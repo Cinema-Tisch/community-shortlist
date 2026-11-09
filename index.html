@@ -114,7 +114,7 @@ h1{
 }
 
 /* Formular */
-form.suggest{display:grid;grid-template-columns:1fr 104px;gap:10px}
+form.suggest{display:grid;grid-template-columns:1fr;gap:10px}
 .field{display:flex;flex-direction:column;gap:5px}
 .field.full{grid-column:1/-1}
 label{font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--navy-ink)}
@@ -251,7 +251,6 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
   .logo{width:156px;height:156px;margin-left:-78px;top:-74px}
   .card{padding:16px 14px;box-shadow:5px 6px 0 rgba(29,23,18,.32)}
   .lede{font-size:15.5px}
-  form.suggest{grid-template-columns:1fr 88px}
   .film{grid-template-columns:34px 1fr auto;gap:9px;padding:10px 9px 10px 6px}
   .rank{font-size:20px}
   .title{font-size:16.5px}
@@ -265,7 +264,7 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
   border:2px solid var(--line);background:var(--navy);position:relative;
   box-shadow:2px 2px 0 rgba(29,23,18,.25);
 }
-.poster img{width:100%;height:100%;object-fit:cover;display:block}
+.poster img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
 .poster .ph{
   position:absolute;inset:0;display:grid;place-items:center;
   background:
@@ -287,6 +286,8 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
   .cloth > *{transform:rotate(.25deg)}
   .cloth > *:not(.logo){max-width:760px;margin-left:auto;margin-right:auto}
 }
+
+@media (max-width:380px){ #fNote::placeholder{font-size:14.5px} }
 
 /* Team-Modus */
 .teambar{display:none;align-items:center;justify-content:space-between;gap:10px;margin:0 0 18px;padding:9px 12px;
@@ -329,10 +330,10 @@ input[type=email]:focus,input[type=password]:focus,input[type=url]:focus{box-sha
 
 /* Autocomplete */
 .cloth > section{position:relative;z-index:1}
-.cloth > section:first-of-type{z-index:3}
+.cloth > section.card-suggest{z-index:3}
 .ac{position:relative}
 .ac-list{
-  position:absolute;left:0;right:-114px;top:calc(100% + 6px);z-index:5;
+  position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:5;
   list-style:none;margin:0;padding:6px;
   background:#fff;border:2.5px solid var(--line);border-radius:14px;box-shadow:5px 6px 0 rgba(29,23,18,.35);
   max-height:360px;overflow:auto;display:none;
@@ -385,8 +386,8 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   .vote .count{font-size:16px}
   .title{font-size:15.5px}
   .note{font-size:13.5px}
-  .ac-list{right:-98px}
   .admin-actions .lbl{display:none}
+  #fNote,#fTitle{font-size:16px;padding-left:12px;padding-right:12px}
   .admin-actions{gap:5px}
   .admin-actions .mini{padding:6px 8px}
   .ac-list .tag{font-size:10.5px;padding:2px 7px}
@@ -413,24 +414,20 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <ul class="pend-list" id="pendList"></ul>
   </section>
 
-  <section class="card" aria-labelledby="h-suggest">
+  <section class="card card-suggest" aria-labelledby="h-suggest">
     <h2 id="h-suggest"><span class="num">1</span>Film vorschlagen</h2>
     <form class="suggest" id="suggestForm" autocomplete="off" novalidate>
-      <div class="field ac">
+      <div class="field ac full">
         <label for="fTitle">Filmtitel</label>
         <input type="text" id="fTitle" maxlength="120" placeholder="Titel eintippen …" required
                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="acList">
         <ul class="ac-list" id="acList" role="listbox"></ul>
       </div>
-      <div class="field">
-        <label for="fYear">Jahr <span class="opt">(opt.)</span></label>
-        <input type="number" id="fYear" inputmode="numeric" min="1880" max="2100" placeholder="1984">
-      </div>
       <div class="picked" id="picked"></div>
       <div class="dupe" id="dupe" aria-live="polite"></div>
       <div class="field full">
-        <label for="fNote">Warum dieser Film? <span class="opt">(optional)</span></label>
-        <input type="text" id="fNote" maxlength="200" placeholder="Ein Satz, der Max &amp; Vincent überzeugt …">
+        <label for="fNote">Dein Kommentar <span class="opt">(optional)</span></label>
+        <input type="text" id="fNote" maxlength="200" placeholder="Sag uns, was dir der Film bedeutet">
       </div>
       <div class="form-actions">
         <button class="btn" type="submit" id="submitBtn">
@@ -1036,7 +1033,6 @@ function acRender(msg) {
 function acPick(m) {
   state.picked = m;
   fTitle.value = m.title;
-  $("#fYear").value = m.year || "";
   const box = $("#picked");
   box.innerHTML = `${posterHTML(m.poster, m.title, "w92")}<div><div class="t"></div><div class="s"></div></div>
     <button type="button" class="btn ghost small">Ändern</button>`;
@@ -1097,11 +1093,9 @@ $("#suggestForm").addEventListener("submit", async e => {
   e.preventDefault();
   const p = state.picked;
   const title = (p ? p.title : fTitle.value).trim().replace(/\s+/g, " ");
-  const yRaw = $("#fYear").value.trim();
   const note = $("#fNote").value.trim() || null;
   if (!title) { fTitle.focus(); toast("Welcher Film soll's denn sein?", true); return; }
-  const year = yRaw ? parseInt(yRaw, 10) : null;
-  if (yRaw && (!year || year < 1880 || year > 2100)) { $("#fYear").focus(); toast("Das Jahr sieht komisch aus.", true); return; }
+  const year = p?.year ?? null;   // Jahr kommt nur noch von TMDB
 
   const d = findDupe(title, p?.tmdb_id, year);
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + d.episode : ""}.`); return; }
