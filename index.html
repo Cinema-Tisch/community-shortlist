@@ -477,7 +477,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
    KONFIGURATION – hier eure Supabase-Daten eintragen.
    Solange hier Platzhalter stehen, läuft die Seite im Demo-Modus.
    ============================================================ */
-const SUPABASE_URL = "https://ekzjlfcjupjwdwhybnis.supabase.co";             // z. B. https://abcdxyz.supabase.co
+const SUPABASE_URL = "https://ekzjlfcjupjwdwhybnis.supabase.co/";             // z. B. https://abcdxyz.supabase.co
 const SUPABASE_KEY = "sb_publishable_-Gzx4RWgNEGYjrolniC95A_mUxk5CzC";  // NIE den service_role / secret key!
 const USE_TMDB     = true;   // Cover + Vorschläge beim Tippen (braucht die Edge Function "tmdb-search")
 /* ============================================================ */
@@ -493,7 +493,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 function toast(msg, err = false) {
   const t = $("#toast");
   t.textContent = msg; t.classList.toggle("err", err); t.classList.add("show");
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 3400);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), err ? 8000 : 3400);
 }
 function banner(msg, error = false) {
   const b = $("#banner");
@@ -1126,7 +1126,7 @@ $("#suggestForm").addEventListener("submit", async e => {
     const m = String(err.message || "");
     toast(err.code === "23505" ? "Den Film hat schon jemand vorgeschlagen – er wartet noch auf Freigabe."
         : /zu viele/i.test(m) ? "Du hast gerade viele Filme vorgeschlagen – bitte später nochmal."
-        : "Vorschlag konnte nicht gespeichert werden.", true);
+        : "Vorschlag konnte nicht gespeichert werden" + (m ? ` (${m})` : "."), true);
   }
   busy--; btn.disabled = false;
 });
