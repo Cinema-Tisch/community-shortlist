@@ -487,7 +487,7 @@ const IMG = "https://image.tmdb.org/t/p/";
 const state = { films: [], done: [], pending: [], isAdmin: false, mine: new Set(), q: "", lastIds: new Set(), firstRender: true, picked: null, showAllDone: false };
 
 const norm = s => (s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
-  .replace(/^(der|die|das|the|a|an|le|la|les|el)\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+  .replace(/^(der|die|das|the|a|an|le|la|les|el)\s+/, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function toast(msg, err = false) {
@@ -531,9 +531,14 @@ function demoBackend() {
     [8, "Toni Erdmann", 2016], [9, "Pulp Fiction", 1994], [10, "Portrait einer jungen Frau in Flammen", 2019],
     [11, "Aftersun", 2022], [12, "Das Leben der Anderen", 2006], [13, "Paris, je t'aime", 2006], [14, "Paris brennt", 1990],
     [15, "In the Mood for Love", 2000], [16, "Victoria", 2015], [17, "Oppenheimer", 2023], [18, "Anatomie eines Falls", 2023],
-  ].map(([tmdb_id, title, year]) => ({ tmdb_id, title, year, poster: null, original_title: title }));
+  ].map(([tmdb_id, title, year]) => ({ tmdb_id, title, year, poster: null, original_title: title, title_en: title }));
+  const alt = { 2: ["기생충", "Parasite"], 3: ["Lola rennt", "Run Lola Run"], 6: ["Der Himmel über Berlin", "Wings of Desire"],
+    10: ["Portrait de la jeune fille en feu", "Portrait of a Lady on Fire"], 12: ["Das Leben der Anderen", "The Lives of Others"],
+    15: ["花樣年華", "In the Mood for Love"], 18: ["Anatomie d'une chute", "Anatomy of a Fall"] };
+  catalog.forEach(c => { if (alt[c.tmdb_id]) [c.original_title, c.title_en] = alt[c.tmdb_id]; });
   const mk = (i, note, votes, hAgo, extra = {}) => ({
     id: "d" + i, title: catalog[i - 1].title, year: catalog[i - 1].year, tmdb_id: i, poster_path: null,
+    original_title: catalog[i - 1].original_title, title_en: catalog[i - 1].title_en,
     note, votes, created_at: new Date(now - hAgo * h).toISOString(), ...extra });
   let films = [
     mk(1, "Wim Wenders in Bestform – und dieser Score!", 14, 30), mk(2, null, 12, 50),
@@ -566,8 +571,8 @@ function demoBackend() {
         .sort((a, b) => b.discussed_at.localeCompare(a.discussed_at)), mine: new Set(mine),
         pending: admin ? pending.map(p => ({ ...p })) : [], isAdmin: admin };
     },
-    async add({ title, year, note, tmdb_id, poster_path }) {
-      const base = { id: "d" + Date.now(), title, year, note, tmdb_id, poster_path, created_at: new Date().toISOString() };
+    async add({ title, year, note, tmdb_id, poster_path, original_title, title_en }) {
+      const base = { id: "d" + Date.now(), title, year, note, tmdb_id, poster_path, original_title, title_en, created_at: new Date().toISOString() };
       if (!admin && !tmdb_id) { pending.push(base); emit(); return { id: null, status: "pending" }; }
       const f = { ...base, votes: 1, last_vote_at: new Date().toISOString() };
       films.push(f); mine.add(f.id); emit(); return { id: f.id, status: "approved" };
@@ -590,7 +595,7 @@ function demoBackend() {
     async search(q) {
       await new Promise(r => setTimeout(r, 150));
       const n = norm(q);
-      return catalog.filter(c => norm(c.title).includes(n)).slice(0, 6);
+      return catalog.filter(c => [c.title, c.original_title, c.title_en].some(x => norm(x).includes(n))).slice(0, 6);
     },
     subscribe(cb) { listener = cb; setLive("demo"); },
   };
@@ -613,7 +618,7 @@ function supabaseBackend() {
     }).finally(() => { signingIn = null; });
     return signingIn;
   }
-  const cols = "id,title,year,note,tmdb_id,poster_path,created_at,votes,last_vote_at";
+  const cols = "id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,votes,last_vote_at";
   return {
     mode: "live",
     async init() {
@@ -632,7 +637,7 @@ function supabaseBackend() {
     async load() {
       const [r1, r2, r3, r4] = await Promise.all([
         sb.from("film_ranking").select(cols),
-        sb.from("film_discussed").select("id,title,year,note,tmdb_id,poster_path,created_at,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
+        sb.from("film_discussed").select("id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
         admin ? sb.from("films").select("id,title,year,note,tmdb_id,poster_path,created_at").eq("status", "pending").order("created_at")
               : Promise.resolve({ data: [], error: null }),
@@ -711,7 +716,7 @@ function render() {
   all.forEach((f, i) => ranks.set(f.id, i + 1));
 
   const q = norm(state.q);
-  const items = all.filter(f => !q || norm(f.title).includes(q) || String(f.year || "").includes(q));
+  const items = all.filter(f => !q || [f.title, f.original_title, f.title_en].some(x => norm(x).includes(q)) || String(f.year || "").includes(q));
   const totalVotes = state.films.reduce((s, f) => s + f.votes, 0);
   $("#stats").textContent = `${state.films.length} ${state.films.length === 1 ? "Film" : "Filme"} · ${totalVotes} ${totalVotes === 1 ? "Stimme" : "Stimmen"}`;
 
@@ -957,7 +962,7 @@ function findDupe(title, tmdb_id, year) {
   const pool = [...state.films.map(f => ({ ...f, _done: false })), ...state.done.map(f => ({ ...f, _done: true }))];
   if (tmdb_id) { const hit = pool.find(f => f.tmdb_id === tmdb_id); if (hit) return hit; }
   const n = norm(title); if (n.length < 2) return null;
-  return pool.find(f => norm(f.title) === n && (!year || !f.year || f.year === year)) || null;
+  return pool.find(f => [f.title, f.original_title, f.title_en].some(x => x && norm(x) === n) && (!year || !f.year || f.year === year)) || null;
 }
 function checkDupe() {
   const box = $("#dupe");
@@ -1020,7 +1025,7 @@ function acRender(msg) {
         const voted = state.mine.has(d.id);
         tag = `<button type="button" class="tag jump" data-id="${esc(d.id)}" data-vote="${voted ? 0 : 1}">${voted ? "Schon dabei – ansehen" : "Schon dabei – hochvoten?"}${voted ? "" : upMini}</button>`;
       }
-      const sub = [m.year, m.original_title && m.original_title !== m.title ? m.original_title : ""].filter(Boolean).join(" · ");
+      const sub = [m.year, ...[...new Set([m.title_en, m.original_title])].filter(x => x && x !== m.title)].filter(Boolean).join(" · ");
       return `<li role="option" id="ac${i}" data-i="${i}" aria-selected="${i === acIndex}">
         ${posterHTML(m.poster, m.title, "w92")}
         <div class="txt"><div class="t">${esc(m.title)}</div><div class="s">${esc(sub)}</div></div>${tag}</li>`;
@@ -1102,7 +1107,8 @@ $("#suggestForm").addEventListener("submit", async e => {
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + d.episode : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
 
-  const film = { title, year, note, tmdb_id: p?.tmdb_id ?? null, poster_path: p?.poster ?? null };
+  const film = { title, year, note, tmdb_id: p?.tmdb_id ?? null, poster_path: p?.poster ?? null,
+                 original_title: p?.original_title || null, title_en: p?.title_en || null };
   const btn = $("#submitBtn"); btn.disabled = true; busy++;
   try {
     const res = await api.add(film);
