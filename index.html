@@ -280,6 +280,14 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
 .film.top .vote:not([aria-pressed=true]){background:#fff}
 .film.top .added{color:#8f7671}
 
+/* Desktop: Tischdecke fast bis zum Rand, Inhalt bleibt mittig */
+@media (min-width:900px){
+  body{padding-left:3vw;padding-right:3vw}
+  .cloth{max-width:none;transform:rotate(-.25deg)}
+  .cloth > *{transform:rotate(.25deg)}
+  .cloth > *:not(.logo){max-width:760px;margin-left:auto;margin-right:auto}
+}
+
 /* Team-Modus */
 .teambar{display:none;align-items:center;justify-content:space-between;gap:10px;margin:0 0 18px;padding:9px 12px;
   background:var(--navy);color:#fff;font-weight:800;font-size:14.5px;border:3px solid var(--line);border-radius:12px;box-shadow:3px 3px 0 var(--line)}
@@ -624,7 +632,7 @@ function supabaseBackend() {
     async load() {
       const [r1, r2, r3, r4] = await Promise.all([
         sb.from("film_ranking").select(cols),
-        sb.from("film_discussed").select(cols + ",discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
+        sb.from("film_discussed").select("id,title,year,note,tmdb_id,poster_path,created_at,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
         admin ? sb.from("films").select("id,title,year,note,tmdb_id,poster_path,created_at").eq("status", "pending").order("created_at")
               : Promise.resolve({ data: [], error: null }),
