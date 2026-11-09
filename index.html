@@ -365,6 +365,8 @@ input[type=email]:focus,input[type=password]:focus,input[type=url]:focus{box-sha
 footer{display:flex;flex-direction:column;align-items:center;gap:10px}
 .tmdb{font-size:12px;font-weight:600;color:var(--line);background:rgba(255,253,248,.92);padding:6px 12px;border-radius:10px;border:2px solid var(--line);max-width:46ch;line-height:1.35}
 .tmdb a{color:var(--navy-ink)}
+.tmdb-logo{display:block;width:fit-content;margin:2px auto 6px}
+.tmdb-logo img{display:block;height:22px;width:auto}
 
 @media (max-width:560px){
   .film{grid-template-columns:22px 36px 1fr auto;gap:8px;padding:9px 8px 9px 5px}
@@ -450,7 +452,12 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
 
   <footer>
     <button class="pill-name" type="button" id="teamLink" aria-label="Cinema-Tisch · Max &amp; Vincent – Team-Login">Cinema-Tisch · Max &amp; Vincent</button>
-    <p class="tmdb" id="tmdbNote" hidden>Filmdaten und Cover: <a href="https://www.themoviedb.org/" rel="noopener" target="_blank">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+    <p class="tmdb" id="tmdbNote" hidden>
+      <a href="https://www.themoviedb.org/" rel="noopener" target="_blank" class="tmdb-logo">
+        <!-- Logo-Datei als "tmdb-logo.svg" (oder .png) neben die index.html legen -->
+        <img src="tmdb-logo.svg" alt="TMDB" onerror="if(!this.dataset.png){this.dataset.png=1;this.src='tmdb-logo.png'}else{this.parentNode.remove()}">
+      </a>
+      Filmdaten und Cover: <a href="https://www.themoviedb.org/" rel="noopener" target="_blank">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
   </footer>
 </main>
 
