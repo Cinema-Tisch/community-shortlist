@@ -101,6 +101,7 @@ h1{
 }
 
 .card{
+  --cpb:22px;
   background:var(--paper);
   border:3.5px solid var(--line);
   border-radius:18px 10px 22px 12px / 12px 20px 10px 18px;
@@ -182,19 +183,23 @@ input::placeholder{color:#9a95a6}
 ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 /* Top 10: darunter eingeklappt, Platz 11 schaut zu einem Drittel heraus */
 .list-wrap{position:relative}
-.list-wrap.foldable{padding-bottom:36px}
+.list-wrap.foldable{padding-bottom:52px;transition:padding-bottom .5s ease}
+.list-wrap.collapsed{padding-bottom:36px}
 .list-wrap.foldable ol.films{margin:-10px;padding:10px}
 .list-wrap.collapsed ol.films,.list-wrap.anim ol.films{overflow:hidden}
 .list-wrap.anim ol.films{max-height:none !important}
 .list-wrap.foldable::after{content:"";position:absolute;left:-10px;right:-10px;top:var(--fade-top,0);height:var(--fade,70px);pointer-events:none;
   background:linear-gradient(to bottom, rgba(255,253,248,0), rgba(255,253,248,.35) 35%, rgba(255,253,248,.8) 55%, var(--paper) 78%);
   opacity:0;transition:opacity .45s ease}
-.list-wrap.collapsed::after{opacity:1;transition-delay:.15s}
-.more{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:2px;
+.list-wrap.collapsed::after{opacity:1;transition-delay:.1s}
+.list-wrap.anim::after{opacity:0;transition:none}
+.more{position:absolute;left:50%;bottom:-6px;transition:bottom .5s ease;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:2px;
   background:none;border:0;padding:4px 18px;cursor:pointer;color:var(--line);font:inherit}
 .more[hidden]{display:none}
-.more .chev{width:56px;height:16px;transition:transform .6s cubic-bezier(.45,0,.2,1)}
-.list-wrap:not(.collapsed) .more .chev{transform:rotate(180deg)}
+.more .chev{width:56px;height:16px;transition:transform .55s cubic-bezier(.65,0,.35,1)}
+/* aufgeklappt: Pfeil mittig zwischen letztem Film und Kartenrand */
+.list-wrap.foldable:not(.collapsed) .more{bottom:calc(52px - (52px + var(--cpb,22px)) / 2 - 32px)}
+.list-wrap:not(.collapsed) .more .chev{transform:scaleY(-1)}
 .list-wrap.collapsed .more .chev{animation:chev-float 2.6s ease-in-out infinite}
 @keyframes chev-float{0%,100%{translate:0 0}50%{translate:0 4px}}
 .more-lbl{font-size:14px;font-weight:700;color:var(--navy);opacity:0;transition:opacity .2s;white-space:nowrap}
@@ -278,7 +283,7 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
   .cloth > *{transform:none}
   .cloth{background-size:7px 7px, 36px 36px, 36px 36px}
   .logo{width:156px;height:156px;margin-left:-78px;top:-74px}
-  .card{padding:16px 14px;box-shadow:5px 6px 0 rgba(29,23,18,.32)}
+  .card{--cpb:16px;padding:16px 14px;box-shadow:5px 6px 0 rgba(29,23,18,.32)}
   .lede{font-size:15.5px}
   .film{grid-template-columns:34px 1fr auto;gap:9px;padding:10px 9px 10px 6px}
   .rank{font-size:20px}
@@ -410,15 +415,18 @@ body.team .pill-name{cursor:default}
 .pick-item .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .pick-item .s{font-size:13px;color:var(--muted);font-weight:600}
 /* Info-Fenster über dem Cover */
-.poster[data-tmdb]{cursor:help}
+.poster[data-tmdb]{cursor:pointer}
 .poster[data-tmdb]:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
 .peek{position:fixed;z-index:60;left:0;top:0;background:var(--paper);border:2.5px solid var(--line);border-radius:12px 8px 14px 9px / 9px 14px 8px 12px;
-  box-shadow:4px 5px 0 rgba(29,23,18,.3);padding:11px 13px 12px;font-size:14px;line-height:1.48;color:var(--line);pointer-events:none;
+  box-shadow:4px 5px 0 rgba(29,23,18,.3);padding:11px 13px 12px;font-size:14px;line-height:1.48;color:var(--line);overflow:auto;overscroll-behavior:contain;
   opacity:0;transform:translateY(4px);transition:opacity .18s ease,transform .18s ease}
 .peek.show{opacity:1;transform:none}
 .peek[hidden]{display:none}
 .pk-meta{font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:.01em;margin-bottom:5px}
 .pk-text{margin:0}
+.pk-more{display:inline-block;margin-top:6px;padding:0;background:none;border:0;font:inherit;font-size:13.5px;font-weight:800;color:var(--navy);
+  cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+.pk-more:hover{color:var(--red-deep)}
 .pk-note{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic}
 .pk-load{color:var(--muted);font-size:13.5px}
 @media (prefers-reduced-motion:reduce){.peek{transition:none;transform:none}}
@@ -1507,21 +1515,40 @@ function fmtRuntime(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h ? `${h} Std.${m ? ` ${m} Min.` : ""}` : `${m} Min.`;
 }
+// Lange Inhaltsangaben: bis zum Satzende nach ca. 350 Zeichen zeigen, der Rest per „Weiterlesen“
+function splitOverview(t, limit = 350) {
+  if (t.length <= limit + 80) return [t, ""];
+  const ends = [...t.matchAll(/[.!?…]["“”»«')]?(?=\s)/g)].map(m => m.index + m[0].length);
+  let cut = ends.filter(i => i <= limit + 40).pop() ?? ends.find(i => i > limit);
+  if (!cut || t.length - cut < 60) return [t, ""];
+  return [t.slice(0, cut), t.slice(cut).trim()];
+}
 function fillPeek(d) {
   if (d === undefined) { peek.innerHTML = `<div class="pk-load">Lädt …</div>`; return; }
   if (!d || (!d.overview && !d.runtime && !d.people?.length)) {
     peek.innerHTML = `<div class="pk-load">Für diesen Film hat TMDB leider keine Inhaltsangabe.</div>`; return;
   }
   const meta = [d.people?.length ? `${d.people_label || "Regie"}: ${d.people.join(", ")}` : "", fmtRuntime(d.runtime)].filter(Boolean);
-  peek.innerHTML = `${meta.length ? `<div class="pk-meta"></div>` : ""}<p class="pk-text"></p>${d.lang === "en" ? `<div class="pk-note">Nur auf Englisch bei TMDB</div>` : ""}`;
+  const [short, rest] = splitOverview(d.overview || "Keine Inhaltsangabe vorhanden.");
+  peek.innerHTML = `${meta.length ? `<div class="pk-meta"></div>` : ""}<p class="pk-text"><span class="pk-short"></span>${rest ? ` <span class="pk-rest" hidden></span>` : ""}</p>
+    ${rest ? `<button type="button" class="pk-more">Weiterlesen</button>` : ""}${d.lang === "en" ? `<div class="pk-note">Nur auf Englisch bei TMDB</div>` : ""}`;
   if (meta.length) peek.querySelector(".pk-meta").textContent = meta.join(" · ");
-  peek.querySelector(".pk-text").textContent = d.overview || "Keine Inhaltsangabe vorhanden.";
+  peek.querySelector(".pk-short").textContent = short;
+  if (rest) {
+    peek.querySelector(".pk-rest").textContent = rest;
+    peek.querySelector(".pk-more").onclick = e => {
+      e.stopPropagation();
+      peek.querySelector(".pk-rest").hidden = false; e.currentTarget.remove();
+      peek.classList.add("long"); placePeek();
+    };
+  }
 }
 function placePeek() {
   if (!peekFor || peek.hidden) return;
   const r = peekFor.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, gap = 12;
   const w = Math.min(vw >= 900 ? 400 : 330, vw - 24);
   peek.style.width = w + "px";
+  peek.style.maxHeight = (vh - 24) + "px";
   const h = peek.offsetHeight;
   let x, y;
   if (r.right + gap + w <= vw - 12) { x = r.right + gap; y = r.top - 6; }          // rechts neben dem Cover
@@ -1536,7 +1563,7 @@ function placePeek() {
 async function showPeek(el) {
   if (peekFor === el && !peek.hidden) return;
   clearTimeout(hideTimer);
-  peekFor = el;
+  peekFor = el; peek.classList.remove("long"); peek.scrollTop = 0;
   const d = peekCache.get(el.dataset.ttype + ":" + el.dataset.tmdb);
   fillPeek(d instanceof Promise ? undefined : d);
   peek.hidden = false; requestAnimationFrame(() => peek.classList.add("show"));
@@ -1553,17 +1580,23 @@ function hidePeek(now = false) {
 }
 const peekTarget = e => e.target.closest?.(".poster[data-tmdb]");
 document.addEventListener("pointerdown", e => { lastPointer = e.pointerType || "mouse"; }, true);
+function hideSoon() { clearTimeout(peekTimer); clearTimeout(hideTimer); hideTimer = setTimeout(() => hidePeek(), 220); }
 document.addEventListener("pointerover", e => {
   if (e.pointerType !== "mouse") return;
-  const el = peekTarget(e); if (!el || el === peekFor) return;
+  if (e.target.closest?.(".peek")) { clearTimeout(hideTimer); return; }   // Maus wandert ins Fenster: offen lassen
+  const el = peekTarget(e);
+  if (el === peekFor) { clearTimeout(hideTimer); return; }
+  if (!el) return;
   clearTimeout(peekTimer);
   peekTimer = setTimeout(() => { if (el.matches(":hover")) showPeek(el); }, 300);
   loadDetails(el.dataset.tmdb, el.dataset.ttype);   // schon mal laden, während die Maus verweilt
 });
 document.addEventListener("pointerout", e => {
   if (e.pointerType !== "mouse") return;
-  const el = peekTarget(e); if (!el || el.contains(e.relatedTarget)) return;
-  clearTimeout(peekTimer); hidePeek();
+  const from = peekTarget(e) || e.target.closest?.(".peek");
+  if (!from || from.contains(e.relatedTarget)) return;
+  if (e.relatedTarget?.closest?.(".peek") || (peekFor && peekFor.contains(e.relatedTarget))) return;
+  hideSoon();
 });
 // Touch: Tippen aufs Cover öffnet/schließt, Tippen daneben schließt
 document.addEventListener("click", e => {
@@ -1573,15 +1606,15 @@ document.addEventListener("click", e => {
   if (!e.target.closest(".peek")) hidePeek();
 }, true);
 document.addEventListener("focusin", e => { const el = peekTarget(e); if (el && el.matches(":focus-visible")) showPeek(el); });
-document.addEventListener("focusout", e => { if (peekTarget(e) === peekFor) hidePeek(); });
+document.addEventListener("focusout", e => { if (peekTarget(e) === peekFor && !peek.contains(e.relatedTarget)) hidePeek(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && peekFor) hidePeek(true); });
 // Beim Scrollen schließen – ein wartendes Öffnen bleibt, prüft aber, ob die Maus noch drauf ist
-addEventListener("scroll", () => { if (!peek.hidden) { const t = peekTimer; peekTimer = null; hidePeek(true); peekTimer = t; } }, { passive: true, capture: true });
+addEventListener("scroll", e => { if (peek.contains(e.target)) return; if (!peek.hidden) { const t = peekTimer; peekTimer = null; hidePeek(true); peekTimer = t; } }, { passive: true, capture: true });
 addEventListener("resize", () => hidePeek(true));
 
 /* ---------------- Top 10 + Aufklappen ---------------- */
 const TOP_N = 10;
-let expanded = false, foldAnim = null;
+let expanded = false, foldAnim = null;   // foldAnim: laufender requestAnimationFrame
 function updateFold() {
   const wrap = $("#listWrap"), btn = $("#moreBtn"), list = $("#list");
   const lis = [...list.children].filter(li => li.classList.contains("film"));
@@ -1608,17 +1641,31 @@ function setExpanded(v, animate = true) {
   const wrap = $("#listWrap"), list = $("#list");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const from = list.getBoundingClientRect().height;
-  const top = wrap.getBoundingClientRect().top;
-  foldAnim?.cancel();
+  if (foldAnim) { cancelAnimationFrame(foldAnim); foldAnim = null; }
   expanded = v; updateFold();
-  if (!animate || reduce) return;
+  if (!animate || reduce) { wrap.classList.remove("anim"); list.style.height = ""; return; }
   const to = expanded ? list.scrollHeight : parseFloat(list.style.maxHeight);
-  // Höhe weich animieren; während der Animation bleibt der Inhalt abgeschnitten
+  const dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;   // sanft an- und auslaufen
+  // Beim Zuklappen bleibt der Pfeil an seiner Stelle auf dem Bildschirm: die Seite scrollt im Gleichschritt mit
+  const btnTop = $("#moreBtn").getBoundingClientRect().top;
+  const keepPlace = !expanded && btnTop > 0 && btnTop < innerHeight;
+  const html = document.documentElement, sb = html.style.scrollBehavior;
+  html.style.scrollBehavior = "auto";
   wrap.classList.add("anim");
-  foldAnim = list.animate([{ height: from + "px" }, { height: to + "px" }],
-    { duration: Math.min(900, 380 + Math.abs(to - from) * 0.25), easing: "cubic-bezier(.45,0,.2,1)" });
-  foldAnim.onfinish = foldAnim.oncancel = () => { wrap.classList.remove("anim"); foldAnim = null; };
-  if (!v && top < 0) wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  list.style.height = from + "px";
+  let prev = from;
+  const t0 = performance.now();
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    const h = from + (to - from) * ease(p);
+    list.style.height = h + "px";
+    if (keepPlace) window.scrollBy(0, h - prev);
+    prev = h;
+    if (p < 1) { foldAnim = requestAnimationFrame(step); return; }
+    foldAnim = null; list.style.height = ""; wrap.classList.remove("anim"); html.style.scrollBehavior = sb;
+  };
+  foldAnim = requestAnimationFrame(step);
 }
 $("#moreBtn").addEventListener("click", () => setExpanded(!expanded));
 // Höhen ändern sich noch nach dem ersten Zeichnen (Schrift, Cover, Fensterbreite) → Schnittkante neu messen
