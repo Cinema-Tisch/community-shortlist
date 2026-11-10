@@ -308,9 +308,10 @@ body.team .card-suggest{display:none}
 .film.top1{position:relative;will-change:auto}
 .film.top1::before{
   content:"";position:absolute;inset:-7px;border-radius:19px;z-index:-1;pointer-events:none;
+  /* Grundglühen rundum (nie ganz weg) + hellere Stelle, die umläuft */
   background:conic-gradient(from var(--glow-a),
-    rgba(242,184,75,0) 0deg, rgba(242,184,75,.18) 50deg, rgba(255,200,90,.9) 125deg,
-    rgba(255,236,170,1) 160deg, rgba(255,200,90,.9) 195deg, rgba(242,184,75,.18) 270deg, rgba(242,184,75,0) 330deg);
+    rgba(242,184,75,.45) 0deg, rgba(245,190,80,.6) 60deg, rgba(255,205,95,.95) 125deg,
+    rgba(255,236,170,1) 160deg, rgba(255,205,95,.95) 195deg, rgba(245,190,80,.6) 260deg, rgba(242,184,75,.45) 360deg);
   filter:blur(9px) saturate(1.2);
   animation:glow-orbit 5s linear infinite, glow-breathe 3.4s ease-in-out infinite;
 }
