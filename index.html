@@ -167,6 +167,9 @@ input::placeholder{color:#9a95a6}
 .dupe.show{display:flex}
 .nohit{grid-column:1/-1;display:none;background:var(--cream);border:2.5px dashed var(--red);border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.4;color:var(--line)}
 .nohit.show{display:block}
+.nohit.nudge{animation:nudge .35s ease}
+@keyframes nudge{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+#fNote.need:placeholder-shown{border-color:var(--red);box-shadow:3px 3px 0 var(--red)}
 .nohit b{font-weight:800}
 .dupe b{font-weight:800}
 
@@ -607,7 +610,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
       <div class="picked" id="picked"></div>
       <div class="dupe" id="dupe" aria-live="polite"></div>
       <div class="nohit" id="noHit" aria-live="polite">
-        <b>Kein Film aus der Liste ausgewählt.</b> Kein Problem – gib uns unten ein paar Anhaltspunkte mit (Jahr, Regie, Land oder wo du ihn gesehen hast), damit wir den richtigen Film finden. Dann einfach nochmal abschicken.
+        <b>Kein Film aus der Liste ausgewählt.</b> Kein Problem – schreib uns unten ein paar Anhaltspunkte dazu (Jahr, Regie, Land oder wo du ihn gesehen hast), damit wir den richtigen Film finden. Ohne Anhaltspunkte können wir den Vorschlag leider nicht annehmen.
       </div>
       <div class="field full">
         <label for="fNote">Sag uns, warum? <span class="opt">(optional)</span></label>
@@ -1893,7 +1896,7 @@ function acRender(msg) {
   acList.classList.add("show"); fTitle.setAttribute("aria-expanded", "true");
 }
 function acPick(m) {
-  state.picked = m; $("#noHit").classList.remove("show");
+  state.picked = m; $("#noHit").classList.remove("show", "nudge"); $("#fNote").classList.remove("need");
   fTitle.value = m.title;
   const box = $("#picked");
   box.innerHTML = `${posterHTML(m.poster, m.title, "w92")}<div><div class="t"></div><div class="s"></div></div>
@@ -1968,10 +1971,14 @@ $("#suggestForm").addEventListener("submit", async e => {
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + epText(d) : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
 
-  // Ohne TMDB-Treffer: einmal auf die Kommentarfunktion hinweisen
+  // Ohne TMDB-Treffer ist ein Kommentar mit Anhaltspunkten Pflicht (mindestens 3 Zeichen)
   const hint = $("#noHit");
-  if (!p && !note && !hint.classList.contains("show")) {
-    hint.classList.add("show"); $("#fNote").focus(); return;
+  if (!p && (!note || note.length < 3)) {
+    const again = hint.classList.contains("show");
+    hint.classList.add("show");
+    const fn = $("#fNote"); fn.classList.add("need"); fn.focus();
+    if (again) { hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); }
+    return;
   }
 
   const film = { title, year, note, tmdb_id: p?.tmdb_id ?? null, poster_path: p?.poster ?? null,
@@ -1997,7 +2004,7 @@ $("#suggestForm").addEventListener("submit", async e => {
   }
   busy--; btn.disabled = false;
 });
-function resetForm() { $("#suggestForm").reset(); unpick(); acClose(); $("#noHit").classList.remove("show"); }
+function resetForm() { $("#suggestForm").reset(); unpick(); acClose(); $("#noHit").classList.remove("show", "nudge"); $("#fNote").classList.remove("need"); }
 
 /* ---------------- Start ---------------- */
 (async () => {
