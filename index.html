@@ -439,9 +439,10 @@ body.team .pill-name{cursor:default}
 .cover:hover .disc,.cover:has(.poster:focus-visible) .disc{transform:translate(28%,-50%)}
 /* wie eine DVD-Hülle: leicht im Uhrzeigersinn gekippt, links sieht man die Kante */
 .cover:hover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line)}
-.cover:has(.lifted) .disc{opacity:0;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .12s .2s}
+/* Beim Öffnen verschwindet die DVD sofort mit dem Cover – sonst sieht man sie kurz allein in die Hülle rutschen */
+.cover:has(.lifted) .disc{opacity:0;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .08s}
 .cover.landing .disc{opacity:1;transition:transform .4s cubic-bezier(.3,1.2,.5,1), opacity .12s !important}
-.cover.tuck .disc{transform:translate(-50%,-50%) !important;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .12s .2s !important}
+.cover.tuck .disc{transform:translate(-50%,-50%) !important;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .08s !important}
 .cover.tuck .poster[data-tmdb]{transform:none !important}
 /* der Text rückt ein Stück zur Seite und macht der Scheibe Platz */
 .film .info{transition:transform .45s cubic-bezier(.3,1.2,.5,1)}
@@ -450,9 +451,16 @@ body.team .pill-name{cursor:default}
 @media (prefers-reduced-motion:reduce){.disc,.film .info{transition:none}}
 /* Touch-Geräte (kein Hover): dauerhaft wie die Endposition beim Drüberfahren mit der Maus */
 @media (hover:none){
-  .cover:has(.poster[data-tmdb]) .disc{transform:translate(28%,-50%);transition:none}
-  .cover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line);transition:none}
+  /* Nach dem Schließen des Klappentexts gleiten Cover und DVD sanft zurück in die Schräglage */
+  .cover:has(.poster[data-tmdb]) .disc{transform:translate(28%,-50%);transition:transform .45s cubic-bezier(.3,1.2,.5,1), opacity .12s}
+  .cover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line);transition:transform .4s cubic-bezier(.3,1.2,.5,1), box-shadow .4s}
+  .cover.tuck .poster[data-tmdb]{transition:none !important}   /* beim Öffnen sofort gerade, damit die Hülle sauber startet */
   .film:has(.poster[data-tmdb]) .info{transform:none !important;margin-left:30px;transition:none}
+}
+/* Teambereich am Handy: keine DVD, damit die Knöpfe Platz haben */
+@media (max-width:560px){
+  body.team .disc{display:none !important}
+  body.team .film .info{transform:none !important;margin-left:0 !important}
 }
 @media (hover:none) and (max-width:560px){
   .film:has(.poster[data-tmdb]) .info{margin-left:24px}
@@ -1663,8 +1671,9 @@ function closeCase() {
   cs.style.transform = caseFromTransform(r, { left: parseFloat(cs.style.left), top: parseFloat(cs.style.top), width: cs.offsetWidth, height: cs.offsetHeight });
   layer.classList.remove("open"); layer.classList.add("closing");
   // Kurz vor der Landung gleitet die DVD schon wieder heraus
+  // (Am Handy erst nach dem Landen: dann gleiten Cover und DVD gemeinsam in die Schräglage, siehe done())
   const cover = poster.closest(".cover");
-  if (cover) setTimeout(() => { cover.classList.add("landing"); cover.classList.remove("tuck"); }, 380);
+  if (cover && !matchMedia("(hover: none)").matches) setTimeout(() => { cover.classList.add("landing"); cover.classList.remove("tuck"); }, 380);
   // Gelandet: Das echte Cover liegt deckend darunter (die DVD bleibt verdeckt), die Hülle darüber blendet aus –
   // so erscheint der Rahmen weich statt schlagartig
   let ended = false;
