@@ -48,6 +48,10 @@ body{
 .cloth{
   position:relative;
   max-width:760px;margin:96px auto 0;
+  /* Safari: Tischdecke von Anfang an mindestens fensterhoch, damit sie beim Laden der Liste nicht im sichtbaren
+     Bereich wächst – und als eigene Ebene, damit das Karomuster dabei nicht kurz verrutscht */
+  min-height:100vh;
+  will-change:transform;
   padding:120px 30px 34px;
   background-color:var(--cream);
   /* Karomuster als feste Kacheln, verankert links oben: verrutscht nicht, wenn sich die Höhe ändert */
