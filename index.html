@@ -303,10 +303,19 @@ body.team.votes-off .hidden-note{display:block}
 /* Team-Modus: Vorschlagen ausblenden */
 body.team .card-suggest{display:none}
 
-/* Platz 1 glüht leicht */
-@keyframes glow{0%,100%{box-shadow:3px 3px 0 rgba(29,23,18,.22),0 0 0 0 rgba(242,184,75,0)}
-  50%{box-shadow:3px 3px 0 rgba(29,23,18,.22),0 0 22px 7px rgba(242,184,75,.85)}}
-.film.top1{animation:glow 2.6s ease-in-out infinite}
+/* Platz 1: goldenes Glühen, das im Uhrzeigersinn um die Kanten wandert und leicht wabert */
+@property --glow-a{syntax:'<angle>';inherits:false;initial-value:0deg}
+.film.top1{position:relative;will-change:auto}
+.film.top1::before{
+  content:"";position:absolute;inset:-7px;border-radius:19px;z-index:-1;pointer-events:none;
+  background:conic-gradient(from var(--glow-a),
+    rgba(242,184,75,0) 0deg, rgba(242,184,75,.18) 50deg, rgba(255,200,90,.9) 125deg,
+    rgba(255,236,170,1) 160deg, rgba(255,200,90,.9) 195deg, rgba(242,184,75,.18) 270deg, rgba(242,184,75,0) 330deg);
+  filter:blur(9px) saturate(1.2);
+  animation:glow-orbit 5s linear infinite, glow-breathe 3.4s ease-in-out infinite;
+}
+@keyframes glow-orbit{to{--glow-a:360deg}}
+@keyframes glow-breathe{0%,100%{opacity:.7;inset:-6px}50%{opacity:1;inset:-12px}}
 
 /* Rad-Pool */
 .wheel-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
