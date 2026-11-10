@@ -414,22 +414,59 @@ body.team .pill-name{cursor:default}
 .pick-item .txt{display:flex;flex-direction:column;min-width:0}
 .pick-item .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .pick-item .s{font-size:13px;color:var(--muted);font-weight:600}
-/* Info-Fenster über dem Cover */
-.poster[data-tmdb]{cursor:pointer}
+/* Klappentext: Cover löst sich, fliegt zur Mitte und dreht sich um */
+.poster[data-tmdb]{cursor:pointer;transition:transform .2s ease, box-shadow .2s ease}
 .poster[data-tmdb]:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
-.peek{position:fixed;z-index:60;left:0;top:0;background:var(--paper);border:2.5px solid var(--line);border-radius:12px 8px 14px 9px / 9px 14px 8px 12px;
-  box-shadow:4px 5px 0 rgba(29,23,18,.3);padding:11px 13px 12px;font-size:14px;line-height:1.48;color:var(--line);overflow:auto;overscroll-behavior:contain;
-  opacity:0;transform:translateY(4px);transition:opacity .18s ease,transform .18s ease}
-.peek.show{opacity:1;transform:none}
-.peek[hidden]{display:none}
-.pk-meta{font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:.01em;margin-bottom:5px}
-.pk-text{margin:0}
-.pk-more{display:inline-block;margin-top:6px;padding:0;background:none;border:0;font:inherit;font-size:13.5px;font-weight:800;color:var(--navy);
-  cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
-.pk-more:hover{color:var(--red-deep)}
-.pk-note{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic}
-.pk-load{color:var(--muted);font-size:13.5px}
-@media (prefers-reduced-motion:reduce){.peek{transition:none;transform:none}}
+/* Cover mit DVD dahinter: beim Drüberfahren rutscht die Scheibe zur Hälfte heraus */
+.cover{position:relative;z-index:2;display:flex}
+.cover .poster{position:relative;z-index:1}
+.disc{position:absolute;z-index:0;top:50%;left:50%;width:104%;aspect-ratio:1;pointer-events:none;
+  background:url(data:image/webp;base64,UklGRuQbAABXRUJQVlA4WAoAAAAQAAAAnwAAnwAAQUxQSKQKAAABx8agbSNJ5+zyJ/3dHYOIyMfnnIUMDMg97yEUxDRlC8qWFVT2IFmN4Xt+Jhi0jeRodme+LH/IHUJE/ycApdUYszGpIQcmFdwIABdWxMb0w3fm8HLRnkkX5if9FXbuwP9vIgKQZgwyacJcSA0bAHo7jCvU8IRt2/K22bZt+3HKMoY5DZfbm5mZmZlp/DAzM4+e2TNiZn6eMnPT+klSbrAQti04z30g2bGt67rGETEBjLokkc0yprBdqPcQLgy2pjfOTE9NtgP3OnMX5k6fX2BoUrHrSaE+wPrtB/bs2rF18+QES+0tnD126vizh04eA0i41I2CDOy+7rqX7NnNorYNiBCLnn7isYMPHepBRKmTUIa117/hFdfPAMZOGEAMN2BbISA/ed89dx6FSKoHRYaZ17/jdXuBLIkePj8+cbY/Pj6WBHbJZSzZCWy7BZy77+abgBTVFwl49fvfuRuKE8zrQrvvdZ3WOJdsCyxklwi48AcfXwuRqi0SbPrA+14PhaA37+54TCixosZCLm7Nzv7b918NStUlZfZ86Zu7cEksdPpMtlsARisBGEAuCjr/+Ve326malDIHvvilXeRQf76TJtqJ1WwQLglueBvFUUEJdn7msxvIiYV5T0yK1W+QS+jtX3wtRaqYCKY//OEZcvLcXGumxYgaRDbv/PSV5KiUBO/92230ky/Ot6cTo2yUinnP+2ZAlRHBnt+cne23mOtOrEmMuDGpMPOe15KjIhJ8/pbZg48yN5cmRQUKE5lr374FqQoSO39rdvbh2YcWWjNBZVoyr7+WvkZO5qqXk1sslKlEhRpR2P+SFhoxFa7bjel12uNUqwEVXrkVjVSw6VpK0NEk1WuIwr59jLLZtIMS7o6NUdVi62UUjYrYvh3T8xgVLUCM78Sjwtq1BIU2rijAKLMRaxRaTLUM3VZCVLrM5NgotGgFwqLiBZgxRrMIBzUZyKuth7CDxV1toldY5fMFILG4Kg7oZq2qM31MiFo9h7xaCsfPh9UWS5QrzhiOs1qt0ycAsfSqQ6DyNF4VihePY5yXJCrf4HT+abwaWhwE2gCukUFz5GR45czDYAIQdWsOXwivlHX4aHKyqWEBD7JSjhMPyQS1bEp68R68IoZbMa0Cdg0J64Gn08roljNhTH2bG51WoMTRW6NIRnUlx4s3KpYP/hEIANcUlLiBtGwl7jiSijxQ1wb8JtJyRXdsY5FBri1QTruPa5nEs1eLoTVmYKdzLE9cnJhyIGTqXEX7n9ayBMeuQoCoN/BGumk50pmxccsCU+sW2nvEvrTQ4wckBKbu5XWdbrq0RGe8CFR/FtpxyL4UsX63BGDqX950oZ8uJfHBNUVIphl+Osql5PiAAITqT07lNa8paWnhl71OgWSaofkiXpr4kLJAqBE4+Z2Xl1iK8sy7EYhmKCgTH6S1lOANl2UhWY0AEB+eQkuAd2AapBxl/5tIiynPvIGE5KYAFL+PWCx4ya4isNUckt66vcQi4o0UoASN0cob3oIWybySMFiNQYDfjIeFd78EIdMcgNCrN5cYxnVTWVBEg7TK1lehIeZ6bHA0CIF5DcMHJBk1CEC8NGUBKuv2IVNE07jyAEPYucMBNI48c+0iB8IA0SyMuIZBsYsCpoFepcLgHkBNQ0Ls3mhBZjuyiWZBQd6xHYHTVkTzFLh9YIA1m5FADYSdQzZMgWmcNrATAzNtADUNQGylANOyaKRiU7JgCtNU1q8FmByiSii5VIigTGxA0MaISixEqhDA41MAAbgSzOO3HkRVUsYnEdWZfferP/LdI7hCPDYF4Koo6Vtf7TP2CqoktQd6VQEfeEqp99OUCqGFoEOAqiLyz1KN9pAAmKMiS3z9jnEt/EJFLP0CYVdBjju+12Xr3zpVhMHkgbkeqAooccPf67NvsCrBEuAuhjMLVUEJgKBC+x2AM2fA1UApRFCJHtabH+gew7gaKnSI1ZnHJJ7HqGEMNQvngeAolhuGEVgLpzHmGKJhGhlyen4OMIeI5oEgt16wjDl2Wm4aAsg6SYB16kmsJlI4gcBRDmO7SZjBQn4SA+IRLJpkkQZ08ekhhQdzy43CYUG//eyJRY48Cbg5mKG99jMXY4DUvc9ZNAgJcNYjiOF3SzQKA5n8KMPNnReSm4MdCHrtk4fwkBLH7qHgxhAM9sYPnVAZQnAzFs0i53QvieGFG+Zaxs3AYEEvOnfhRQj+6NEimmEJAPcm/2oSLZb46KxohkYW5H77x0ksLtb+V7gZlGCwp96bl0TihyhyAzCyoPSmDk2ipQRXd4MmWILBXm7fSGLJwU3Kcu0ZGXCvdfE/iaUl/hRR/yVA0OtN3/mouETd/kBkueYsGXBP8e9Ol5KKtztQrQmEkKzLjnLJ4sl9QtS7BBDubm934pKIHhstVGeWEMLee5RlfXyvkOtLAIJwf9PYhViO6JR1FjUuCRB49zNoOeDwDqH6skAQpb+hnA8vS3QvbLSE6smAQAVte4zl1uE1YUQtG4mhvc3z87FciTcfPJhwHQmwQJn+B8at5SLxK7MC1xBmUIXey19VgmUP7b7RooYlQOBSpj7Iiia+sLUISzUDQkAWa7eXWAlSeguibs1wZfqbnrFY0WDPSyxANaIBgzJl4twhVjrxim1Z4DoBBDgTrQeJlUK8RACqj0WdVTY8MBesXFlzOQJcIwYC9dsvZ1WqbLvcAag+BoW5ErQaELvX9EW9SqhsX2dWqdg9UWoG1N+5vmjVmG24ZtRftxmxirUW14MAA26vZXWXNM5wV9xQ4zSNVhdEizJQ5R5iC2KMVS8LPKDqGmqDihhJd3Fh0NWkgQJW6TKivQVcBrArxww6G7c684yo5dMl+gPCVaOBUoDW2XOMrjg2N9YzgCgVYobmIhPHXsCjgzj6XDv3AYRdEWZoycaJky8w0oannpa6BggVV4BBA/0+lPHu4bN4pAZPPdCb6PUZlErxaBkEkPuWNf7Uw8iMesDb/mH29rszgCQbNCoGAbif4bb7Zn9lK4kKVGLLzzz8YK9bACTZBo2AQQDu9awSs//5KUhUY4J3/mV7bKFbGJRkLKTVZBBD+90il+n+r+wkRFUqWPM/p2dioVsYlAQWCK0KgxjqXq/IebL1wL9BokoT5//7/zprWegoGBQGg9AyWcMMIIaWXq/IeXziqf+8ixDVqsShv765rFPfSCxqBoWFdQmAsZDFUOde33Ienzr1L/86j6hcO7j7L27oTve6xYSGDBoVyQAaMCBbIJaY+72CiifHj/3d352kVajiInHDn7R2rI1uv5RWimHDjSyWwJKd+7kYcpqJQ//050+RsqnqJLj6+/5xdvae20iDsdiyO+dcCth3PDB77x9/bj2koNJTwNqP/e5Ns8x1HYtqWewyFLBjfPzg3/3gy4EkKj8SsP/Lb3zpNrqdPlIQChRoiPFgMQYbjU1E9/G73z4NSqIWlQK47LUvf8m+NeROvxgJxFINthTttsqpI/feNXseUlCjkVygfcVLrtm/e9sY5JxLsW0QUkSklihzR5995NH/PwqkJOo2RAbYsfXKnTu2bl47MT42xtDS63bmX3j+5IknnzpxDqDlYmpZEpmh42vXTU1Pjo+Fc7dzce7i6bk+gyGKqfeQKIVlVMK2GXlWUDggGhEAAJBNAJ0BKqAAoAA+MRaJQyIhIRIZPlQgAwSygGfqWpaSqTx+e04uzzXljzmeoD9D+wJ+qn60dgHzEeav6TP8F6hP9u/2HW1egj5dP7gfCl/e/+H6SV0M6df1Z7SZyr76/lfy+9rPEXgBfkX9B/z35bflLykoAv0H+v/538xvPW1nsgD9X/9D+avrc+I9QG/ln96/6n3AfJh/rf6P80vcl+f/5f/t/574CP5L/Tf9r/gPbO9lv7jezp+wZxkPbowaQF0I/e//p39zDSYb9CByaVhK+9X9T3EjxccWJO10ehQcYLdszL8GD7vYbydVKW4Y0rSQhCbHk7HKHqzBEPwDzqqm8+Fd4hc9/8f5sERqApz6ZB0gjpAdyO7Gx357RUhwkGKXsbK26UptMl7xSvEIYaCbA1fRbhNZTNrQ4Lrj4HVOqp5nP8NP1qW0YYb89TnFlabt+SuJjTHorJVrWZFqfHnYfo4RD6T8U9d/FW0yLA2Y9SIOLOWJWNvfVGdxCUmLFTfj9upqFnbRBQIKtnNgQDxRt1WDmdTzAwD7PTDvkmb5T0bDSw7S5xAYWn59OmZFeLL9SMM2F1sogWmclhM0tNxavWpmNf7jtOozHrMfwMCycPbeWg0GtKGmY1uc6EHjZrRIskV2RWW0uvBKQq2dnEawFRoytGnHNpS5nZ5pvQGBxXainE6wbcf8JeWpa6S0E03PWxBPVc5v/xZHI7rBPLzZ7/5MGS0KZq47pE2iMlzEoNEEi6kGtzwdZ7vbEZU08GTofl4n6HmB/oY1hhIhPA3nuvOWWelVLrw5CUJUwl9dks+WXE7rQkJp/6PbdBcJnTZqKHgAAP7+7qoeeHQd7DngvUUsKn5l/Sgr/EdEek7EixkU9ld6UEIp4chjXtKJY4B3mU5RtBPnQr/vDCxK5afz1YEd4DZs+aR7J+duxgtu9Q72HVAhP2V8UOTYDbOOOkw7/s+9pqI4XHlUW+6+hdXnj+K/KdHocwLZRep8TcbKavsZ1Nel78j2Tfy8XoGJt/nfgAo5yGM1TTbFWClnO/iNy35g2f08LEiZCyytXgfzzXrqXJMURk0LrVAo8YzaTP0F4MzeZtUpRoVhsUB8ig9sLXncCh94jd7M8sxotRbkMfZz3bh91xQl6ebtV9ZSJyhZhC1bv/45X8HaD22VwVbcYiRDtandrRJTw4MDifA7LrPdms1tYIxbkChFaG9hKcdrm1AGrXKDh+7U3QJHl37KT0aZOxUFc8bpWgv/wwNbhwI70vfl1/ZkGZD9ZxFe2pI1R//8Xh97vDWc8a/CN7QDXzaCJndYv+1s7AEEOBkQuOyyfNOIUW8j1RKl76s52rXs4B72bCuG1wfy0LoEst1l9/hOZvDwKMZVWdTJ2yhraIxJssb8Z97QA58sOK2sXJk+lrXdgrNSerZe/zwoHga0UiBwBRrSOdLBuwUiP3DoSSSIh80vr+0pjtDcbyZC/wuzIOXlV21/tgFtauVQ0AC0i/Enytx83IpZBorgRZH/zPEC5IrYH5EW+/7mPhObwcqN4i2ygdjHnSDKTUNVJ10uZOKJOV0etMkZ17bAs1ncJnSJamItM8073AzMZ0AtMa97xNPU2k2XA/DiGNpWkEXk7Wk0pwMxWaqyicBQhz3220hujcMeqEFlH3oiFesmdnq4A5ZsZ5vUvlnHP2+wANwYda1Y3SH3gcg9tgiYFnwjDaNSufxE2F8jgr7u3LShiG3fM7cL8uKKv57c5MAvSN+kVC7k+z2BccS3ISGekR82vhoD8yd5G/VPmtc/2SuxOHLV9oFMY9ZdCdEn4/RAtn4DCxSdvLELg8XVclpsTzrtIkfzzPUWUuwTX50znN0nRD504a7gcs55GoAf58Cg8wIu6wTXHcqs9IkEfPRAfaLUXhdj8ETBiUikWK4wncZE6xc8IGrvoil5t8YunDdeBaHljTKU6+ylV98htT4+1hUxMEHwUOw5/GQJenGAZqTXcIWsfytFsgiWSp0fiwnJRuykK3QeDv+XY0sbrfpH6QxqQuOxuLwkRSk05lmW9IAqzqm9H2PcSPBYnP4w9g1+ZRpW3xF69QVBms+LkHf8xddusgXF71Tw0wjb3/8/NtimgEkFvcQtDvCzK+ld6z9217j1hIQ+RJ1urYAucxR0uVc2P7p9NTqufMOrZP+/H/qTI5Gxmh7z7tTmzlgC3jCvQWF2HhtOP6tMU7R5f5iXigYb2SGRIo5ln4u3Yh4Etmc7gtnblu+oucVnBGcEeSVl8n76KFrGzM9wBcM6mTnIRyn2hOKrQuVjtd6JaCQywSmxppY7/uKIRXU90Sh0NSzmECmp75XDPB3dJu8PznbkM0n9R2JvRSNPb/qoHa+xdD/wbhH1IyuzpMzp4/sxAZ1ER4es9Zz7TBzoy05Jz66ttxwrX0GXz475BQg79JhzPFWdZE+CZJz9fYneDKJ0SCGblJAFv8eZ7B/zAFOGKtA8bYc0WWVvqcSiszf/+fkNmHqloSbneZ2MKMsuEu+06jYFMzQx2nafUWAH+acCTLn7/AP/7Pv1RQO7QAXf4eLbzz7TvOplL0ZYaEy/sHSdRr7aterWDRObf99ynVQz8o2G5Q34fgXhkJ/Ef1/d/x379k5QyVo7moot5tLBUPoCiXZMbxwZ2P/6id3w9LVd9oC2Gz1w1WmuzXnGd0nR0Nj8zvNkjFWXJpT6h/h/GRkaWdt2EOda4V4YQk4uu/hLYHl17QoFqiHdkinlFIxC7ecX/ye/nVa63/WRrJOk2NP6tL1G/XmSLEIjp8NV3tGLEtQmB/jfZhl1doPIb3MCdVzBqyx6AFpj8GwEWhUwbpaceFmq96Jyv5uehvRPMLerU17uLe/wIHZXubNDSZUNBB1uZ+BecoXz1zZh6b95QsuyJp1QDtjfGydeU0RXnXTfvcwDTPueLkeHnH2yeVwGnysMSYFxpZMOGUYyH53XUrSJH5LjwQZkQnium0mTzvbh5VNsFkl7LhVuyjKudQW9K6M8YaE3qifGEdcTQ503ub3uDx07FjZAbxZLma7+ZPfVINTDWRsEJOxBIaV+n2Tnrfg4ZYKBG2/8L4Gbdq7mV0DlLI6+VV5EDbeIFk9hyZK9VyOXikqG+bG3QG7tYJenS3fvbgP/3txTn0YPX62iUiguak3+glPd/IEnFWVY3Mmpp/Np0syy0Tv00Yz/kBMs/08nfzP+YPJjXIC0BSUpk04lkLOVKsQq/Tf0idPEnsfc6jp5La7x7l4Y2eKmYscpmeBgJtJn1iMKdiKdWtDfZhfnyTA2ZOo7OhJu62bGrx3aQmaE/K1oEPfj/meyDCcRXQuB4POjKKh4U95XerDjymiefKMjjm9i+rLzgvV9WLrEMvEuh9CWLsMnfL38sZWD6nobeyAoJ8/BZlpiB9NXhZhuUFr0gNbIliiO5YE1dv7e0KstT/9ZOJh8ssjM3MH3HxEnUdGtmYrsSNC/leqXR6+edlGb0XpUI0LyfMWv6HSqDSfYzu8gF/FK9tbly/+Gv0yb97Sd62Gj8snifV3tfIrBmtQOrz5Pizg2LsoMcdoL2v45k9b17W/DJNf3VbwqcWTFXltWq6uou7sGuuQDmfZcCbC1OfzsVcAvfE5Z+lP1+zPmZB/cBFdiRq4oHXB+5BbnOCpyNAi732orRuS+AsjmKM8Pc32i93hev8mTzH73Zb9Cfqq2FTFSIB5revAi+oY73Hfi15Kf3rZwgf/8eI+GH/XGphaCxbroKQrIRJv9ijTlv/sJVn86+DPbGYDXqbIPDRPmK2ZOvdKAiZzW4U7N6/bh2bNGqd+uFtY9OsKPyRDPRs2pkSGuFQ+NfGrECgulRnMUmqoXHEFauaPsP7TF+O9780/Q80wNdGFadLTRQ7lqHyWc/JZ9HwXgDKwKHeTwXOWh0QtmPTU6ex2pXXtq5Iq2uDOMXsq8A+7/uZ/yJKs+iDG2dgP6AAB+Kx2rzuj9LNhOt8ox+eKj8b0MLAMy0aJGvwgny5TOajRLeqFwLrmRkXjF2X/n/wFNsdJOXwK8sT2KyQb/WSRLZdg9kY1ZcdX9HJ2fhNU/6JVs2kpHJ7G1oN4KnTiZlDpjbArSrh5+deaqtbDn3g8G8DNaHyyJBfNTMXAsj1z8aiM/oZmqnodnCLO14rziQc6qen4O6fI4V1iiNA756S5s2jWLugg2XcVvqD588PVVlbhKGyePBUghEP/Ck/qBrZNzSUtsOF/Xf4GFAXRpQzTJG9dKTvwyY/mPmylKCfFzKzSOiqyvDmHyfwTKz9xhy5N1E7CQ4dfB+0uMemstIVn5aiadEv7WWb6kOP01fC9dgmUybknJbEZXV1nYrXrnwbP6VqBWOMTJPkAexnPzErN7vPKcus9pzxNF1Xc/IuIH/ZTPXifyb9MajlhVLmgJo8iSraLkja1y1Dq8z/Pyh8wz9/Dg9IiYM+RIt/kSofsYC2+e7Loijd9hj5O14GNLaDA5mAsGNJ1kDaC8HHfoGEDhNsmxVWCOfWn6mfQ/R3++18kyWWbBgARXmb+bf9ycYKKEN38gtFbVsTt3jevYayoqnxUJntTs3YZoaL+LtDS6YKwHc3wUmFGg5Smjc3AKCxxTtpkyrmoiD8XFaJu+iHLAELYRAUF0XEiuXQwsFYBENvnZnKedVlxaSrMUrvU2HvhpmnhvhxHeI4MCX7f/NtRIUBPVOgQ1hJPqK8y+brj2XmzOXeubNGTu5L5YDo7sTz0uifHmPl/FNuCvMJ4aTz0S6ChB9eMDfxca7CWfHGyDZ6DMs5rl9oL1fP7J/2n91y7gY7lTyA9TkTXZxYYELZ1bVI5/ytyXYLb8Uizyl9fVMX8zaQ2jobjbugpp7bBDz1XPO393FsB3qp8HUvrTc62jTAR4NwgB3ho5Pn/i8hXaJbNzVzIoKb19eMb/OU8u0v7qgLBxSFAg/Xr+wIx8s25pxmaUKSXTl0m4JgLJSKSYcNe/YsCV9loElkOnkvjj33j4CYf2q9EhY0co9pmmrjO42ZEGSt6ib5XmR+6cnAMWGHF5HdSRPlyi+np2GOtnbgKFV96vzA6SAPiS7b+31NbCDZLg1qJbL+Ayr7qC7ZMKhuGq3OyOXaSSfvsIqmy6kNLXA0zMcyeCfY+RafcVAodgN+M0X/ADxFVRN5bWyFyhsXbucDJ3ZKnKEfD/npcT7x0FJ7u+ylvi2+0RaRO89Ww8ShZVNc0A7Ypf6gWyrklZ6i8Y8O5LrUqLZpEH5I5spomqIuwXYpl0kdxvlAh9X6T4MyPrrkfYlPihCjP8iT0B/o6vpiVynpE3aE9fza9hjhTJEwoghq58xJxurYl8ULXTcNmQ+ITCp768DUwRYn+JWvL6IbJsuql9/t+n7AYmf8uO2JxjfSFh3IPLJDrCFJOAgkodoV85ZJJYOoqUQfZxakIRNdAzx1cnfLnQvuYhB8STFmmesZMr8A4TdpPWQ+nyVsoAAB0L+iUBrQA8rgnhJgXMyrtUszD4f3bNlkxsnvJyEEyel8LTuBlsUbO8Mfn43U3mmybqFxIjfgaZMcJwAfmIy01OjPDVAKMzT0eoGK4cVobi1R9Adj0o6hg9lmJGo+v1lmtVPjoVW2Owh+8Y23C7SZNsr5hIlgA59ZSPGc2G2o4yU1107uGtSyL24CHbmyE9qfUK7k3sj+hyi2tsQ94U6Ur6z0TJxoChjJn9bwIATLVeSmpsJeMntjpjrTyHjbVKzglyjfq9pkg+6gUr3I10G9yitTTTlFWGGRIKE3hxBchwLmHB+ykNF5j3cTeh0kp0U1YIoFZmbnkwS2BdNE5kIzbciYobKyS+s2vhDsCJNO36BFTxARrxSXAWOFPPscAAAAA=) center/contain no-repeat;
+  transform:translate(-50%,-50%);transition:transform .5s cubic-bezier(.3,1.2,.5,1)}
+.cover:not(:has(.poster[data-tmdb])) .disc{display:none}
+.cover:hover .disc,.cover:has(.poster:focus-visible) .disc{transform:translate(18%,-50%)}
+/* wie eine DVD-Hülle: leicht im Uhrzeigersinn gekippt, links sieht man die Kante */
+.cover:hover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line)}
+.cover:has(.lifted) .disc{opacity:0;transition:none}
+/* der Text rückt ein Stück zur Seite und macht der Scheibe Platz */
+.film .info{transition:transform .45s cubic-bezier(.3,1.2,.5,1)}
+.film:has(.cover:hover .poster[data-tmdb]) .info,.film:has(.poster[data-tmdb]:focus-visible) .info{transform:translateX(30px)}
+@media (max-width:560px){.film:has(.cover:hover .poster[data-tmdb]) .info{transform:translateX(24px)}}
+@media (prefers-reduced-motion:reduce){.disc,.film .info{transition:none}}
+.poster.lifted{visibility:hidden}
+html.case-open{overflow:hidden}
+.case-layer{position:fixed;inset:0;z-index:70}
+.case-dim{position:absolute;inset:0;background:rgba(20,14,8,.55);opacity:0;transition:opacity .45s ease}
+.case-layer.open .case-dim{opacity:1}
+.case{position:absolute;transform-origin:0 0;perspective:1600px;transition:transform .7s cubic-bezier(.5,0,.15,1)}
+.case-layer.closing .case{transition:transform .6s cubic-bezier(.5,0,.3,1)}
+.case-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.45,0,.2,1)}
+.case-layer.open .case-inner{transform:rotateY(180deg);transition-delay:.1s}
+.case-layer.closing .case-inner{transition-duration:.6s}
+.case-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid var(--line);
+  border-radius:var(--r,52px);overflow:hidden;box-shadow:8px 10px 0 rgba(0,0,0,.35)}
+.case-front{background:var(--navy)}
+.case-front img{width:100%;height:100%;object-fit:cover;display:block}
+.case-front .ph{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:800 120px/1 "Playfair Display",Georgia,serif;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
+.case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
+  padding:calc(var(--r,52px) * .55 + 8px) calc(var(--r,52px) * .5 + 6px) calc(var(--r,52px) * .45 + 4px)}
+.case-x{position:absolute;top:calc(var(--r,52px) * .32);right:calc(var(--r,52px) * .32);width:44px;height:44px;display:grid;place-items:center;
+  background:#fff;color:var(--navy-ink);border:2.5px solid var(--line);border-radius:12px;box-shadow:3px 3px 0 var(--line);
+  font-family:inherit;font-weight:800;font-size:18px;line-height:1;cursor:pointer;transition:transform .12s, box-shadow .12s, background .15s}
+.case-x:hover{background:var(--navy-soft)}
+.case-x:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
+.case-title{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:24px;line-height:1.15;color:var(--navy-ink);margin:0 52px 4px 0;min-height:44px}
+.case-alt{font-size:13.5px;font-weight:600;color:var(--muted);margin-bottom:10px}
+.case-alt[hidden],.case-meta[hidden]{display:none}
+.case-meta{font-size:13px;font-weight:800;color:var(--navy);padding:8px 0;border-top:2px dashed rgba(29,23,18,.25);border-bottom:2px dashed rgba(29,23,18,.25);margin-bottom:12px}
+.case-text{flex:1;overflow:auto;font-size:15px;line-height:1.58;color:var(--line);overscroll-behavior:contain;padding-right:4px}
+.case-load{color:var(--muted)}
+.case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
+.case-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
+.case-src{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center}
+.case-layer.reduce .case,.case-layer.reduce .case-inner,.case-layer.reduce .case-dim{transition:none}
+@media (prefers-reduced-motion:reduce){.poster[data-tmdb]:hover{transform:none}}
 input[type=email],input[type=password],input[type=url]{width:100%;font:inherit;font-size:17px;font-weight:500;color:var(--line);padding:12px 14px;background:#fff;border:2.5px solid var(--line);border-radius:12px;outline:none}
 input[type=email]:focus,input[type=password]:focus,input[type=url]:focus{box-shadow:4px 4px 0 var(--navy)}
 
@@ -649,7 +686,7 @@ const fmtDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString("de-DE", {
 
 function posterHTML(path, title, size = "w185", peek = null) {
   const initial = esc((norm(title)[0] || "?").toUpperCase());
-  const pk = peek ? ` data-tmdb="${esc(peek.id)}" data-ttype="${esc(peek.type || "movie")}"` : "";
+  const pk = peek ? ` data-tmdb="${esc(peek.id)}" data-ttype="${esc(peek.type || "movie")}" data-ctitle="${esc(peek.title || title)}" data-csub="${esc(peek.sub || "")}"` : "";
   return `<div class="poster"${pk}><div class="ph">${initial}</div>${path ? `<img src="${IMG}${size}${esc(path)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</div>`;
 }
 
@@ -921,7 +958,7 @@ function render() {
     if (!li || li.dataset.poster !== posterKey) {
       const fresh = document.createElement("li");
       fresh.className = "film"; fresh.dataset.id = f.id; fresh.dataset.poster = posterKey;
-      fresh.innerHTML = `<div class="rank"></div>${posterHTML(f.poster_path, f.title, "w154")}
+      fresh.innerHTML = `<div class="rank"></div><div class="cover"><span class="disc" aria-hidden="true"></span>${posterHTML(f.poster_path, f.title, "w154")}</div>
         <div class="info"><div><span class="title"></span><span class="year"></span></div><div class="alt"></div><div class="note"></div><div class="added"></div>
           <div class="admin-actions">
             <button type="button" class="mini go" data-act="wheel" title="Aufs Rad">🎡 <span class="lbl">Aufs </span>Rad</button>
@@ -947,7 +984,8 @@ function render() {
     const pst = li.querySelector(".poster");
     if (f.tmdb_id) {
       pst.dataset.tmdb = f.tmdb_id; pst.dataset.ttype = f.tmdb_type || "movie";
-      pst.tabIndex = 0; pst.setAttribute("aria-label", `Worum geht's in „${tp.main}“?`); pst.setAttribute("role", "button");
+      pst.dataset.ctitle = tp.main; pst.dataset.csub = tp.sub;
+      pst.tabIndex = 0; pst.setAttribute("aria-label", `Klappentext zu „${tp.main}“ lesen`); pst.setAttribute("role", "button");
     } else { delete pst.dataset.tmdb; pst.removeAttribute("tabindex"); pst.removeAttribute("role"); pst.removeAttribute("aria-label"); }
     li.querySelector(".title").textContent = tp.main;
     li.querySelector(".year").textContent = f.year ? `(${f.year})` : "";
@@ -1237,7 +1275,7 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
       ${f.type === "pick"
         ? `<div class="pick" id="mf${i}" role="radiogroup" data-value="${esc(f.options[0]?.value ?? "")}">${f.options.map((o, j) => `
             <button type="button" class="pick-item" role="radio" aria-checked="${j === 0}" data-value="${esc(o.value)}">
-              ${o.free ? `<div class="poster free"><div class="ph">?</div></div>` : posterHTML(o.poster, o.label, "w92", o.tmdb_id ? { id: o.tmdb_id, type: o.tmdb_type } : null)}
+              ${o.free ? `<div class="poster free"><div class="ph">?</div></div>` : posterHTML(o.poster, o.label, "w92", o.tmdb_id ? { id: o.tmdb_id, type: o.tmdb_type, title: o.label, sub: o.sub } : null)}
               <span class="txt"><span class="t">${esc(o.label)}</span>${o.sub ? `<span class="s">${esc(o.sub)}</span>` : ""}</span>
             </button>`).join("")}</div>`
         : f.type === "select"
@@ -1259,7 +1297,7 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
   back.classList.add("show");
   setTimeout(() => (m.querySelector("input") || m.querySelector("[type=submit]")).focus(), 30);
   return new Promise(resolve => {
-    const close = v => { hidePeek(true); back.classList.remove("show"); document.removeEventListener("keydown", onKey); resolve(v); };
+    const close = v => { back.classList.remove("show"); document.removeEventListener("keydown", onKey); resolve(v); };
     const onKey = e => { if (e.key === "Escape") close(null); };
     document.addEventListener("keydown", onKey);
     m.querySelector("[data-x]").onclick = () => close(null);
@@ -1494,123 +1532,124 @@ function jumpTo(id, vote) {
   target?.classList.remove("flash"); void target?.offsetWidth; target?.classList.add("flash");
 }
 
-/* ---------------- Info-Fenster über dem Cover ---------------- */
+/* ---------------- Klappentext: Cover anklicken, es löst sich und dreht sich um ---------------- */
 function pickOption(c, j) {
   return { value: String(j), label: c.title, poster: c.poster, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type,
     sub: [c.year, c.title_en && c.title_en !== c.title ? c.title_en : null, c.tmdb_type === "tv" ? "Serie" : null].filter(Boolean).join(" · ") };
 }
-const peekCache = new Map();
+const detailCache = new Map();
 function loadDetails(id, type) {
   const key = type + ":" + id;
-  if (!peekCache.has(key)) peekCache.set(key, api.details(id, type).catch(err => { console.warn(err); peekCache.delete(key); return null; }));
-  return peekCache.get(key);
+  if (!detailCache.has(key)) detailCache.set(key, api.details(id, type).catch(err => { console.warn(err); detailCache.delete(key); return null; }));
+  return detailCache.get(key);
 }
-const peek = document.createElement("div");
-peek.className = "peek"; peek.id = "peek"; peek.setAttribute("role", "tooltip"); peek.hidden = true;
-document.body.appendChild(peek);
-let peekFor = null, peekTimer = null, hideTimer = null, lastPointer = "mouse";
-
 function fmtRuntime(min) {
   if (!min) return "";
   const h = Math.floor(min / 60), m = min % 60;
   return h ? `${h} Std.${m ? ` ${m} Min.` : ""}` : `${m} Min.`;
 }
-// Lange Inhaltsangaben: bis zum Satzende nach ca. 350 Zeichen zeigen, der Rest per „Weiterlesen“
-function splitOverview(t, limit = 350) {
-  if (t.length <= limit + 80) return [t, ""];
-  const ends = [...t.matchAll(/[.!?…]["“”»«')]?(?=\s)/g)].map(m => m.index + m[0].length);
-  let cut = ends.filter(i => i <= limit + 40).pop() ?? ends.find(i => i > limit);
-  if (!cut || t.length - cut < 60) return [t, ""];
-  return [t.slice(0, cut), t.slice(cut).trim()];
+const caseState = { layer: null, poster: null, closing: false };
+
+function caseFromTransform(r, box) {
+  return `translate(${r.left - box.left}px, ${r.top - box.top}px) scale(${r.width / box.width}, ${r.height / box.height})`;
 }
-function fillPeek(d) {
-  if (d === undefined) { peek.innerHTML = `<div class="pk-load">Lädt …</div>`; return; }
+function caseBox() {
+  const vw = innerWidth, vh = innerHeight;
+  // gleiche Form wie das kleine Cover: Seitenverhältnis 2:3
+  let w = Math.min(400, vw - 32), h = w * 1.5;
+  if (h > vh - 40) { h = vh - 40; w = h / 1.5; }
+  w = Math.round(w); h = Math.round(h);
+  return { width: w, height: h, left: Math.round((vw - w) / 2), top: Math.round((vh - h) / 2) };
+}
+function fillCase(rear, d) {
+  const meta = rear.querySelector(".case-meta"), text = rear.querySelector(".case-text");
+  if (d === undefined) { text.innerHTML = `<span class="case-load">Lädt …</span>`; return; }
   if (!d || (!d.overview && !d.runtime && !d.people?.length)) {
-    peek.innerHTML = `<div class="pk-load">Für diesen Film hat TMDB leider keine Inhaltsangabe.</div>`; return;
+    text.innerHTML = `<span class="case-load">Für diesen Film hat TMDB leider keine Inhaltsangabe.</span>`; return;
   }
-  const meta = [d.people?.length ? `${d.people_label || "Regie"}: ${d.people.join(", ")}` : "", fmtRuntime(d.runtime)].filter(Boolean);
-  const [short, rest] = splitOverview(d.overview || "Keine Inhaltsangabe vorhanden.");
-  peek.innerHTML = `${meta.length ? `<div class="pk-meta"></div>` : ""}<p class="pk-text"><span class="pk-short"></span>${rest ? ` <span class="pk-rest" hidden></span>` : ""}</p>
-    ${rest ? `<button type="button" class="pk-more">Weiterlesen</button>` : ""}${d.lang === "en" ? `<div class="pk-note">Nur auf Englisch bei TMDB</div>` : ""}`;
-  if (meta.length) peek.querySelector(".pk-meta").textContent = meta.join(" · ");
-  peek.querySelector(".pk-short").textContent = short;
-  if (rest) {
-    peek.querySelector(".pk-rest").textContent = rest;
-    peek.querySelector(".pk-more").onclick = e => {
-      e.stopPropagation();
-      peek.querySelector(".pk-rest").hidden = false; e.currentTarget.remove();
-      peek.classList.add("long"); placePeek();
-    };
-  }
+  const bits = [d.people?.length ? `${d.people_label || "Regie"}: ${d.people.join(", ")}` : "", fmtRuntime(d.runtime)].filter(Boolean);
+  meta.textContent = bits.join(" · "); meta.hidden = !bits.length;
+  text.textContent = d.overview || "Keine Inhaltsangabe vorhanden.";
+  requestAnimationFrame(() => { const upd = () => text.classList.toggle("has-more", text.scrollTop + text.clientHeight < text.scrollHeight - 4); upd(); text.onscroll = upd; });
+  if (d.lang === "en") { const n = document.createElement("div"); n.className = "case-note"; n.textContent = "Nur auf Englisch bei TMDB"; text.after(n); }
 }
-function placePeek() {
-  if (!peekFor || peek.hidden) return;
-  const r = peekFor.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, gap = 12;
-  const w = Math.min(vw >= 900 ? 400 : 330, vw - 24);
-  peek.style.width = w + "px";
-  peek.style.maxHeight = (vh - 24) + "px";
-  const h = peek.offsetHeight;
-  let x, y;
-  if (r.right + gap + w <= vw - 12) { x = r.right + gap; y = r.top - 6; }          // rechts neben dem Cover
-  else if (r.left - gap - w >= 12) { x = r.left - gap - w; y = r.top - 6; }        // links daneben
-  else {                                                                            // Handy: darunter oder darüber
-    x = Math.min(Math.max(12, r.left), vw - w - 12);
-    y = r.bottom + gap + h <= vh - 12 ? r.bottom + gap : r.top - gap - h;
-  }
-  y = Math.min(Math.max(12, y), vh - h - 12);
-  peek.style.left = Math.round(x) + "px"; peek.style.top = Math.round(y) + "px";
+async function openCase(poster) {
+  if (caseState.layer) return;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const r = poster.getBoundingClientRect(), box = caseBox();
+  const img = poster.querySelector("img");
+  const src = img?.src ? img.src.replace(/\/w\d+\//, "/w500/") : "";
+  const title = poster.dataset.ctitle || "", sub = poster.dataset.csub || "";
+  const layer = document.createElement("div");
+  layer.className = "case-layer" + (reduce ? " reduce" : "");
+  layer.innerHTML = `<div class="case-dim"></div>
+    <div class="case" role="dialog" aria-modal="true" style="left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;--r:${Math.round(box.width * 0.13)}px">
+      <div class="case-inner">
+        <div class="case-face case-front">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph">${esc((norm(title)[0] || "?").toUpperCase())}</div>`}</div>
+        <div class="case-face case-rear">
+          <button type="button" class="case-x" aria-label="Schließen">✕</button>
+          <h3 class="case-title"></h3><div class="case-alt"></div>
+          <div class="case-meta" hidden></div>
+          <div class="case-text"></div>
+          <div class="case-src">Inhaltsangabe: TMDB</div>
+        </div>
+      </div>
+    </div>`;
+  const cs = layer.querySelector(".case");
+  cs.setAttribute("aria-label", `Klappentext: ${title}`);
+  layer.querySelector(".case-title").textContent = title;
+  const alt = layer.querySelector(".case-alt"); alt.textContent = sub; alt.hidden = !sub;
+  const rear = layer.querySelector(".case-rear");
+  const cached = detailCache.get(poster.dataset.ttype + ":" + poster.dataset.tmdb);
+  fillCase(rear, cached instanceof Promise ? undefined : cached);
+  cs.style.transform = caseFromTransform(r, box);
+  document.body.appendChild(layer);
+  document.documentElement.classList.add("case-open");
+  caseState.layer = layer; caseState.poster = poster;
+  poster.classList.add("lifted");
+  void cs.offsetWidth;                       // Startzustand zeichnen, dann losfliegen
+  layer.classList.add("open"); cs.style.transform = "";
+  layer.querySelector(".case-dim").onclick = closeCase;
+  layer.querySelector(".case-x").onclick = closeCase;
+  setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
+  const d = await loadDetails(poster.dataset.tmdb, poster.dataset.ttype);
+  if (caseState.layer === layer) { rear.querySelector(".case-note")?.remove(); fillCase(rear, d); }
 }
-async function showPeek(el) {
-  if (peekFor === el && !peek.hidden) return;
-  clearTimeout(hideTimer);
-  peekFor = el; peek.classList.remove("long"); peek.scrollTop = 0;
-  const d = peekCache.get(el.dataset.ttype + ":" + el.dataset.tmdb);
-  fillPeek(d instanceof Promise ? undefined : d);
-  peek.hidden = false; requestAnimationFrame(() => peek.classList.add("show"));
-  placePeek();
-  const data = await loadDetails(el.dataset.tmdb, el.dataset.ttype);
-  if (peekFor !== el) return;
-  fillPeek(data); placePeek();
+function closeCase() {
+  const { layer, poster } = caseState;
+  if (!layer || caseState.closing) return;
+  caseState.closing = true;
+  const cs = layer.querySelector(".case");
+  const done = () => {
+    layer.remove(); poster.classList.remove("lifted");
+    document.documentElement.classList.remove("case-open");
+    caseState.layer = caseState.poster = null; caseState.closing = false;
+    if (poster.isConnected && poster.tabIndex >= 0) poster.focus({ preventScroll: true });
+  };
+  if (layer.classList.contains("reduce") || !poster.isConnected) { done(); return; }
+  const r = poster.getBoundingClientRect();
+  cs.style.transform = caseFromTransform(r, { left: parseFloat(cs.style.left), top: parseFloat(cs.style.top), width: cs.offsetWidth, height: cs.offsetHeight });
+  layer.classList.remove("open"); layer.classList.add("closing");
+  let ended = false;
+  cs.addEventListener("transitionend", e => { if (e.target === cs && e.propertyName === "transform" && !ended) { ended = true; done(); } });
+  setTimeout(() => { if (!ended) { ended = true; done(); } }, 900);
 }
-function hidePeek(now = false) {
-  clearTimeout(peekTimer); clearTimeout(hideTimer);
-  if (peek.hidden) { peekFor = null; return; }
-  peek.classList.remove("show"); peekFor = null;
-  if (now) peek.hidden = true; else hideTimer = setTimeout(() => { if (!peekFor) peek.hidden = true; }, 160);
-}
-const peekTarget = e => e.target.closest?.(".poster[data-tmdb]");
-document.addEventListener("pointerdown", e => { lastPointer = e.pointerType || "mouse"; }, true);
-function hideSoon() { clearTimeout(peekTimer); clearTimeout(hideTimer); hideTimer = setTimeout(() => hidePeek(), 220); }
-document.addEventListener("pointerover", e => {
-  if (e.pointerType !== "mouse") return;
-  if (e.target.closest?.(".peek")) { clearTimeout(hideTimer); return; }   // Maus wandert ins Fenster: offen lassen
-  const el = peekTarget(e);
-  if (el === peekFor) { clearTimeout(hideTimer); return; }
-  if (!el) return;
-  clearTimeout(peekTimer);
-  peekTimer = setTimeout(() => { if (el.matches(":hover")) showPeek(el); }, 300);
-  loadDetails(el.dataset.tmdb, el.dataset.ttype);   // schon mal laden, während die Maus verweilt
-});
-document.addEventListener("pointerout", e => {
-  if (e.pointerType !== "mouse") return;
-  const from = peekTarget(e) || e.target.closest?.(".peek");
-  if (!from || from.contains(e.relatedTarget)) return;
-  if (e.relatedTarget?.closest?.(".peek") || (peekFor && peekFor.contains(e.relatedTarget))) return;
-  hideSoon();
-});
-// Touch: Tippen aufs Cover öffnet/schließt, Tippen daneben schließt
+const caseTarget = e => e.target.closest?.(".poster[data-tmdb]");
 document.addEventListener("click", e => {
-  if (lastPointer === "mouse") return;
-  const el = peekTarget(e);
-  if (el) { if (peekFor === el) hidePeek(); else showPeek(el); return; }
-  if (!e.target.closest(".peek")) hidePeek();
+  const p = caseTarget(e); if (!p) return;
+  e.preventDefault(); e.stopPropagation();
+  openCase(p);
 }, true);
-document.addEventListener("focusin", e => { const el = peekTarget(e); if (el && el.matches(":focus-visible")) showPeek(el); });
-document.addEventListener("focusout", e => { if (peekTarget(e) === peekFor && !peek.contains(e.relatedTarget)) hidePeek(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && peekFor) hidePeek(true); });
-// Beim Scrollen schließen – ein wartendes Öffnen bleibt, prüft aber, ob die Maus noch drauf ist
-addEventListener("scroll", e => { if (peek.contains(e.target)) return; if (!peek.hidden) { const t = peekTimer; peekTimer = null; hidePeek(true); peekTimer = t; } }, { passive: true, capture: true });
-addEventListener("resize", () => hidePeek(true));
+addEventListener("keydown", e => {
+  if (caseState.layer) {
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeCase(); }
+    else if (e.key === "Tab") { e.preventDefault(); caseState.layer.querySelector(".case-x")?.focus(); }
+    return;
+  }
+  const p = caseTarget(e);
+  if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openCase(p); }
+}, true);
+addEventListener("resize", () => { if (caseState.layer) closeCase(); });
 
 /* ---------------- Top 10 + Aufklappen ---------------- */
 const TOP_N = 10;
