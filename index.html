@@ -179,6 +179,25 @@ input::placeholder{color:#9a95a6}
 
 /* Liste */
 ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+/* Top 10: darunter eingeklappt, Platz 11 schaut zu einem Drittel heraus */
+.list-wrap{position:relative}
+.list-wrap.foldable ol.films{margin:-10px;padding:10px;transition:max-height .5s cubic-bezier(.3,.8,.3,1)}
+.list-wrap.collapsed ol.films{overflow:hidden}
+.list-wrap.collapsed{padding-bottom:34px}
+.list-wrap.collapsed::after{content:"";position:absolute;left:-10px;right:-10px;top:var(--fade-top,0);height:var(--fade,70px);pointer-events:none;
+  background:linear-gradient(to bottom, rgba(255,253,248,0), rgba(255,253,248,.35) 35%, rgba(255,253,248,.8) 55%, var(--paper) 78%)}
+.more{display:flex;flex-direction:column;align-items:center;gap:2px;margin:14px auto 0;background:none;border:0;padding:4px 18px;
+  cursor:pointer;color:var(--line);font:inherit}
+.list-wrap.collapsed .more{position:absolute;left:50%;top:calc(var(--edge,0px) - 24px);transform:translateX(-50%);margin:0;z-index:2}
+.more[hidden]{display:none}
+.more .chev{width:56px;height:16px;transition:transform .35s}
+.list-wrap.collapsed .more .chev{animation:chev-float 2.6s ease-in-out infinite}
+.list-wrap:not(.collapsed) .more .chev{transform:rotate(180deg)}
+@keyframes chev-float{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.more-lbl{font-size:14px;font-weight:700;color:var(--navy);opacity:0;transition:opacity .2s;white-space:nowrap}
+.more:hover .more-lbl,.more:focus-visible .more-lbl{opacity:1}
+@media (hover:none){.more-lbl{opacity:1}}
+@media (prefers-reduced-motion:reduce){.list-wrap.collapsed .more .chev{animation:none}.list-wrap.foldable ol.films{transition:none}}
 .film{
   display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;
   background:#fff;border:2.5px solid var(--line);border-radius:14px;
@@ -504,12 +523,15 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
         <input type="search" id="q" placeholder="Liste durchsuchen">
       </div>
     </div>
-    <div class="hidden-note">Stimmen sind für Besucher gerade ausgeblendet – nur ihr seht Zahlen und Reihenfolge.</div>
+    <div class="hidden-note">Stimmen sind für Besucher gerade ausgeblendet – nur ihr seht die Zahlen.</div>
     <div class="meta">
       <span id="stats">Lade Liste …</span>
       <span class="live" id="live"><i></i><span>Verbinde</span></span>
     </div>
-    <ol class="films" id="list" aria-live="polite"></ol>
+    <div class="list-wrap" id="listWrap">
+      <ol class="films" id="list" aria-live="polite"></ol>
+      <button class="more" id="moreBtn" type="button" hidden aria-expanded="false"><svg class="chev" viewBox="0 0 56 16" fill="none" aria-hidden="true"><path d="M4 4 L28 12 L52 4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="more-lbl" id="moreLbl"></span></button>
+    </div>
   </section>
 
   <section class="card" id="backlogCard" hidden>
@@ -624,6 +646,7 @@ function demoBackend() {
     mk(1, "Wim Wenders in Bestform – und dieser Score!", 14, 30), mk(2, null, 12, 50),
     mk(3, "Endlich mal deutsches Kino aufs Rad.", 9, 20), mk(4, "Damit ihr euch mal richtig streitet.", 8, 70),
     mk(5, null, 6, 5), mk(6, null, 5, 90), mk(7, "Bagel.", 4, 3), mk(8, null, 2, 1.5),
+    mk(10, "Für die ruhigen Abende.", 2, 26), mk(13, null, 1, 40), mk(14, null, 1, 8), mk(15, null, 1, 120), mk(18, null, 0, 0.5),
     mk(9, "Der Klassiker muss aufs Rad.", 15, 300, { on_wheel_at: new Date(now - 3 * day).toISOString() }),
     mk(11, null, 17, 400, { discussed_at: new Date(now - 6 * day).toISOString().slice(0, 10), episode: "Folge 24", episode_url: "https://example.com/folge-24", followups: "Folge 26" }),
     mk(12, null, 11, 600, { discussed_at: new Date(now - 20 * day).toISOString().slice(0, 10), episode: "Folge 22" }),
@@ -818,19 +841,14 @@ function render() {
   const before = new Map();
   list.querySelectorAll(".film").forEach(el => before.set(el.dataset.id, el.getBoundingClientRect().top));
 
-  // Stimmen ausgeblendet: Besucher sehen keine Zahlen und keine Rangfolge (alphabetisch sortiert)
+  // Stimmen ausgeblendet: Besucher sehen keine Zahlen und Platznummern – die Reihenfolge bleibt
   const hide = !state.showVotes && !state.isAdmin;
   document.body.classList.toggle("votes-hidden", hide);
   document.body.classList.toggle("votes-off", !state.showVotes);
   const ranked = state.films.slice().sort(byVotes);
   const ranks = new Map();
   ranked.forEach((f, i) => ranks.set(f.id, i + 1));
-  // Ausgeblendet: Top 3 (mit Krone) zuerst, der Rest alphabetisch – so verrät die Reihenfolge nichts weiter
-  const podiumIds = new Set(ranked.filter(f => f.votes > 0).slice(0, 3).map(f => f.id));
-  const all = hide
-    ? [...ranked.filter(f => podiumIds.has(f.id)),
-       ...state.films.filter(f => !podiumIds.has(f.id)).sort((a, b) => titleParts(a).main.localeCompare(titleParts(b).main, "de"))]
-    : ranked;
+  const all = ranked;
 
   const q = norm(state.q);
   const items = all.filter(f => !q || [f.title, f.original_title, f.title_en].some(x => norm(x).includes(q)) || String(f.year || "").includes(q));
@@ -896,6 +914,7 @@ function render() {
       : `<strong>Der Tisch ist noch leer</strong>Schlagt den ersten Film vor!`;
     list.appendChild(li);
   }
+  updateFold();
 
   list.querySelectorAll(".film").forEach(el => {
     const old = before.get(el.dataset.id);
@@ -1398,11 +1417,53 @@ function checkDupe() {
 }
 function jumpTo(id, vote) {
   state.q = ""; $("#q").value = ""; render();
+  const idx = [...$("#list").children].findIndex(li => li.dataset.id === id);
+  if (idx >= TOP_N) setExpanded(true, false);
   if (vote) document.querySelector(`.film[data-id="${CSS.escape(id)}"] .vote`)?.click();
   const target = document.querySelector(`.film[data-id="${CSS.escape(id)}"]`);
   target?.scrollIntoView({ behavior: "smooth", block: "center" });
   target?.classList.remove("flash"); void target?.offsetWidth; target?.classList.add("flash");
 }
+
+/* ---------------- Top 10 + Aufklappen ---------------- */
+const TOP_N = 10;
+let expanded = false;
+function updateFold(animate = false) {
+  const wrap = $("#listWrap"), btn = $("#moreBtn"), lis = [...$("#list").children].filter(li => li.classList.contains("film"));
+  const extra = lis.length - TOP_N;
+  const foldable = extra > 0 && !state.q;
+  btn.hidden = !foldable;
+  wrap.classList.toggle("foldable", foldable);
+  wrap.classList.toggle("collapsed", foldable && !expanded);
+  btn.setAttribute("aria-expanded", expanded);
+  $("#moreLbl").textContent = expanded ? "Einklappen" : `${extra} weitere${extra === 1 ? "r" : ""} Vorschl${extra === 1 ? "ag" : "äge"}`;
+  lis.forEach((li, i) => li.toggleAttribute("inert", foldable && !expanded && i >= TOP_N));
+  const list = $("#list");
+  if (!foldable || expanded) {
+    if (animate && list.style.maxHeight) {
+      list.style.maxHeight = list.scrollHeight + "px";
+      list.addEventListener("transitionend", () => { if (expanded) list.style.maxHeight = ""; }, { once: true });
+    } else list.style.maxHeight = "";
+    return;
+  }
+  const li = lis[TOP_N];
+  const third = li.offsetHeight / 3;
+  const h = li.offsetTop - list.offsetTop + third;
+  const edge = list.offsetTop + h, fade = third + 12;
+  wrap.style.setProperty("--fade", Math.round(fade + 4) + "px");
+  wrap.style.setProperty("--fade-top", Math.round(edge - fade) + "px");
+  wrap.style.setProperty("--edge", Math.round(edge) + "px");
+  if (animate) { list.style.maxHeight = list.scrollHeight + "px"; void list.offsetHeight; }
+  list.style.maxHeight = h + "px";
+}
+function setExpanded(v, animate = true) {
+  if (expanded === v) return;
+  const top = $("#listWrap").getBoundingClientRect().top;
+  expanded = v; updateFold(animate);
+  if (!v && top < 0) $("#listWrap").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("#moreBtn").addEventListener("click", () => setExpanded(!expanded));
+addEventListener("resize", () => updateFold());
 
 /* ---------------- Autocomplete (TMDB) ---------------- */
 
