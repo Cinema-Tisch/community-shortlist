@@ -479,7 +479,9 @@ html.case-open{overflow:hidden}
 .case-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid var(--line);
   border-radius:var(--r,52px);overflow:hidden;box-shadow:8px 10px 0 rgba(0,0,0,.35)}
 .case-front{background:var(--navy)}
-.case-front img{width:100%;height:100%;object-fit:cover;display:block}
+.case-front img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.case-front .hi{opacity:0;transition:opacity .25s ease}
+.case-front .hi.on{opacity:1}
 .case-front .ph{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:800 120px/1 "Playfair Display",Georgia,serif;
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
@@ -1617,6 +1619,9 @@ async function openCase(poster) {
   poster.closest(".cover")?.classList.add("tuck");
   const r = poster.getBoundingClientRect(), box = caseBox();
   const img = poster.querySelector("img");
+  // Sofort das schon geladene kleine Cover zeigen, das große (w500) blendet darüber ein, sobald es fertig ist –
+  // sonst blitzt beim ersten Öffnen der blaue Platzhalter auf
+  const lo = img?.complete && img.naturalWidth ? img.src : "";
   const src = img?.src ? img.src.replace(/\/w\d+\//, "/w500/") : "";
   const title = poster.dataset.ctitle || "", sub = poster.dataset.csub || "";
   const layer = document.createElement("div");
@@ -1624,7 +1629,7 @@ async function openCase(poster) {
   layer.innerHTML = `<div class="case-dim"></div>
     <div class="case" role="dialog" aria-modal="true" style="left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;--r:${Math.round(box.width * 0.13)}px">
       <div class="case-inner">
-        <div class="case-face case-front">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph">${esc((norm(title)[0] || "?").toUpperCase())}</div>`}</div>
+        <div class="case-face case-front">${src ? `${lo ? `<img class="lo" src="${esc(lo)}" alt="">` : ""}<img class="hi" alt="">` : `<div class="ph">${esc((norm(title)[0] || "?").toUpperCase())}</div>`}</div>
         <div class="case-face case-rear">
           <button type="button" class="case-x" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></button>
           <h3 class="case-title"></h3><div class="case-alt"></div>
@@ -1643,6 +1648,8 @@ async function openCase(poster) {
   fillCase(rear, cached instanceof Promise ? undefined : cached);
   cs.style.transform = caseFromTransform(r, box);
   document.body.appendChild(layer);
+  const hi = layer.querySelector(".case-front .hi");
+  if (hi) { hi.src = src; hi.decode().then(() => hi.classList.add("on"), () => hi.classList.add("on")); }
   document.documentElement.classList.add("case-open");
   caseState.layer = layer; caseState.poster = poster;
   poster.classList.add("lifted");
@@ -1686,6 +1693,12 @@ function closeCase() {
   setTimeout(land, 900);
 }
 const caseTarget = e => e.target.closest?.(".poster[data-tmdb]");
+// Großes Cover schon beim Drüberfahren oder Antippen vorladen
+const preloaded = new Set();
+document.addEventListener("pointerover", e => {
+  const src = caseTarget(e)?.querySelector("img")?.src?.replace(/\/w\d+\//, "/w500/");
+  if (src && !preloaded.has(src)) { preloaded.add(src); new Image().src = src; }
+}, { passive: true });
 document.addEventListener("click", e => {
   const p = caseTarget(e); if (!p) return;
   e.preventDefault(); e.stopPropagation();
