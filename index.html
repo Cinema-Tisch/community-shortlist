@@ -303,20 +303,15 @@ body.team.votes-off .hidden-note{display:block}
 /* Team-Modus: Vorschlagen ausblenden */
 body.team .card-suggest{display:none}
 
-/* Platz 1: rötliches Glühen (zwischen Top-3-Rosa und Tischdecken-Rot), das im Uhrzeigersinn um die Kanten wandert und leicht wabert */
-@property --glow-a{syntax:'<angle>';inherits:false;initial-value:0deg}
+/* Platz 1: dezentes, ruhiges Wabern in Rot (zwischen Top-3-Rosa und Tischdecken-Rot) */
 .film.top1{position:relative;will-change:auto}
 .film.top1::before{
-  content:"";position:absolute;inset:-7px;border-radius:19px;z-index:-1;pointer-events:none;
-  /* Grundglühen rundum (nie ganz weg) + hellere Stelle, die umläuft */
-  background:conic-gradient(from var(--glow-a),
-    rgba(232,149,140,.45) 0deg, rgba(232,149,140,.6) 60deg, rgba(232,149,140,.95) 125deg,
-    rgba(232,149,140,1) 160deg, rgba(232,149,140,.95) 195deg, rgba(232,149,140,.6) 260deg, rgba(232,149,140,.45) 360deg);
-  filter:blur(9px) saturate(1.2);
-  animation:glow-orbit 5s linear infinite, glow-breathe 3.4s ease-in-out infinite;
+  content:"";position:absolute;inset:-6px;border-radius:19px;z-index:-1;pointer-events:none;
+  background:rgba(232,149,140,.9);
+  filter:blur(9px);
+  animation:glow-breathe 7s ease-in-out infinite;
 }
-@keyframes glow-orbit{to{--glow-a:360deg}}
-@keyframes glow-breathe{0%,100%{opacity:.5;inset:-6px}50%{opacity:.75;inset:-9px}}
+@keyframes glow-breathe{0%,100%{opacity:.4;inset:-5px}50%{opacity:.7;inset:-9px}}
 
 /* Rad-Pool */
 .wheel-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
