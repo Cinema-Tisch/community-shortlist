@@ -159,6 +159,9 @@ input::placeholder{color:#9a95a6}
   padding:10px 12px;font-size:15px;color:var(--navy-ink);font-weight:600;
 }
 .dupe.show{display:flex}
+.nohit{grid-column:1/-1;display:none;background:var(--cream);border:2.5px dashed var(--red);border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.4;color:var(--line)}
+.nohit.show{display:block}
+.nohit b{font-weight:800}
 .dupe b{font-weight:800}
 
 /* Toolbar */
@@ -199,6 +202,8 @@ ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .info{min-width:0}
 .title{font-weight:800;font-size:17.5px;line-height:1.25;overflow-wrap:anywhere}
 .year{font-weight:600;color:var(--muted);font-size:15px;margin-left:4px;white-space:nowrap}
+.alt{font-size:13.5px;font-weight:600;color:var(--muted);line-height:1.3;margin-top:1px;overflow-wrap:anywhere}
+.alt[hidden]{display:none}
 .note{margin-top:3px;font-size:14.5px;line-height:1.35;color:#4b4658;font-style:italic;overflow-wrap:anywhere}
 .added{margin-top:3px;font-size:12.5px;color:#9a95a6;font-weight:600}
 
@@ -474,6 +479,9 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
       </div>
       <div class="picked" id="picked"></div>
       <div class="dupe" id="dupe" aria-live="polite"></div>
+      <div class="nohit" id="noHit" aria-live="polite">
+        <b>Kein Film aus der Liste ausgewählt.</b> Kein Problem – gib uns unten ein paar Anhaltspunkte mit (Jahr, Regie, Land oder wo du ihn gesehen hast), damit wir den richtigen Film finden. Dann einfach nochmal abschicken.
+      </div>
       <div class="field full">
         <label for="fNote">Sag uns, warum? <span class="opt">(optional)</span></label>
         <input type="text" id="fNote" maxlength="200" placeholder="Ein kurzer Satz zum Film">
@@ -663,7 +671,9 @@ function demoBackend() {
     async approve(id) { const p = pending.find(x => x.id === id); pending = pending.filter(x => x.id !== id);
       films.push({ ...p, votes: 0 }); emit(); },
     async update(id, fields) {
-      const f = films.find(x => x.id === id) || pending.find(x => x.id === id); Object.assign(f, fields); emit(); },
+      const f = films.find(x => x.id === id) || pending.find(x => x.id === id); Object.assign(f, fields);
+      if (fields.status === "approved" && pending.includes(f)) { pending = pending.filter(x => x !== f); delete f.status; films.push({ votes: 0, ...f }); }
+      emit(); },
     async remove(id) { films = films.filter(x => x.id !== id); pending = pending.filter(x => x.id !== id); mine.delete(id); emit(); },
     async toWheel(id) { Object.assign(films.find(x => x.id === id), { on_wheel_at: new Date().toISOString() }); emit(); },
     async offWheel(id) { films.find(x => x.id === id).on_wheel_at = null; emit(); },
@@ -819,7 +829,7 @@ function render() {
   const podiumIds = new Set(ranked.filter(f => f.votes > 0).slice(0, 3).map(f => f.id));
   const all = hide
     ? [...ranked.filter(f => podiumIds.has(f.id)),
-       ...state.films.filter(f => !podiumIds.has(f.id)).sort((a, b) => a.title.localeCompare(b.title, "de"))]
+       ...state.films.filter(f => !podiumIds.has(f.id)).sort((a, b) => titleParts(a).main.localeCompare(titleParts(b).main, "de"))]
     : ranked;
 
   const q = norm(state.q);
@@ -839,7 +849,7 @@ function render() {
       const fresh = document.createElement("li");
       fresh.className = "film"; fresh.dataset.id = f.id; fresh.dataset.poster = posterKey;
       fresh.innerHTML = `<div class="rank"></div>${posterHTML(f.poster_path, f.title, "w154")}
-        <div class="info"><div><span class="title"></span><span class="year"></span></div><div class="note"></div><div class="added"></div>
+        <div class="info"><div><span class="title"></span><span class="year"></span></div><div class="alt"></div><div class="note"></div><div class="added"></div>
           <div class="admin-actions">
             <button type="button" class="mini go" data-act="wheel" title="Aufs Rad">🎡 <span class="lbl">Aufs </span>Rad</button>
             <button type="button" class="mini" data-act="edit" title="Bearbeiten" aria-label="Bearbeiten"><span aria-hidden="true">✎</span><span class="lbl">Bearbeiten</span></button>
@@ -860,15 +870,17 @@ function render() {
     [1, 2, 3].forEach(n => li.classList.toggle("top" + n, podium && r === n));
     if (podium && r === 1) li.style.setProperty("--glow-delay", `-${Date.now() % 7000}ms`);
     li.querySelector(".rank").textContent = hide ? "" : r;
-    li.querySelector(".title").textContent = f.title;
+    const tp = titleParts(f);
+    li.querySelector(".title").textContent = tp.main;
     li.querySelector(".year").textContent = f.year ? `(${f.year})` : "";
+    const alt = li.querySelector(".alt"); alt.textContent = tp.sub; alt.hidden = !tp.sub;
     const note = li.querySelector(".note");
     note.textContent = f.note ? `„${f.note}“` : ""; note.hidden = !f.note;
     li.querySelector(".added").textContent = `vorgeschlagen ${ago(f.created_at)}`;
     const btn = li.querySelector(".vote");
     const on = state.mine.has(f.id);
     btn.setAttribute("aria-pressed", on);
-    btn.setAttribute("aria-label", `${f.title}${hide ? "" : `: ${f.votes} Stimmen`}. ${on ? "Stimme zurücknehmen" : "Hochvoten"}`);
+    btn.setAttribute("aria-label", `${tp.main}${hide ? "" : `: ${f.votes} Stimmen`}. ${on ? "Stimme zurücknehmen" : "Hochvoten"}`);
     btn.title = on ? "Stimme zurücknehmen" : "Hochvoten";
     btn.querySelector(".count").textContent = f.votes;
     order.push(li);
@@ -897,6 +909,21 @@ function render() {
   state.lastIds = new Set(state.films.map(f => f.id));
   state.firstRender = false;
   checkDupe();
+}
+
+/* Titelanzeige: Originaltitel groß, darunter deutsch · englisch (ohne Doppelungen) */
+function titleParts(f) {
+  // Original in nicht-lateinischer Schrift (z. B. 기생충, ゴジラ): deutscher Titel groß, Original klein
+  const nonLatin = t => /(?=\p{L})\P{Script=Latin}/u.test(t || "");
+  const orig = (f.original_title || "").trim();
+  const flip = orig && nonLatin(orig) && f.title && !nonLatin(f.title);
+  const main = (flip ? f.title : orig || f.title || "").trim();
+  const seen = [norm(main)], subs = [];
+  for (const t of flip ? [orig, f.title_en] : [f.title, f.title_en]) {
+    const n = norm(t);
+    if (t && n && !seen.includes(n)) { seen.push(n); subs.push(t.trim()); }
+  }
+  return { main, sub: subs.join(" · ") };
 }
 
 /* „Folge 39 (Follow-up Folge 41)“ – der Link bleibt bei der Hauptbesprechung */
@@ -931,7 +958,7 @@ function renderTeam() {
         <div class="added">vorgeschlagen ${ago(p.created_at)}</div>
         <div class="actions">
           <button type="button" class="mini ok" data-pact="approve">✓ Annehmen</button>
-          <button type="button" class="mini" data-pact="edit">Bearbeiten</button>
+          <button type="button" class="mini" data-pact="assign">🔍 TMDB zuweisen</button>
           <button type="button" class="mini danger" data-pact="reject">✕ Ablehnen</button>
         </div></div>
     </li>`).join("");
@@ -1097,7 +1124,8 @@ function renderWheel() {
   list.innerHTML = state.wheel.map(f => `
     <li class="wheel-item" data-id="${esc(f.id)}">
       ${posterHTML(f.poster_path, f.title, "w92")}
-      <div><div><span class="title">${esc(f.title)}</span>${f.year ? `<span class="year">(${f.year})</span>` : ""}</div>
+      <div><div><span class="title">${esc(titleParts(f).main)}</span>${f.year ? `<span class="year">(${f.year})</span>` : ""}</div>
+        ${titleParts(f).sub ? `<div class="alt">${esc(titleParts(f).sub)}</div>` : ""}
         <div class="added">aufs Rad gekommen ${ago(f.on_wheel_at)} · ${f.votes} ${f.votes === 1 ? "Stimme" : "Stimmen"}</div>
         <div class="actions">
           <button type="button" class="mini ok" data-wact="discuss">✓ Besprochen</button>
@@ -1215,13 +1243,42 @@ $("#pendList").addEventListener("click", async e => {
   const id = b.closest(".pend").dataset.id, p = state.pending.find(x => x.id === id); if (!p) return;
   if (b.dataset.pact === "approve") teamDo(() => api.approve(id), `„${p.title}“ ist jetzt auf der Liste.`);
   else if (b.dataset.pact === "reject") teamDo(() => api.remove(id), `„${p.title}“ abgelehnt.`);
-  else {
-    const v = await dialog({ title: "Vorschlag bearbeiten", confirm: "Speichern & annehmen", fields: editFields(p) });
-    if (!v) return;
-    let fields; try { fields = cleanEdit(v); } catch (er) { toast(er.message, true); return; }
-    teamDo(() => api.update(id, { ...fields, status: "approved" }), `„${fields.title}“ ist jetzt auf der Liste.`);
-  }
+  else assignPending(p);
 });
+
+/* Warteraum: Vorschlag einem TMDB-Eintrag zuweisen (oder nur den Titel korrigieren) */
+async function assignPending(p) {
+  const s = await dialog({ title: "TMDB-Eintrag zuweisen", confirm: "Bei TMDB suchen",
+    text: `Vorschlag: „${p.title}“${p.note ? ` – „${p.note}“` : ""}. Tipps: Jahreszahl anhängen, Original- oder englischen Titel probieren oder den Link von der TMDB-Seite einfügen.`,
+    fields: [{ name: "q", label: "Titel oder TMDB-Link", value: p.title, required: true, max: 200 }] });
+  if (!s) return;
+  let res = [];
+  if (tmdbOn && !tmdbBroken) { try { res = await api.search(s.q, { tv: true }); } catch (err) { console.warn(err); } }
+  const isLink = /themoviedb\.org/i.test(s.q);
+  const freeTitle = isLink ? "" : s.q.trim().replace(/\s+/g, " ");
+  const options = res.map((c, j) => ({ value: String(j),
+    label: `${c.title}${c.year ? ` (${c.year})` : ""}${c.title_en && c.title_en !== c.title ? ` · ${c.title_en}` : ""}${c.tmdb_type === "tv" ? " · Serie" : ""}` }));
+  if (freeTitle) options.push({ value: "free", label: `Ohne TMDB annehmen als „${freeTitle}“` });
+  if (!options.length) { toast("Kein TMDB-Treffer für diesen Link.", true); return; }
+  const v = await dialog({ title: "Richtigen Film wählen", confirm: "Zuweisen & annehmen",
+    text: res.length ? "Der Vorschlag bekommt Cover und Titel von TMDB und kommt auf die Liste. Der Kommentar bleibt." : "Bei TMDB nichts gefunden – du kannst den Vorschlag trotzdem annehmen.",
+    fields: [{ name: "pick", label: "Film", type: "select", options }] });
+  if (!v) return;
+  const c = v.pick === "free" ? null : res[+v.pick];
+  const fields = c
+    ? { title: c.title, year: c.year || null, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null,
+        original_title: c.original_title || null, title_en: c.title_en || null }
+    : { title: freeTitle };
+  const d = c ? findDupe(c.title, c.tmdb_id, c.year, [c.original_title, c.title_en], c.tmdb_type) : findDupe(freeTitle, null, null);
+  if (d) {
+    const where = d._done ? `wurde schon besprochen${d.episode ? " (" + epText(d) + ")" : ""}` : d._wheel ? "ist gerade auf dem Rad" : "steht schon auf der Liste";
+    const ok = await dialog({ title: "Gibt es schon", confirm: "Vorschlag ablehnen", danger: true,
+      text: `„${d.title}“ ${where}. Den doppelten Vorschlag aus dem Warteraum entfernen?` });
+    if (ok) teamDo(() => api.remove(p.id), "Doppelten Vorschlag entfernt.");
+    return;
+  }
+  teamDo(() => api.update(p.id, { ...fields, status: "approved" }), `„${fields.title}“ ist jetzt auf der Liste.`);
+}
 
 $("#teamLink").addEventListener("click", async () => {
   if (state.isAdmin) return;
@@ -1386,7 +1443,7 @@ function acRender(msg) {
   acList.classList.add("show"); fTitle.setAttribute("aria-expanded", "true");
 }
 function acPick(m) {
-  state.picked = m;
+  state.picked = m; $("#noHit").classList.remove("show");
   fTitle.value = m.title;
   const box = $("#picked");
   box.innerHTML = `${posterHTML(m.poster, m.title, "w92")}<div><div class="t"></div><div class="s"></div></div>
@@ -1461,6 +1518,12 @@ $("#suggestForm").addEventListener("submit", async e => {
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + epText(d) : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
 
+  // Ohne TMDB-Treffer: einmal auf die Kommentarfunktion hinweisen
+  const hint = $("#noHit");
+  if (!p && !note && !hint.classList.contains("show")) {
+    hint.classList.add("show"); $("#fNote").focus(); return;
+  }
+
   const film = { title, year, note, tmdb_id: p?.tmdb_id ?? null, poster_path: p?.poster ?? null,
                  original_title: p?.original_title || null, title_en: p?.title_en || null };
   const btn = $("#submitBtn"); btn.disabled = true; busy++;
@@ -1469,7 +1532,7 @@ $("#suggestForm").addEventListener("submit", async e => {
     resetForm();
     busy--; btn.disabled = false;
     if (res.status === "pending") {
-      toast(`Danke! „${title}“ wird kurz geprüft und erscheint dann auf der Liste.`);
+      toast(`Danke! Wir schauen, ob wir „${title}“ finden – dann kommt er auf die Liste.`);
       refresh(); return;
     }
     toast(`„${title}“ liegt jetzt auf dem Tisch!`);
@@ -1484,7 +1547,7 @@ $("#suggestForm").addEventListener("submit", async e => {
   }
   busy--; btn.disabled = false;
 });
-function resetForm() { $("#suggestForm").reset(); unpick(); acClose(); }
+function resetForm() { $("#suggestForm").reset(); unpick(); acClose(); $("#noHit").classList.remove("show"); }
 
 /* ---------------- Start ---------------- */
 (async () => {
