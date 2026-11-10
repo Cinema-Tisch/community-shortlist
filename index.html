@@ -938,8 +938,8 @@ $("#linkList").addEventListener("click", async e => {
   const b = e.target.closest("[data-search]"); if (!b) return;
   const r = linkRows[+b.dataset.search];
   const v = await dialog({ title: "Selbst bei TMDB suchen", confirm: "Suchen",
-    text: `Für „${r.film.title}“ (${r.film.episode || "Backlog"}). Tipp: Originaltitel oder englischen Titel probieren, ohne Jahreszahl.`,
-    fields: [{ name: "q", label: "Suchbegriff", value: r.film.title, required: true, max: 80 }] });
+    text: `Für „${r.film.title}“ (${r.film.episode || "Backlog"}). Tipps: Jahreszahl anhängen („The King 2019“), Original- oder englischen Titel probieren – oder einfach den Link von der TMDB-Seite einfügen.`,
+    fields: [{ name: "q", label: "Suchbegriff oder TMDB-Link", value: r.film.title, required: true, max: 200 }] });
   if (!v) return;
   b.disabled = true;
   let res = [];
