@@ -1653,6 +1653,7 @@ function closeCase() {
   const cs = layer.querySelector(".case");
   const done = () => {
     layer.remove(); poster.classList.remove("lifted");
+    poster.getAnimations().forEach(a => a.cancel());   // Überblendung beenden (Cover bleibt voll sichtbar)
     poster.closest(".cover")?.classList.remove("tuck", "landing");
     document.documentElement.classList.remove("case-open");
     caseState.layer = caseState.poster = null; caseState.closing = false;
@@ -1665,6 +1666,15 @@ function closeCase() {
   // Kurz vor der Landung gleitet die DVD schon wieder heraus
   const cover = poster.closest(".cover");
   if (cover) setTimeout(() => { cover.classList.add("landing"); cover.classList.remove("tuck"); }, 380);
+  // Auf den letzten Metern überblenden: Das echte Cover (mit Rahmen und Schatten) blendet ein, die fliegende Hülle aus –
+  // so taucht der Rahmen nicht schlagartig auf
+  setTimeout(() => {
+    if (!caseState.closing || caseState.layer !== layer) return;
+    poster.classList.remove("lifted");
+    const fade = { duration: 150, easing: "ease-out", fill: "forwards" };
+    poster.animate([{ opacity: 0 }, { opacity: 1 }], fade);
+    cs.animate([{ opacity: 1 }, { opacity: 0 }], fade);
+  }, 450);
   let ended = false;
   cs.addEventListener("transitionend", e => { if (e.target === cs && e.propertyName === "transform" && !ended) { ended = true; done(); } });
   setTimeout(() => { if (!ended) { ended = true; done(); } }, 900);
