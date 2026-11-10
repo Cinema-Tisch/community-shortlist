@@ -476,16 +476,17 @@ html.case-open{overflow:hidden}
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
   padding:calc(var(--r,52px) * .55 + 8px) calc(var(--r,52px) * .5 + 6px) calc(var(--r,52px) * .45 + 4px)}
-.case-x{position:absolute;top:calc(var(--r,52px) * .55 - 2px);   /* mittig zur ersten Titelzeile */right:calc(var(--r,52px) * .32);width:48px;height:48px;display:grid;place-items:center;
+.case-x{position:absolute;top:calc(var(--r,52px) * .55 - 2px);   /* mittig zur ersten Titelzeile */right:calc(var(--r,52px) * .5 + 6px);   /* gleicher Abstand zum Rand wie der Titel links */width:48px;height:48px;display:grid;place-items:center;
   background:#fff;color:var(--navy-ink);border:2.5px solid var(--line);border-radius:12px;box-shadow:3px 3px 0 var(--line);
   font-family:inherit;font-weight:800;font-size:18px;line-height:1;cursor:pointer;transition:transform .12s, box-shadow .12s, background .15s}
 .case-x svg{width:28px;height:28px}
 .case-x:hover{background:var(--navy-soft)}
 .case-x:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
-.case-title{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:24px;line-height:1.15;color:var(--navy-ink);margin:0 52px 4px 0;min-height:44px}
+.case-title{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:24px;line-height:1.15;color:var(--navy-ink);margin:0 60px 4px 0;min-height:44px}
 .case-alt{font-size:13.5px;font-weight:600;color:var(--muted);margin-bottom:10px}
 .case-alt[hidden],.case-meta[hidden]{display:none}
-.case-meta{font-size:13px;font-weight:800;color:var(--navy);padding:8px 0;border-top:2px dashed rgba(29,23,18,.25);border-bottom:2px dashed rgba(29,23,18,.25);margin-bottom:12px}
+.case-meta .rt{margin-left:auto;white-space:nowrap}
+.case-meta{display:flex;align-items:baseline;gap:4px 14px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--navy);padding:8px 0;border-top:2px dashed rgba(29,23,18,.25);border-bottom:2px dashed rgba(29,23,18,.25);margin-bottom:12px}
 .case-text{flex:1;overflow:auto;font-size:15px;line-height:1.58;color:var(--line);overscroll-behavior:contain;padding-right:4px}
 .case-load{color:var(--muted)}
 .case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
@@ -1593,8 +1594,10 @@ function fillCase(rear, d) {
   if (!d || (!d.overview && !d.runtime && !d.people?.length)) {
     text.innerHTML = `<span class="case-load">Für diesen Film hat TMDB leider keine Inhaltsangabe.</span>`; return;
   }
-  const bits = [d.people?.length ? `${d.people_label || "Regie"}: ${d.people.join(", ")}` : "", fmtRuntime(d.runtime)].filter(Boolean);
-  meta.textContent = bits.join(" · "); meta.hidden = !bits.length;
+  // Regie links, Laufzeit rechtsbündig
+  const who = d.people?.length ? `${d.people_label || "Regie"}: ${d.people.join(", ")}` : "", len = fmtRuntime(d.runtime);
+  meta.replaceChildren(...[who, len].map((t, i) => { const sp = document.createElement("span"); sp.textContent = t; if (i) sp.className = "rt"; return sp; }).filter(sp => sp.textContent));
+  meta.hidden = !who && !len;
   text.textContent = d.overview || "Keine Inhaltsangabe vorhanden.";
   requestAnimationFrame(() => { const upd = () => text.classList.toggle("has-more", text.scrollTop + text.clientHeight < text.scrollHeight - 4); upd(); text.onscroll = upd; });
   if (d.lang === "en") { const n = document.createElement("div"); n.className = "case-note"; n.textContent = "Nur auf Englisch bei TMDB"; text.after(n); }
