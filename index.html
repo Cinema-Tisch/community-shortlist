@@ -123,7 +123,8 @@ form.suggest{display:grid;grid-template-columns:1fr;gap:10px}
 .field.full{grid-column:1/-1}
 label{font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--navy-ink)}
 label .opt{font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted)}
-input[type=text],input[type=number],input[type=search]{
+.fhint{font-size:.8rem;color:var(--muted);margin-top:5px;line-height:1.35}
+input[type=text],input[type=number],input[type=search],input[type=date]{
   width:100%;font:inherit;font-size:17px;font-weight:500;color:var(--line);
   padding:12px 14px;background:#fff;
   border:2.5px solid var(--line);border-radius:12px;outline:none;
@@ -503,9 +504,15 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <ol class="films" id="list" aria-live="polite"></ol>
   </section>
 
+  <section class="card" id="backlogCard" hidden>
+    <h2><span class="num">📚</span>Backlog <span class="badge" id="doneCount">0</span></h2>
+    <p class="hint" style="margin:-6px 0 12px">Ihr habt einen Film besprochen, der nicht über die Liste oder das Rad kam? Hier direkt eintragen. War er schon mal dran, wird die neue Folge als Follow-up vermerkt.</p>
+    <div class="link-row"><button class="btn" type="button" id="backlogAdd">＋ Film ins Backlog</button></div>
+  </section>
+
   <section class="card" id="linkCard" hidden>
     <h2><span class="num">🔗</span>Backlog mit TMDB verknüpfen <span class="badge" id="linkCount">0</span></h2>
-    <p class="hint" style="margin:-6px 0 12px">Diese besprochenen Filme haben noch keine TMDB-Nummer. Erst mit Nummer erkennt die Seite sie zuverlässig – egal in welcher Sprache jemand den Titel eingibt, und ohne andere Verfilmungen mit gleichem Titel zu blockieren.</p>
+    <p class="hint" style="margin:-6px 0 12px">Diese besprochenen Filme haben noch keine TMDB-Nummer. Erst mit Nummer erkennt die Seite sie zuverlässig – egal in welcher Sprache jemand den Titel eingibt, und ohne andere Verfilmungen mit gleichem Titel zu blockieren. Dieser Bereich verschwindet, sobald alles verknüpft ist.</p>
     <div class="link-row"><button class="btn small" type="button" id="linkLoad">Nächste 25 abgleichen</button><span class="hint" id="linkStatus"></span></div>
     <ul class="link-list" id="linkList"></ul>
     <div class="link-row" id="linkSaveRow" hidden><button class="btn" type="button" id="linkSave">Auswahl speichern</button></div>
@@ -610,7 +617,7 @@ function demoBackend() {
     mk(3, "Endlich mal deutsches Kino aufs Rad.", 9, 20), mk(4, "Damit ihr euch mal richtig streitet.", 8, 70),
     mk(5, null, 6, 5), mk(6, null, 5, 90), mk(7, "Bagel.", 4, 3), mk(8, null, 2, 1.5),
     mk(9, "Der Klassiker muss aufs Rad.", 15, 300, { on_wheel_at: new Date(now - 3 * day).toISOString() }),
-    mk(11, null, 17, 400, { discussed_at: new Date(now - 6 * day).toISOString().slice(0, 10), episode: "Folge 24", episode_url: "https://example.com/folge-24" }),
+    mk(11, null, 17, 400, { discussed_at: new Date(now - 6 * day).toISOString().slice(0, 10), episode: "Folge 24", episode_url: "https://example.com/folge-24", followups: "Folge 26" }),
     mk(12, null, 11, 600, { discussed_at: new Date(now - 20 * day).toISOString().slice(0, 10), episode: "Folge 22" }),
     { id: "b1", title: "Godzilla", year: null, tmdb_id: null, poster_path: null, note: null, votes: 0,
       created_at: new Date(now - 900 * h).toISOString(), discussed_at: new Date(now - 14 * day).toISOString().slice(0, 10), episode: "Folge 60" },
@@ -661,6 +668,8 @@ function demoBackend() {
     async toWheel(id) { Object.assign(films.find(x => x.id === id), { on_wheel_at: new Date().toISOString() }); emit(); },
     async offWheel(id) { films.find(x => x.id === id).on_wheel_at = null; emit(); },
     async link(id, fields) { Object.assign(films.find(x => x.id === id), fields); emit(); },
+    async addBacklog(film) { films.push({ ...film, id: "d" + Date.now(), votes: 0, created_at: new Date().toISOString() }); emit(); },
+    async setFollowups(id, text) { films.find(x => x.id === id).followups = text; emit(); },
     async discuss(id, extra) {
       Object.assign(films.find(x => x.id === id), { discussed_at: new Date().toISOString().slice(0, 10) }, extra); emit(); },
     async vote(id, on) {
@@ -715,7 +724,7 @@ function supabaseBackend() {
     async load() {
       const [r1, r2, r3, r4, r5, r6] = await Promise.all([
         sb.from("film_ranking").select(cols),
-        sb.from("film_discussed").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
+        sb.from("film_discussed").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url,followups").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
         admin ? sb.from("films").select("id,title,year,note,tmdb_id,poster_path,created_at").eq("status", "pending").order("created_at")
               : Promise.resolve({ data: [], error: null }),
@@ -752,6 +761,8 @@ function supabaseBackend() {
     async toWheel(id) { must(await sb.from("films").update({ on_wheel_at: new Date().toISOString() }).eq("id", id)); },
     async offWheel(id) { must(await sb.from("films").update({ on_wheel_at: null }).eq("id", id)); },
     async link(id, fields) { must(await sb.from("films").update(fields).eq("id", id)); },
+    async addBacklog(film) { must(await sb.from("films").insert({ ...film, created_by: uid })); },
+    async setFollowups(id, text) { must(await sb.from("films").update({ followups: text }).eq("id", id)); },
     async discuss(id, extra) {
       must(await sb.from("films").update({ discussed_at: new Date().toISOString().slice(0, 10), ...extra }).eq("id", id));
     },
@@ -888,6 +899,12 @@ function render() {
   checkDupe();
 }
 
+/* „Folge 39 (Follow-up Folge 41)“ – der Link bleibt bei der Hauptbesprechung */
+function epText(d) {
+  if (!d.episode) return "";
+  return d.episode + (d.followups ? ` (Follow-up ${d.followups})` : "");
+}
+
 /* ---------------- Team-Modus ---------------- */
 
 function renderTeam() {
@@ -899,6 +916,8 @@ function renderTeam() {
   const unlinked = state.done.filter(f => !f.tmdb_id).length;
   $("#linkCard").hidden = !state.isAdmin || (!unlinked && !linkRows.length);
   $("#linkCount").textContent = unlinked;
+  $("#backlogCard").hidden = !state.isAdmin;
+  $("#doneCount").textContent = state.done.length;
   $("#votesToggle").textContent = state.showVotes ? "👁 Stimmen: sichtbar" : "🙈 Stimmen: ausgeblendet";
   if (!state.isAdmin) return;
   $("#pendCount").textContent = state.pending.length;
@@ -1003,6 +1022,71 @@ $("#linkSave").addEventListener("click", async () => {
   refresh();
 });
 
+/* ---------------- Film direkt ins Backlog ---------------- */
+function nextEpisode() {
+  const nums = state.done.map(f => +((f.episode || "").match(/(\d+)/) || [])[1]).filter(n => n > 0);
+  return nums.length ? `Folge ${Math.max(...nums) + 1}` : "";
+}
+function addFollowup(old, ep) {
+  if (!old) return ep;
+  const n = ep.replace(/^Folge\s+/i, "");
+  if (old.split(/,\s*/).some(x => x.replace(/^Folge\s+/i, "") === n)) return old;
+  return `${old}, ${/^Folge\s/i.test(old) ? n : ep}`;
+}
+$("#backlogAdd").addEventListener("click", async () => {
+  const s = await dialog({ title: "Film ins Backlog", confirm: "Bei TMDB suchen",
+    text: "Tipps: Jahreszahl anhängen („The King 2019“), Original- oder englischen Titel probieren – oder den Link von der TMDB-Seite einfügen. Serien werden auch gefunden.",
+    fields: [{ name: "q", label: "Titel oder TMDB-Link", required: true, max: 200 }] });
+  if (!s) return;
+  let res = [];
+  if (tmdbOn && !tmdbBroken) {
+    const btn = $("#backlogAdd"); btn.disabled = true;
+    try { res = await api.search(s.q, { tv: true }); } catch (err) { console.warn(err); }
+    btn.disabled = false;
+  }
+  const isLink = /themoviedb\.org/i.test(s.q);
+  const freeTitle = isLink ? "" : s.q.replace(/\s+/g, " ");
+  const options = res.map((c, j) => ({ value: String(j),
+    label: `${c.title}${c.year ? ` (${c.year})` : ""}${c.title_en && c.title_en !== c.title ? ` · ${c.title_en}` : ""}${c.tmdb_type === "tv" ? " · Serie" : ""}` }));
+  if (freeTitle) options.push({ value: "free", label: `Ohne TMDB eintragen: „${freeTitle}“` });
+  if (!options.length) { toast("Kein TMDB-Treffer für diesen Link.", true); return; }
+  const v = await dialog({ title: "Folge eintragen", confirm: "Ins Backlog",
+    text: res.length ? "Richtige Version auswählen und die Folge eintragen." : "Bei TMDB nichts gefunden – du kannst den Film trotzdem eintragen.",
+    fields: [
+      { name: "pick", label: "Film", type: "select", options },
+      { name: "episode", label: "Folge", value: nextEpisode(), placeholder: "z. B. Folge 62", required: true, max: 60 },
+      { name: "date", label: "Erschienen am", type: "date", value: new Date().toISOString().slice(0, 10), required: true },
+      { name: "episode_url", label: "Link zur Folge", type: "url", placeholder: "https://…", optional: true,
+        hint: "Bei einem Follow-up wird der Link nicht gespeichert – er führt immer zur ersten Besprechung." },
+    ] });
+  if (!v || !checkUrl(v)) return;
+  const c = v.pick === "free" ? null : res[+v.pick];
+  const film = c
+    ? { title: c.title, year: c.year || null, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null,
+        original_title: c.original_title || null, title_en: c.title_en || null }
+    : { title: freeTitle, year: null, tmdb_id: null, tmdb_type: "movie", poster_path: null, original_title: null, title_en: null };
+  const ep = { discussed_at: v.date, episode: v.episode.replace(/\s+/g, " "), episode_url: v.episode_url || null };
+  const d = findDupe(film.title, film.tmdb_id, film.year, [film.original_title, film.title_en], film.tmdb_type);
+  // TMDB-Daten nur ergänzen, wenn der vorhandene Eintrag noch keine hat
+  const extra = d && !d.tmdb_id && film.tmdb_id ? film : {};
+
+  if (d && d._done) {
+    if (d.episode === ep.episode) { toast(`„${d.title}“ steht schon mit ${d.episode} im Backlog.`); return; }
+    const ok = await dialog({ title: "Schon im Backlog", confirm: "Als Follow-up eintragen",
+      text: `„${d.title}“ wurde schon in ${epText(d) || "einer früheren Folge"} besprochen. ${ep.episode} als Follow-up vermerken? Der Link bleibt bei der ersten Besprechung.` });
+    if (!ok) return;
+    teamDo(async () => {
+      await api.setFollowups(d.id, addFollowup(d.followups, ep.episode));
+      if (Object.keys(extra).length) await api.link(d.id, extra);
+    }, `Follow-up für „${d.title}“ eingetragen.`);
+  } else if (d) {
+    teamDo(() => api.discuss(d.id, { ...extra, ...ep }),
+      `„${d.title}“ war ${d._wheel ? "auf dem Rad" : "auf der Liste"} – jetzt im Backlog.`);
+  } else {
+    teamDo(() => api.addBacklog({ ...film, ...ep }), `„${film.title}“ ist im Backlog.`);
+  }
+});
+
 function renderWheel() {
   const card = $("#wheelCard");
   card.hidden = !state.isAdmin;
@@ -1046,7 +1130,7 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
     ${fields.map((f, i) => `<div class="field"><label for="mf${i}">${esc(f.label)}${f.optional ? ' <span class="opt">(optional)</span>' : ""}</label>
       ${f.type === "select"
         ? `<select id="mf${i}" name="${f.name}">${f.options.map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("")}</select>`
-        : `<input id="mf${i}" name="${f.name}" type="${f.type || "text"}" ${f.max ? `maxlength="${f.max}"` : ""} ${f.type === "number" ? 'inputmode="numeric"' : ""}
+        : `<input id="mf${i}" name="${f.name}" type="${f.type || "text"}" ${f.max ? `maxlength="${f.max}"` : ""} ${f.type === "number" ? 'inputmode="numeric"' : ""} ${f.type === "date" ? 'max="2100-12-31"' : ""}
         placeholder="${esc(f.placeholder || "")}" autocomplete="${f.autocomplete || "off"}">`}</div>`).join("")}
     <div class="err" id="mErr"></div>
     <div class="row"><button type="button" class="btn ghost" data-x>Abbrechen</button><button type="submit" class="btn" ${danger ? 'style="background:var(--red-deep)"' : ""}></button></div>`;
@@ -1054,6 +1138,7 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
   if (text) m.querySelector("p").textContent = text;
   m.querySelector("[type=submit]").textContent = confirm;
   fields.forEach((f, i) => { if (f.value != null || f.type !== "select") m.querySelector("#mf" + i).value = f.value ?? ""; });
+  fields.forEach((f, i) => { if (f.hint) { const h = document.createElement("div"); h.className = "fhint"; h.textContent = f.hint; m.querySelector("#mf" + i).after(h); } });
   back.classList.add("show");
   setTimeout(() => (m.querySelector("input") || m.querySelector("[type=submit]")).focus(), 30);
   return new Promise(resolve => {
@@ -1231,7 +1316,7 @@ function checkDupe() {
     span.querySelector("b").textContent = d.title;
     box.appendChild(span);
   } else if (d._done) {
-    span.innerHTML = `<b></b> haben wir schon besprochen${d.episode ? " (" + esc(d.episode) + ")" : ""}.`;
+    span.innerHTML = `<b></b> haben wir schon besprochen${d.episode ? " in " + esc(epText(d)) : ""}.`;
     span.querySelector("b").textContent = d.title;
     box.appendChild(span);
     if (/^https:\/\//.test(d.episode_url || "")) {
@@ -1284,7 +1369,7 @@ function acRender(msg) {
       let tag = "";
       if (d && d._wheel) tag = `<span class="tag done">Gerade auf dem Rad</span>`;
       else if (d && d._done) {
-        const label = d.episode ? `Besprochen in ${esc(d.episode)}` : "Besprochen";
+        const label = d.episode ? `Besprochen in ${esc(epText(d))}` : "Besprochen";
         tag = /^https:\/\//.test(d.episode_url || "")
           ? `<a class="tag done link" href="${esc(d.episode_url)}" target="_blank" rel="noopener" title="Folge anhören">${label}${linkIcon}</a>`
           : `<span class="tag done">Besprochen</span>`;
@@ -1373,7 +1458,7 @@ $("#suggestForm").addEventListener("submit", async e => {
 
   const d = findDupe(title, p?.tmdb_id, year, [p?.original_title, p?.title_en], p?.tmdb_type);
   if (d && d._wheel) { toast(`„${d.title}“ ist gerade auf dem Glücksrad.`); return; }
-  if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + d.episode : ""}.`); return; }
+  if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + epText(d) : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
 
   const film = { title, year, note, tmdb_id: p?.tmdb_id ?? null, poster_path: p?.poster ?? null,
