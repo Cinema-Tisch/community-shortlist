@@ -1773,6 +1773,8 @@ function slideCollapse() {
   // Alles oberhalb der Kante optisch zurück an die alte Stelle, dann nach unten gleiten lassen
   const dist = Math.abs(from - to);
   const timing = { duration: Math.min(900, 450 + dist * 0.25), easing: "cubic-bezier(.45,0,.2,1)" };
+  // Verschiebung der Liste VOR dem Start der Animationen messen (danach enthält die Position schon die Verschiebung)
+  const rest = before[movers.length - 1][1] - pos(list)[1];
   const anims = movers.map((el, i) => {
     const now = pos(el);
     const dx = before[i][0] - now[0], dy = before[i][1] - now[1];
@@ -1782,7 +1784,6 @@ function slideCollapse() {
     return el.animate([{ translate: `${lx}px ${ly}px` }, { translate: "0px 0px" }], timing);
   }).filter(Boolean);
   // Die Liste wird an der festen Kante abgeschnitten: ihr Ausschnitt wandert gegenläufig zur Verschiebung mit
-  const rest = before[movers.length - 1][1] - pos(list)[1];
   anims.push(list.animate([{ clipPath: `inset(-100000px -60px ${rest}px -60px)` }, { clipPath: "inset(-100000px -60px 0px -60px)" }], timing));
 
   let done = false;
