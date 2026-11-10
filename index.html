@@ -292,7 +292,6 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
 /* Stimmen ausgeblendet (nur Besucher) */
 body.votes-hidden .vote .count{display:none}
 body.votes-hidden .vote{min-width:52px;padding:10px 8px}
-body.votes-hidden .film .rank{visibility:hidden}
 .hidden-note{display:none;margin:-4px 2px 10px;font-size:13px;font-weight:700;color:var(--muted)}
 body.team.votes-off .hidden-note{display:block}
 
@@ -300,22 +299,23 @@ body.team.votes-off .hidden-note{display:block}
 .teambar .tb-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .teambar{flex-wrap:wrap}
 
-/* Import */
-.imp textarea{width:100%;min-height:150px;font:inherit;font-size:15px;line-height:1.45;padding:12px;border:2.5px solid var(--line);border-radius:12px;background:#fff;resize:vertical;outline:none}
-.imp textarea:focus{box-shadow:4px 4px 0 var(--navy)}
-.imp .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
-.imp-list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
-.imp-item{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
-.imp-item.off{opacity:.5}
-.imp-item input{width:20px;height:20px;accent-color:var(--navy)}
-.imp-item .poster{width:34px;box-shadow:none;border-width:1.5px}
-.imp-item .t{font-weight:800;font-size:15px;line-height:1.25}
-.imp-item .s{font-size:12.5px;color:var(--muted);font-weight:600}
-.imp-item .n{font-weight:800;color:var(--navy-ink);white-space:nowrap}
-.imp-item .warn{color:var(--red-deep)}
-details.imp summary{cursor:pointer;font-weight:800;color:var(--navy-ink);list-style:none}
-details.imp summary::-webkit-details-marker{display:none}
-details.imp[open] summary{margin-bottom:12px}
+
+/* Team-Modus: Vorschlagen ausblenden */
+body.team .card-suggest{display:none}
+
+/* Platz 1 glüht leicht */
+@keyframes glow{0%,100%{box-shadow:3px 3px 0 rgba(29,23,18,.22),0 0 0 0 rgba(242,184,75,0)}
+  50%{box-shadow:3px 3px 0 rgba(29,23,18,.22),0 0 22px 7px rgba(242,184,75,.85)}}
+.film.top1{animation:glow 2.6s ease-in-out infinite}
+
+/* Rad-Pool */
+.wheel-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.wheel-item{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:#fff;border:2.5px solid var(--line);border-radius:14px;padding:11px;box-shadow:3px 3px 0 rgba(29,23,18,.22)}
+.wheel-item .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.wheel-slots{display:flex;gap:6px;margin-left:auto}
+.wheel-slots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);background:#fff}
+.wheel-slots i.on{background:var(--red)}
+select{width:100%;font:inherit;font-size:16px;font-weight:600;padding:11px 12px;border:2.5px solid var(--line);border-radius:12px;background:#fff;color:var(--line)}
 
 /* Team-Modus */
 .teambar{display:none;align-items:center;justify-content:space-between;gap:10px;margin:0 0 18px;padding:9px 12px;
@@ -443,16 +443,6 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <ul class="pend-list" id="pendList"></ul>
   </section>
 
-  <section class="card" id="importCard" hidden>
-    <details class="imp" id="impDetails">
-      <summary><h2 style="margin:0"><span class="num">⇣</span>Filme importieren</h2></summary>
-      <p class="hint" style="margin:0 0 10px">Eine Zeile pro Film: <b>Titel (Jahr) – Stimmen</b>. Jahr und Stimmen sind optional. Die Stimmen werden als Altstimmen übernommen.</p>
-      <textarea id="impText" placeholder="Whiplash (2014) – 3&#10;A Coffee in Berlin (2012) – 3&#10;The Fall (2006) – 0"></textarea>
-      <div class="row"><button class="btn small" type="button" id="impCheck">Mit TMDB abgleichen</button><span class="hint" id="impStatus"></span></div>
-      <ul class="imp-list" id="impList"></ul>
-      <div class="row" id="impGoRow" hidden><button class="btn" type="button" id="impGo">Importieren</button></div>
-    </details>
-  </section>
 
   <section class="card card-suggest" aria-labelledby="h-suggest">
     <h2 id="h-suggest"><span class="num">1</span>Film vorschlagen</h2>
@@ -495,6 +485,12 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <ol class="films" id="list" aria-live="polite"></ol>
   </section>
 
+  <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
+    <h2 id="h-wheel"><span class="num">🎡</span>Auf dem Rad <span class="wheel-slots" id="wheelSlots"><i></i><i></i></span></h2>
+    <p class="hint" style="margin:-6px 0 14px">Höchstens zwei Community-Filme gleichzeitig. Kommt ein dritter dazu, fragen wir, welcher besprochen wurde.</p>
+    <ul class="wheel-list" id="wheelList"></ul>
+  </section>
+
 
   <footer>
     <button class="pill-name" type="button" id="teamLink" aria-label="Cinema-Tisch · Max &amp; Vincent – Team-Login">Cinema-Tisch · Max &amp; Vincent</button>
@@ -522,7 +518,7 @@ const USE_TMDB     = true;   // Cover + Vorschläge beim Tippen (braucht die Edg
 
 const $ = (s, el = document) => el.querySelector(s);
 const IMG = "https://image.tmdb.org/t/p/";
-const state = { films: [], done: [], pending: [], isAdmin: false, showVotes: true, mine: new Set(), q: "", lastIds: new Set(), firstRender: true, picked: null, showAllDone: false };
+const state = { films: [], done: [], wheel: [], pending: [], isAdmin: false, showVotes: true, mine: new Set(), q: "", lastIds: new Set(), firstRender: true, picked: null, showAllDone: false };
 
 const norm = s => (s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
   .replace(/^(der|die|das|the|a|an|le|la|les|el)\s+/, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
@@ -582,6 +578,7 @@ function demoBackend() {
     mk(1, "Wim Wenders in Bestform – und dieser Score!", 14, 30), mk(2, null, 12, 50),
     mk(3, "Endlich mal deutsches Kino aufs Rad.", 9, 20), mk(4, "Damit ihr euch mal richtig streitet.", 8, 70),
     mk(5, null, 6, 5), mk(6, null, 5, 90), mk(7, "Bagel.", 4, 3), mk(8, null, 2, 1.5),
+    mk(9, "Der Klassiker muss aufs Rad.", 15, 300, { on_wheel_at: new Date(now - 3 * day).toISOString() }),
     mk(11, null, 17, 400, { discussed_at: new Date(now - 6 * day).toISOString().slice(0, 10), episode: "Folge 24", episode_url: "https://example.com/folge-24" }),
     mk(12, null, 11, 600, { discussed_at: new Date(now - 20 * day).toISOString().slice(0, 10), episode: "Folge 22" }),
     mk(16, null, 9, 900, { discussed_at: new Date(now - 34 * day).toISOString().slice(0, 10), episode: "Folge 20" }),
@@ -596,7 +593,7 @@ function demoBackend() {
   const emit = () => listener();
   setInterval(() => {
     if (document.hidden) return;
-    const open = films.filter(f => !f.discussed_at);
+    const open = films.filter(f => !f.discussed_at && !f.on_wheel_at);
     const f = open[Math.floor(Math.random() * open.length)];
     f.votes++; f.last_vote_at = new Date().toISOString(); emit();
   }, 6500);
@@ -605,7 +602,8 @@ function demoBackend() {
     async init() {},
     async load() {
       const copy = films.map(f => ({ ...f }));
-      return { films: copy.filter(f => !f.discussed_at), done: copy.filter(f => f.discussed_at)
+      return { films: copy.filter(f => !f.discussed_at && !f.on_wheel_at), wheel: copy.filter(f => f.on_wheel_at && !f.discussed_at).sort((a, b) => a.on_wheel_at.localeCompare(b.on_wheel_at)),
+        done: copy.filter(f => f.discussed_at)
         .sort((a, b) => b.discussed_at.localeCompare(a.discussed_at)), mine: new Set(mine),
         pending: admin ? pending.map(p => ({ ...p })) : [], isAdmin: admin, showVotes };
     },
@@ -617,19 +615,16 @@ function demoBackend() {
     },
     async login(email, pw) { await new Promise(r => setTimeout(r, 300)); admin = true; },
     async setShowVotes(v) { showVotes = v; emit(); },
-    async importFilm(film, n) {
-      const f = { ...film, id: "d" + Date.now() + Math.random().toString(36).slice(2, 6), votes: n,
-        created_at: new Date().toISOString(), last_vote_at: n ? new Date(Date.now() - 864e5).toISOString() : null };
-      films.push(f); emit();
-    },
     async logout() { admin = false; },
     async approve(id) { const p = pending.find(x => x.id === id); pending = pending.filter(x => x.id !== id);
       films.push({ ...p, votes: 0 }); emit(); },
     async update(id, fields) {
       const f = films.find(x => x.id === id) || pending.find(x => x.id === id); Object.assign(f, fields); emit(); },
     async remove(id) { films = films.filter(x => x.id !== id); pending = pending.filter(x => x.id !== id); mine.delete(id); emit(); },
-    async toWheel(id, extra) {
-      const f = films.find(x => x.id === id); Object.assign(f, { discussed_at: new Date().toISOString().slice(0, 10) }, extra); emit(); },
+    async toWheel(id) { Object.assign(films.find(x => x.id === id), { on_wheel_at: new Date().toISOString() }); emit(); },
+    async offWheel(id) { films.find(x => x.id === id).on_wheel_at = null; emit(); },
+    async discuss(id, extra) {
+      Object.assign(films.find(x => x.id === id), { discussed_at: new Date().toISOString().slice(0, 10) }, extra); emit(); },
     async vote(id, on) {
       const f = films.find(x => x.id === id); if (!f) return;
       if (on && !mine.has(id)) { mine.add(id); f.votes++; f.last_vote_at = new Date().toISOString(); }
@@ -679,17 +674,18 @@ function supabaseBackend() {
       if (session && !session.user.is_anonymous) await checkAdmin();
     },
     async load() {
-      const [r1, r2, r3, r4, r5] = await Promise.all([
+      const [r1, r2, r3, r4, r5, r6] = await Promise.all([
         sb.from("film_ranking").select(cols),
         sb.from("film_discussed").select("id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
         admin ? sb.from("films").select("id,title,year,note,tmdb_id,poster_path,created_at").eq("status", "pending").order("created_at")
               : Promise.resolve({ data: [], error: null }),
         sb.from("settings").select("show_votes").eq("id", 1).maybeSingle(),
+        sb.from("film_wheel").select("id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,on_wheel_at,votes").order("on_wheel_at"),
       ]);
-      for (const r of [r1, r2, r3, r4]) if (r.error) throw r.error;
+      for (const r of [r1, r2, r3, r4, r6]) if (r.error) throw r.error;
       const showVotes = r5.error || !r5.data ? true : r5.data.show_votes !== false;   // fehlt die Tabelle: Stimmen zeigen
-      return { films: r1.data, done: r2.data, mine: new Set(r3.data.map(v => v.film_id)), pending: r4.data, isAdmin: admin, showVotes };
+      return { films: r1.data, done: r2.data, mine: new Set(r3.data.map(v => v.film_id)), pending: r4.data, wheel: r6.data, isAdmin: admin, showVotes };
     },
     async add(film) {
       await ensureUser();
@@ -711,15 +707,12 @@ function supabaseBackend() {
     },
     async logout() { await sb.auth.signOut(); uid = null; admin = false; },
     async setShowVotes(v) { must(await sb.from("settings").update({ show_votes: v }).eq("id", 1)); },
-    async importFilm(film, n) {
-      const { data, error } = await sb.from("films").insert(film).select("id").single();
-      if (error) throw error;
-      if (n > 0) must(await sb.rpc("add_legacy_votes", { p_film: data.id, p_count: n }));
-    },
     async approve(id) { must(await sb.from("films").update({ status: "approved" }).eq("id", id)); },
     async update(id, fields) { must(await sb.from("films").update(fields).eq("id", id)); },
     async remove(id) { must(await sb.from("films").delete().eq("id", id)); },
-    async toWheel(id, extra) {
+    async toWheel(id) { must(await sb.from("films").update({ on_wheel_at: new Date().toISOString() }).eq("id", id)); },
+    async offWheel(id) { must(await sb.from("films").update({ on_wheel_at: null }).eq("id", id)); },
+    async discuss(id, extra) {
       must(await sb.from("films").update({ discussed_at: new Date().toISOString().slice(0, 10), ...extra }).eq("id", id));
     },
     async vote(id, on) {
@@ -771,7 +764,12 @@ function render() {
   const ranked = state.films.slice().sort(byVotes);
   const ranks = new Map();
   ranked.forEach((f, i) => ranks.set(f.id, i + 1));
-  const all = hide ? state.films.slice().sort((a, b) => a.title.localeCompare(b.title, "de")) : ranked;
+  // Ausgeblendet: Top 3 (mit Krone) zuerst, der Rest alphabetisch – so verrät die Reihenfolge nichts weiter
+  const podiumIds = new Set(ranked.filter(f => f.votes > 0).slice(0, 3).map(f => f.id));
+  const all = hide
+    ? [...ranked.filter(f => podiumIds.has(f.id)),
+       ...state.films.filter(f => !podiumIds.has(f.id)).sort((a, b) => a.title.localeCompare(b.title, "de"))]
+    : ranked;
 
   const q = norm(state.q);
   const items = all.filter(f => !q || [f.title, f.original_title, f.title_en].some(x => norm(x).includes(q)) || String(f.year || "").includes(q));
@@ -805,11 +803,11 @@ function render() {
     }
     existing.delete(f.id);
     const r = ranks.get(f.id);
-    const podium = !hide && f.votes > 0;
+    const podium = f.votes > 0;
     li.classList.toggle("top", podium && r <= 3);
     li.classList.toggle("crowned", podium && r <= 3);
     [1, 2, 3].forEach(n => li.classList.toggle("top" + n, podium && r === n));
-    li.querySelector(".rank").textContent = r;
+    li.querySelector(".rank").textContent = hide ? "" : r;
     li.querySelector(".title").textContent = f.title;
     li.querySelector(".year").textContent = f.year ? `(${f.year})` : "";
     const note = li.querySelector(".note");
@@ -855,7 +853,7 @@ function renderTeam() {
   $("#teambar").classList.toggle("show", state.isAdmin);
   const card = $("#pendingCard");
   card.hidden = !state.isAdmin;
-  $("#importCard").hidden = !state.isAdmin;
+  renderWheel();
   $("#votesToggle").textContent = state.showVotes ? "👁 Stimmen: sichtbar" : "🙈 Stimmen: ausgeblendet";
   if (!state.isAdmin) return;
   $("#pendCount").textContent = state.pending.length;
@@ -875,19 +873,57 @@ function renderTeam() {
     </li>`).join("");
 }
 
+function renderWheel() {
+  const card = $("#wheelCard");
+  card.hidden = !state.isAdmin;
+  if (!state.isAdmin) return;
+  [...$("#wheelSlots").children].forEach((d, i) => d.classList.toggle("on", i < state.wheel.length));
+  const list = $("#wheelList");
+  if (!state.wheel.length) { list.innerHTML = `<li class="pend-empty">Gerade ist kein Community-Film auf dem Rad.</li>`; return; }
+  list.innerHTML = state.wheel.map(f => `
+    <li class="wheel-item" data-id="${esc(f.id)}">
+      ${posterHTML(f.poster_path, f.title, "w92")}
+      <div><div><span class="title">${esc(f.title)}</span>${f.year ? `<span class="year">(${f.year})</span>` : ""}</div>
+        <div class="added">aufs Rad gekommen ${ago(f.on_wheel_at)} · ${f.votes} ${f.votes === 1 ? "Stimme" : "Stimmen"}</div>
+        <div class="actions">
+          <button type="button" class="mini ok" data-wact="discuss">✓ Besprochen</button>
+          <button type="button" class="mini" data-wact="back">↩ Zurück auf die Liste</button>
+        </div></div>
+    </li>`).join("");
+}
+const episodeFields = [
+  { name: "episode", label: "Folge", placeholder: "z. B. Folge 25", optional: true, max: 60 },
+  { name: "episode_url", label: "Link zur Folge", type: "url", placeholder: "https://…", optional: true },
+];
+function checkUrl(v) {
+  if (v.episode_url && !/^https:\/\//.test(v.episode_url)) { toast("Der Link muss mit https:// beginnen.", true); return false; }
+  return true;
+}
+$("#wheelList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-wact]"); if (!b) return;
+  const id = b.closest(".wheel-item").dataset.id, f = state.wheel.find(x => x.id === id); if (!f) return;
+  if (b.dataset.wact === "back") { teamDo(() => api.offWheel(id), `„${f.title}“ ist wieder auf der Liste.`); return; }
+  const v = await dialog({ title: `„${f.title}“ besprochen`, confirm: "Ins Backlog",
+    text: "Der Film verlässt das Rad und landet im Backlog. Folge und Link könnt ihr auch später in Supabase nachtragen.", fields: episodeFields });
+  if (!v || !checkUrl(v)) return;
+  teamDo(() => api.discuss(id, { episode: v.episode || null, episode_url: v.episode_url || null }), `„${f.title}“ ist im Backlog.`);
+});
+
 // Kleiner Dialog statt alert/confirm/prompt
 function dialog({ title, text = "", fields = [], confirm = "OK", danger = false }) {
   const back = $("#modalBack"), m = $("#modal");
   m.innerHTML = `<h3 id="mTitle"></h3>${text ? "<p></p>" : ""}
     ${fields.map((f, i) => `<div class="field"><label for="mf${i}">${esc(f.label)}${f.optional ? ' <span class="opt">(optional)</span>' : ""}</label>
-      <input id="mf${i}" name="${f.name}" type="${f.type || "text"}" ${f.max ? `maxlength="${f.max}"` : ""} ${f.type === "number" ? 'inputmode="numeric"' : ""}
-        placeholder="${esc(f.placeholder || "")}" autocomplete="${f.autocomplete || "off"}"></div>`).join("")}
+      ${f.type === "select"
+        ? `<select id="mf${i}" name="${f.name}">${f.options.map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("")}</select>`
+        : `<input id="mf${i}" name="${f.name}" type="${f.type || "text"}" ${f.max ? `maxlength="${f.max}"` : ""} ${f.type === "number" ? 'inputmode="numeric"' : ""}
+        placeholder="${esc(f.placeholder || "")}" autocomplete="${f.autocomplete || "off"}">`}</div>`).join("")}
     <div class="err" id="mErr"></div>
     <div class="row"><button type="button" class="btn ghost" data-x>Abbrechen</button><button type="submit" class="btn" ${danger ? 'style="background:var(--red-deep)"' : ""}></button></div>`;
   m.querySelector("h3").textContent = title;
   if (text) m.querySelector("p").textContent = text;
   m.querySelector("[type=submit]").textContent = confirm;
-  fields.forEach((f, i) => { m.querySelector("#mf" + i).value = f.value ?? ""; });
+  fields.forEach((f, i) => { if (f.value != null || f.type !== "select") m.querySelector("#mf" + i).value = f.value ?? ""; });
   back.classList.add("show");
   setTimeout(() => (m.querySelector("input") || m.querySelector("[type=submit]")).focus(), 30);
   return new Promise(resolve => {
@@ -931,13 +967,21 @@ async function onAdminAction(e) {
   const act = e.currentTarget.dataset.act, id = e.currentTarget.closest(".film").dataset.id;
   const f = state.films.find(x => x.id === id); if (!f) return;
   if (act === "wheel") {
-    const v = await dialog({ title: `„${f.title}“ aufs Rad`, confirm: "Aufs Rad",
-      text: "Der Film verschwindet von der Liste und landet in eurem Backlog. Folge und Link könnt ihr jetzt oder später in Supabase eintragen.",
-      fields: [{ name: "episode", label: "Folge", placeholder: "z. B. Folge 25", optional: true, max: 60 },
-               { name: "episode_url", label: "Link zur Folge", type: "url", placeholder: "https://…", optional: true }] });
-    if (!v) return;
-    if (v.episode_url && !/^https:\/\//.test(v.episode_url)) { toast("Der Link muss mit https:// beginnen.", true); return; }
-    teamDo(() => api.toWheel(id, { episode: v.episode || null, episode_url: v.episode_url || null }), `„${f.title}“ ist aufs Rad gewandert.`);
+    if (state.wheel.length < 2) {
+      teamDo(() => api.toWheel(id), `„${f.title}“ ist jetzt auf dem Rad.`);
+      return;
+    }
+    // Rad ist voll: einer der beiden muss besprochen worden sein
+    const v = await dialog({ title: "Das Rad ist voll", confirm: `„${f.title}“ aufs Rad`,
+      text: `Auf dem Rad sind schon zwei Community-Filme. Welcher wurde besprochen? Er wandert ins Backlog, „${f.title}“ nimmt seinen Platz ein.`,
+      fields: [{ name: "done", label: "Besprochen wurde", type: "select", options: state.wheel.map(w => ({ value: w.id, label: w.title })) },
+               ...episodeFields] });
+    if (!v || !checkUrl(v)) return;
+    const old = state.wheel.find(w => w.id === v.done);
+    teamDo(async () => {
+      await api.discuss(v.done, { episode: v.episode || null, episode_url: v.episode_url || null });
+      await api.toWheel(id);
+    }, `„${old?.title}“ ist im Backlog, „${f.title}“ auf dem Rad.`);
   } else if (act === "edit") {
     const v = await dialog({ title: "Film bearbeiten", confirm: "Speichern", fields: editFields(f) });
     if (!v) return;
@@ -984,71 +1028,6 @@ $("#votesToggle").addEventListener("click", () => {
   teamDo(() => api.setShowVotes(v), v ? "Stimmen sind wieder für alle sichtbar." : "Stimmen sind jetzt für Besucher ausgeblendet.");
 });
 
-/* ---------------- Import (Team) ---------------- */
-let impRows = [];
-function parseImport(text) {
-  return text.split(/\n+/).map(l => l.trim()).filter(Boolean).map(line => {
-    const m = line.match(/^(.*?)(?:\s*\((\d{4})\))?\s*(?:[–—-]\s*(\d+))?\s*$/);
-    return { line, title: (m?.[1] || line).trim(), year: m?.[2] ? +m[2] : null, votes: m?.[3] ? +m[3] : 0 };
-  }).filter(r => r.title);
-}
-function renderImport() {
-  const list = $("#impList");
-  list.innerHTML = impRows.map((r, i) => {
-    const m = r.match;
-    const shown = m ? m.title : r.title;
-    const sub = r.dupe ? `<span class="warn">Schon auf der Liste – wird übersprungen</span>`
-      : m ? esc([m.year, m.title_en && m.title_en !== m.title ? m.title_en : ""].filter(Boolean).join(" · ")) + (r.year && m.year && m.year !== r.year ? ` <span class="warn">(Jahr weicht ab: ${r.year})</span>` : "")
-      : `<span class="warn">Kein TMDB-Treffer – wird ohne Cover übernommen</span>`;
-    return `<li class="imp-item${r.on ? "" : " off"}"><input type="checkbox" data-i="${i}" ${r.on ? "checked" : ""} ${r.dupe ? "disabled" : ""} aria-label="${esc(shown)} importieren">
-      ${posterHTML(m?.poster, shown, "w92")}
-      <div><div class="t">${esc(shown)}</div><div class="s">${sub}</div></div>
-      <span class="n">${r.votes} ${r.votes === 1 ? "Stimme" : "Stimmen"}</span></li>`;
-  }).join("");
-  const n = impRows.filter(r => r.on).length;
-  $("#impGoRow").hidden = !impRows.length;
-  $("#impGo").textContent = `${n} ${n === 1 ? "Film" : "Filme"} importieren`;
-  $("#impGo").disabled = !n;
-}
-$("#impList").addEventListener("change", e => {
-  const i = e.target.dataset.i; if (i == null) return;
-  impRows[+i].on = e.target.checked; renderImport();
-});
-$("#impCheck").addEventListener("click", async () => {
-  impRows = parseImport($("#impText").value);
-  if (!impRows.length) { toast("Bitte zuerst die Liste einfügen.", true); return; }
-  const btn = $("#impCheck"); btn.disabled = true;
-  for (let i = 0; i < impRows.length; i++) {
-    const r = impRows[i];
-    $("#impStatus").textContent = `Gleiche ab … ${i + 1}/${impRows.length}`;
-    let res = [];
-    if (tmdbOn && !tmdbBroken) { try { res = await api.search(r.title); } catch (e) { console.warn(e); } }
-    r.match = (r.year && res.find(m => m.year === r.year)) || (r.year ? res.find(m => Math.abs((m.year || 0) - r.year) <= 1) : null) || res[0] || null;
-    r.dupe = !!findDupe(r.match ? r.match.title : r.title, r.match?.tmdb_id, r.match?.year ?? r.year);
-    r.on = !r.dupe;
-  }
-  $("#impStatus").textContent = "Bitte prüfen: Häkchen weg bei falschen Treffern.";
-  btn.disabled = false;
-  renderImport();
-});
-$("#impGo").addEventListener("click", async () => {
-  const rows = impRows.filter(r => r.on);
-  const btn = $("#impGo"); btn.disabled = true; busy++;
-  let ok = 0; const failed = [];
-  for (const r of rows) {
-    const m = r.match;
-    const film = m ? { title: m.title, year: m.year, tmdb_id: m.tmdb_id, poster_path: m.poster, original_title: m.original_title || null, title_en: m.title_en || null }
-                   : { title: r.title, year: r.year };
-    $("#impStatus").textContent = `Importiere … ${ok + failed.length + 1}/${rows.length}`;
-    try { await api.importFilm(film, r.votes); ok++; }
-    catch (e) { console.error(e); failed.push(r.title); }
-  }
-  busy--;
-  impRows = []; renderImport(); $("#impText").value = "";
-  $("#impStatus").textContent = failed.length ? `Nicht importiert: ${failed.join(", ")}` : "";
-  toast(`${ok} ${ok === 1 ? "Film" : "Filme"} importiert${failed.length ? `, ${failed.length} fehlgeschlagen` : ""}.`, !!failed.length);
-  refresh();
-});
 
 $("#logoutBtn").addEventListener("click", async () => {
   await api.logout(); Object.assign(state, await api.load()); render(); toast("Abgemeldet.");
@@ -1093,7 +1072,8 @@ async function onVote(e) {
 
 // Gibt es den Film schon? (offen oder besprochen)
 function findDupe(title, tmdb_id, year) {
-  const pool = [...state.films.map(f => ({ ...f, _done: false })), ...state.done.map(f => ({ ...f, _done: true }))];
+  const pool = [...state.films.map(f => ({ ...f, _done: false })), ...state.wheel.map(f => ({ ...f, _wheel: true })),
+                ...state.done.map(f => ({ ...f, _done: true }))];
   if (tmdb_id) { const hit = pool.find(f => f.tmdb_id === tmdb_id); if (hit) return hit; }
   const n = norm(title); if (n.length < 2) return null;
   return pool.find(f => [f.title, f.original_title, f.title_en].some(x => x && norm(x) === n) && (!year || !f.year || f.year === year)) || null;
@@ -1105,7 +1085,11 @@ function checkDupe() {
   box.innerHTML = "";
   if (!d) { box.classList.remove("show"); return; }
   const span = document.createElement("span");
-  if (d._done) {
+  if (d._wheel) {
+    span.innerHTML = `<b></b> ist gerade auf dem Glücksrad – Daumen drücken!`;
+    span.querySelector("b").textContent = d.title;
+    box.appendChild(span);
+  } else if (d._done) {
     span.innerHTML = `<b></b> haben wir schon besprochen${d.episode ? " (" + esc(d.episode) + ")" : ""}.`;
     span.querySelector("b").textContent = d.title;
     box.appendChild(span);
@@ -1157,7 +1141,8 @@ function acRender(msg) {
     acList.innerHTML = acItems.map((m, i) => {
       const d = findDupe(m.title, m.tmdb_id, m.year);
       let tag = "";
-      if (d && d._done) {
+      if (d && d._wheel) tag = `<span class="tag done">Gerade auf dem Rad</span>`;
+      else if (d && d._done) {
         const label = d.episode ? `Besprochen in ${esc(d.episode)}` : "Besprochen";
         tag = /^https:\/\//.test(d.episode_url || "")
           ? `<a class="tag done link" href="${esc(d.episode_url)}" target="_blank" rel="noopener" title="Folge anhören">${label}${linkIcon}</a>`
@@ -1246,6 +1231,7 @@ $("#suggestForm").addEventListener("submit", async e => {
   const year = p?.year ?? null;   // Jahr kommt nur noch von TMDB
 
   const d = findDupe(title, p?.tmdb_id, year);
+  if (d && d._wheel) { toast(`„${d.title}“ ist gerade auf dem Glücksrad.`); return; }
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + d.episode : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
 
