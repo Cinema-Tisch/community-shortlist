@@ -1675,6 +1675,7 @@ addEventListener("resize", () => { if (caseState.layer) closeCase(); });
 /* ---------------- Top 10 + Aufklappen ---------------- */
 const TOP_N = 10;
 let expanded = false, foldAnim = null;   // foldAnim: laufender requestAnimationFrame
+const bgShift = { body: 0, cx: 0, cy: 0 };  // Gegenverschiebung von Holz und Karomuster beim Zuklappen
 function updateFold() {
   const wrap = $("#listWrap"), btn = $("#moreBtn"), list = $("#list");
   const lis = [...list.children].filter(li => li.classList.contains("film"));
@@ -1702,32 +1703,48 @@ function setExpanded(v, animate = true) {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const from = list.getBoundingClientRect().height;
   if (foldAnim) { cancelAnimationFrame(foldAnim); foldAnim = null; }
+  // Alles messen, BEVOR eingeklappt wird – sonst rechnet der Browser die Seite schon kürzer und springt nach oben
+  const btnTop = $("#moreBtn").getBoundingClientRect().top;
+  const keepPlace = !v && btnTop > 0 && btnTop < innerHeight;
+  const cloth = $(".cloth");
+  const tf = getComputedStyle(cloth).transform;
+  const inv = (tf && tf !== "none" ? new DOMMatrix(tf) : new DOMMatrix()).inverse();
   expanded = v; updateFold();
   if (!animate || reduce) { wrap.classList.remove("anim"); list.style.height = ""; return; }
   const to = expanded ? list.scrollHeight : parseFloat(list.style.maxHeight);
   const dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;   // sanft an- und auslaufen
-  // Beim Zuklappen wird nicht mitgescrollt: Die Seite schrumpft als Ganzes (Holz, Tischdecke, Karten bewegen sich gemeinsam).
-  // Steht man ganz unten, bleibt man unten. Die automatische Scroll-Verankerung des Browsers ist dabei aus,
-  // sonst schiebt sie die Seite zusätzlich nach oben.
-  const btn = $("#moreBtn");
-  const btnBefore = btn.getBoundingClientRect().top;
+  // Beim Zuklappen bleibt das sichtbare Bild stehen (Pfeil, Karten darunter, Holz und Karomuster),
+  // nur der obere Teil der Liste rückt von oben nach. Dafür scrollt die Seite im Gleichschritt mit,
+  // und Holz und Tischdecken-Muster werden um genau diese Strecke gegenverschoben.
   const html = document.documentElement, sb = html.style.scrollBehavior, oa = html.style.overflowAnchor;
-  html.style.scrollBehavior = "auto"; html.style.overflowAnchor = "none";
+  html.style.scrollBehavior = "auto";
+  html.style.overflowAnchor = "none";   // sonst korrigiert der Browser zusätzlich und schiebt die Seite zu weit
   wrap.classList.add("anim");
   list.style.height = from + "px";
+  let prev = from;
   const t0 = performance.now();
   const step = now => {
     const p = Math.min(1, (now - t0) / dur);
     const h = from + (to - from) * ease(p);
+    const y0 = scrollY;                               // vor dem Verkleinern lesen (ganz unten kürzt der Browser sonst selbst)
     list.style.height = h + "px";
+    if (keepPlace) {
+      window.scrollTo(0, y0 + (h - prev));
+      const s = y0 - scrollY;                       // so weit ist der Inhalt oben auf dem Bildschirm nach unten gerückt
+      if (s) {
+        bgShift.body -= s;
+        // Tischdecke ist leicht gedreht: Verschiebung in ihre eigenen Achsen umrechnen
+        const a = inv.transformPoint(new DOMPoint(0, -s)), o = inv.transformPoint(new DOMPoint(0, 0));
+        bgShift.cx += a.x - o.x; bgShift.cy += a.y - o.y;
+        document.body.style.backgroundPosition = `0 ${bgShift.body}px`;
+        cloth.style.backgroundPosition = `${bgShift.cx}px ${bgShift.cy}px`;
+      }
+    }
+    prev = h;
     if (p < 1) { foldAnim = requestAnimationFrame(step); return; }
     foldAnim = null; list.style.height = ""; wrap.classList.remove("anim");
     html.style.scrollBehavior = sb; html.style.overflowAnchor = oa;
-    // War der Pfeil vorher zu sehen und ist jetzt oben aus dem Bild gerutscht: sanft zurückholen
-    const top = btn.getBoundingClientRect().top;
-    if (!expanded && btnBefore > 0 && btnBefore < innerHeight && top < 60)
-      window.scrollBy({ top: top - Math.min(btnBefore, innerHeight * 0.7), behavior: "smooth" });
   };
   foldAnim = requestAnimationFrame(step);
 }
