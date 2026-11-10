@@ -190,6 +190,7 @@ ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .list-wrap.foldable{padding-bottom:52px}
 .list-wrap.ready.foldable{transition:padding-bottom .5s ease}   /* erst nach dem Laden, sonst wächst die Seite beim Öffnen sichtbar nach */
 .list-wrap.sliding,.list-wrap.sliding::after{transition:none !important}
+.list-wrap.sliding{display:flow-root;margin-top:-10px}   /* Zuklappen: Rahmen um die Liste, ohne dass sich das Layout verschiebt */
 .list-wrap.collapsed{padding-bottom:36px}
 .list-wrap.foldable ol.films{margin:-10px;padding:10px}
 .list-wrap.collapsed ol.films,.list-wrap.anim ol.films{overflow:hidden}
@@ -1756,6 +1757,13 @@ function slideCollapse() {
   const to = parseFloat(list.style.maxHeight);
   // Liste hat schon ihre Endhöhe, zeigt aber vorerst alles; abgeschnitten wird gleich an der Kante
   list.style.maxHeight = "none"; list.style.height = to + "px"; list.style.overflow = "visible";
+  // Feste Kante: Die Liste kommt vorübergehend in einen Rahmen, der selbst NICHT mitgleitet und unten an der
+  // Kante abschneidet. Nach oben und zur Seite reicht sein Ausschnitt weit hinaus (Polster + gleich großer
+  // negativer Rand), damit die Filme dort sichtbar bleiben. Am Layout ändert der Rahmen nichts.
+  const N = Math.ceil(from + innerHeight);
+  const clip = document.createElement("div");
+  clip.style.cssText = `overflow:hidden;margin:-${N}px -60px -10px;padding:${N + 10}px 60px 10px`;
+  list.before(clip); clip.appendChild(list);
   // Einmal hochscrollen, dann auf den Pixel nachjustieren
   window.scrollTo(0, y0 - (from - to));
   window.scrollTo(0, scrollY + (bottom() - b0));
@@ -1773,8 +1781,6 @@ function slideCollapse() {
   // Alles oberhalb der Kante optisch zurück an die alte Stelle, dann nach unten gleiten lassen
   const dist = Math.abs(from - to);
   const timing = { duration: Math.min(900, 450 + dist * 0.25), easing: "cubic-bezier(.45,0,.2,1)" };
-  // Verschiebung der Liste VOR dem Start der Animationen messen (danach enthält die Position schon die Verschiebung)
-  const rest = before[movers.length - 1][1] - pos(list)[1];
   const anims = movers.map((el, i) => {
     const now = pos(el);
     const dx = before[i][0] - now[0], dy = before[i][1] - now[1];
@@ -1783,13 +1789,12 @@ function slideCollapse() {
     const [lx, ly] = el.parentElement === cloth ? local(dx, dy) : [dx, dy];
     return el.animate([{ translate: `${lx}px ${ly}px` }, { translate: "0px 0px" }], timing);
   }).filter(Boolean);
-  // Die Liste wird an der festen Kante abgeschnitten: ihr Ausschnitt wandert gegenläufig zur Verschiebung mit
-  anims.push(list.animate([{ clipPath: `inset(-100000px -60px ${rest}px -60px)` }, { clipPath: "inset(-100000px -60px 0px -60px)" }], timing));
 
   let done = false;
   const finish = () => {
     if (done) return; done = true;
     anims.forEach(a => a.cancel());
+    clip.before(list); clip.remove();
     list.style.height = ""; list.style.overflow = "";
     wrap.classList.remove("sliding");
     html.style.scrollBehavior = sb; html.style.overflowAnchor = oa;
