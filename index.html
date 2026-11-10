@@ -191,9 +191,10 @@ ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .list-wrap.ready.foldable{transition:padding-bottom .5s ease}   /* erst nach dem Laden, sonst wächst die Seite beim Öffnen sichtbar nach */
 .list-wrap.sliding,.list-wrap.sliding::after{transition:none !important}
 .list-wrap.sliding{display:flow-root;margin-top:-10px}
-/* Ausblendverlauf immer über den Filmen – Safari legt die gleitende Liste sonst als eigene Ebene darüber */
 .list-wrap.foldable::after{z-index:1}
-.list-wrap.sliding::after{will-change:transform}   /* Zuklappen: Rahmen um die Liste, ohne dass sich das Layout verschiebt */
+/* Beim Zuklappen übernimmt eine Maske am Rahmen das Ausblenden (Safari legt die gleitende Liste sonst über den Verlauf) */
+.list-wrap.sliding::after{opacity:0}
+.list-wrap.nofade::after{transition:none !important}   /* Zuklappen: Rahmen um die Liste, ohne dass sich das Layout verschiebt */
 .list-wrap.collapsed{padding-bottom:36px}
 .list-wrap.foldable ol.films{margin:-10px;padding:10px}
 .list-wrap.collapsed ol.films,.list-wrap.anim ol.films{overflow:hidden}
@@ -1767,6 +1768,11 @@ function slideCollapse() {
   const clip = document.createElement("div");
   clip.style.cssText = `overflow:hidden;margin:-${N}px -60px -10px;padding:${N + 10}px 60px 10px`;
   list.before(clip); clip.appendChild(list);
+  // Ausblenden an der Kante per Maske – gleiche Verlaufsstufen wie der normale Verlauf
+  const F = parseFloat(wrap.style.getPropertyValue("--fade")) || 70;
+  const at = k => `calc(100% - ${F - 2}px + ${(k * F).toFixed(1)}px)`;
+  const mask = `linear-gradient(to bottom, #000 ${at(0)}, rgba(0,0,0,.65) ${at(.35)}, rgba(0,0,0,.2) ${at(.55)}, transparent ${at(.78)})`;
+  clip.style.webkitMaskImage = mask; clip.style.maskImage = mask;
   // Einmal hochscrollen, dann auf den Pixel nachjustieren
   window.scrollTo(0, y0 - (from - to));
   window.scrollTo(0, scrollY + (bottom() - b0));
@@ -1799,7 +1805,9 @@ function slideCollapse() {
     anims.forEach(a => a.cancel());
     clip.before(list); clip.remove();
     list.style.height = ""; list.style.overflow = "";
+    wrap.classList.add("nofade");                    // normaler Verlauf sofort da, ohne Einblenden
     wrap.classList.remove("sliding");
+    requestAnimationFrame(() => requestAnimationFrame(() => wrap.classList.remove("nofade")));
     html.style.scrollBehavior = sb; html.style.overflowAnchor = oa;
     foldAnim = null; updateFold();
   };
