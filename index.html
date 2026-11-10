@@ -598,6 +598,9 @@ function demoBackend() {
     15: ["花樣年華", "In the Mood for Love"], 18: ["Anatomie d'une chute", "Anatomy of a Fall"],
     101: ["ゴジラ", "Godzilla"], 103: ["ゴジラ-1.0", "Godzilla Minus One"], 104: ["Weapons", "Weapons"] };
   catalog.forEach(c => { if (alt[c.tmdb_id]) [c.original_title, c.title_en] = alt[c.tmdb_id]; });
+  catalog.forEach(c => { c.tmdb_type = "movie"; });
+  const tvCatalog = [{ tmdb_id: 317152, tmdb_type: "tv", title: "Mesut Özil – Zu Gast bei Freunden", original_title: "Mesut Özil – Zu Gast bei Freunden",
+    title_en: "Mesut Özil – Zu Gast bei Freunden", year: null, poster: null }];
   const mk = (i, note, votes, hAgo, extra = {}) => ({
     id: "d" + i, title: catalog[i - 1].title, year: catalog[i - 1].year, tmdb_id: i, poster_path: null,
     original_title: catalog[i - 1].original_title, title_en: catalog[i - 1].title_en,
@@ -611,6 +614,8 @@ function demoBackend() {
     mk(12, null, 11, 600, { discussed_at: new Date(now - 20 * day).toISOString().slice(0, 10), episode: "Folge 22" }),
     { id: "b1", title: "Godzilla", year: null, tmdb_id: null, poster_path: null, note: null, votes: 0,
       created_at: new Date(now - 900 * h).toISOString(), discussed_at: new Date(now - 14 * day).toISOString().slice(0, 10), episode: "Folge 60" },
+    { id: "b3", title: "Mesut Özil – Zu Gast bei Freunden", year: null, tmdb_id: null, poster_path: null, note: null, votes: 0,
+      created_at: new Date(now - 990 * h).toISOString(), discussed_at: new Date(now - 200 * day).toISOString().slice(0, 10), episode: "Folge 46" },
     { id: "b2", title: "Weapons", year: null, tmdb_id: null, poster_path: null, note: null, votes: 0,
       created_at: new Date(now - 990 * h).toISOString(), discussed_at: new Date(now - 450 * day).toISOString().slice(0, 10), episode: "Folge 29" },
     mk(16, null, 9, 900, { discussed_at: new Date(now - 34 * day).toISOString().slice(0, 10), episode: "Folge 20" }),
@@ -664,10 +669,11 @@ function demoBackend() {
       if (!on && mine.has(id)) { mine.delete(id); f.votes--; }
       emit();
     },
-    async search(q) {
+    async search(q, opts = {}) {
       await new Promise(r => setTimeout(r, 150));
       const n = norm(q);
-      return catalog.filter(c => [c.title, c.original_title, c.title_en].some(x => norm(x).includes(n))).slice(0, 6);
+      const pool = opts.tv ? [...catalog, ...tvCatalog] : catalog;
+      return pool.filter(c => [c.title, c.original_title, c.title_en].some(x => norm(x).includes(n))).slice(0, 8);
     },
     subscribe(cb) { listener = cb; setLive("demo"); },
   };
@@ -690,7 +696,7 @@ function supabaseBackend() {
     }).finally(() => { signingIn = null; });
     return signingIn;
   }
-  const cols = "id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,votes,last_vote_at";
+  const cols = "id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,votes,last_vote_at";
   return {
     mode: "live",
     async init() {
@@ -709,12 +715,12 @@ function supabaseBackend() {
     async load() {
       const [r1, r2, r3, r4, r5, r6] = await Promise.all([
         sb.from("film_ranking").select(cols),
-        sb.from("film_discussed").select("id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
+        sb.from("film_discussed").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
         admin ? sb.from("films").select("id,title,year,note,tmdb_id,poster_path,created_at").eq("status", "pending").order("created_at")
               : Promise.resolve({ data: [], error: null }),
         sb.from("settings").select("show_votes").eq("id", 1).maybeSingle(),
-        sb.from("film_wheel").select("id,title,year,note,tmdb_id,poster_path,created_at,original_title,title_en,on_wheel_at,votes").order("on_wheel_at"),
+        sb.from("film_wheel").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,on_wheel_at,votes").order("on_wheel_at"),
       ]);
       for (const r of [r1, r2, r3, r4, r6]) if (r.error) throw r.error;
       const showVotes = r5.error || !r5.data ? true : r5.data.show_votes !== false;   // fehlt die Tabelle: Stimmen zeigen
@@ -756,9 +762,9 @@ function supabaseBackend() {
       const { error } = await q;
       if (error && error.code !== "23505") throw error;
     },
-    async search(q) {
+    async search(q, opts = {}) {
       await ensureUser();
-      const { data, error } = await sb.functions.invoke("tmdb-search", { body: { q } });
+      const { data, error } = await sb.functions.invoke("tmdb-search", { body: { q, tv: !!opts.tv } });
       if (error) throw error;
       return Array.isArray(data) ? data : [];
     },
@@ -918,7 +924,7 @@ function renderLink() {
   const list = $("#linkList");
   list.innerHTML = linkRows.map((r, i) => {
     const sel = r.choice >= 0 ? r.cands[r.choice] : null;
-    const opts = r.cands.map((c, j) => `<option value="${j}" ${j === r.choice ? "selected" : ""}>${esc(c.title)}${c.year ? ` (${c.year})` : ""}${c.title_en && c.title_en !== c.title ? ` · ${esc(c.title_en)}` : ""}</option>`).join("");
+    const opts = r.cands.map((c, j) => `<option value="${j}" ${j === r.choice ? "selected" : ""}>${esc(c.title)}${c.year ? ` (${c.year})` : ""}${c.title_en && c.title_en !== c.title ? ` · ${esc(c.title_en)}` : ""}${c.tmdb_type === "tv" ? " · Serie" : ""}</option>`).join("");
     return `<li class="link-item${sel ? "" : " none"}">
       ${posterHTML(sel?.poster, sel ? sel.title : r.film.title, "w92")}
       <div><div class="src">${esc(r.film.title)}${r.film.year ? ` (${r.film.year})` : ""} · ${esc(r.film.episode || "")}</div>
@@ -937,7 +943,7 @@ $("#linkList").addEventListener("click", async e => {
   if (!v) return;
   b.disabled = true;
   let res = [];
-  try { res = await api.search(v.q); } catch (err) { console.warn(err); }
+  try { res = await api.search(v.q, { tv: true }); } catch (err) { console.warn(err); }
   b.disabled = false;
   if (!res.length) { toast(`Keine TMDB-Treffer für „${v.q}“.`, true); return; }
   // neue Treffer nach oben, bisherige dahinter (ohne Doppelte)
@@ -962,7 +968,7 @@ $("#linkLoad").addEventListener("click", async () => {
     while (k < todo.length) {
       const film = todo[k++];
       let cands = [];
-      try { cands = await api.search(film.title); } catch (e) { console.warn(e); }
+      try { cands = await api.search(film.title, { tv: true }); } catch (e) { console.warn(e); }
       let choice = cands.length ? 0 : -1;
       if (film.year) { const j = cands.findIndex(c => c.year === film.year); choice = j; }   // Jahr bekannt: nur exakter Treffer vorauswählen
       linkRows.push({ film, cands, choice });
@@ -981,7 +987,7 @@ $("#linkSave").addEventListener("click", async () => {
   for (const r of rows) {
     const c = r.cands[r.choice];
     try {
-      await api.link(r.film.id, { tmdb_id: c.tmdb_id, poster_path: c.poster || null, year: c.year || null,
+      await api.link(r.film.id, { tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null, year: c.year || null,
         title: c.title, original_title: c.original_title || null, title_en: c.title_en || null });
       ok++;
     } catch (e) {
@@ -1200,13 +1206,13 @@ async function onVote(e) {
 // 2. TMDB-Vorschlag gegen Eintrag OHNE Nummer: nur bei gleichem Titel UND gleichem Jahr
 //    (sonst würde z. B. „Godzilla“ ohne Jahr jeden Godzilla-Film blockieren).
 // 3. Frei getippter Titel: Titelvergleich wie gehabt.
-function findDupe(title, tmdb_id, year, alts = []) {
+function findDupe(title, tmdb_id, year, alts = [], type = "movie") {
   const pool = [...state.films.map(f => ({ ...f, _done: false })), ...state.wheel.map(f => ({ ...f, _wheel: true })),
                 ...state.done.map(f => ({ ...f, _done: true }))];
   const names = [title, ...alts].filter(Boolean).map(norm).filter(n => n.length >= 2);
   const sameTitle = f => [f.title, f.original_title, f.title_en].some(x => x && names.includes(norm(x)));
   if (tmdb_id) {
-    return pool.find(f => f.tmdb_id === tmdb_id)
+    return pool.find(f => f.tmdb_id === tmdb_id && (f.tmdb_type || "movie") === (type || "movie"))
         || pool.find(f => !f.tmdb_id && f.year && year && f.year === year && sameTitle(f))
         || null;
   }
@@ -1216,7 +1222,7 @@ function findDupe(title, tmdb_id, year, alts = []) {
 function checkDupe() {
   const box = $("#dupe");
   const p = state.picked;
-  const d = p ? findDupe(p.title, p.tmdb_id, p.year, [p.original_title, p.title_en]) : findDupe($("#fTitle").value, null, null);
+  const d = p ? findDupe(p.title, p.tmdb_id, p.year, [p.original_title, p.title_en], p.tmdb_type) : findDupe($("#fTitle").value, null, null);
   box.innerHTML = "";
   if (!d) { box.classList.remove("show"); return; }
   const span = document.createElement("span");
@@ -1274,7 +1280,7 @@ function acRender(msg) {
   if (msg) { acList.innerHTML = `<li class="msg">${esc(msg)}</li>`; }
   else {
     acList.innerHTML = acItems.map((m, i) => {
-      const d = findDupe(m.title, m.tmdb_id, m.year, [m.original_title, m.title_en]);
+      const d = findDupe(m.title, m.tmdb_id, m.year, [m.original_title, m.title_en], m.tmdb_type);
       let tag = "";
       if (d && d._wheel) tag = `<span class="tag done">Gerade auf dem Rad</span>`;
       else if (d && d._done) {
@@ -1365,7 +1371,7 @@ $("#suggestForm").addEventListener("submit", async e => {
   if (!title) { fTitle.focus(); toast("Welcher Film soll's denn sein?", true); return; }
   const year = p?.year ?? null;   // Jahr kommt nur noch von TMDB
 
-  const d = findDupe(title, p?.tmdb_id, year, [p?.original_title, p?.title_en]);
+  const d = findDupe(title, p?.tmdb_id, year, [p?.original_title, p?.title_en], p?.tmdb_type);
   if (d && d._wheel) { toast(`„${d.title}“ ist gerade auf dem Glücksrad.`); return; }
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + d.episode : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
