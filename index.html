@@ -49,14 +49,18 @@ body{
   max-width:760px;margin:96px auto 0;
   padding:120px 30px 34px;
   background-color:var(--cream);
+  /* Karomuster als feste Kacheln, verankert links oben: verrutscht nicht, wenn sich die Höhe ändert */
   background-image:
-    repeating-linear-gradient(45deg, rgba(0,0,0,.035) 0 1px, transparent 1px 5px),
-    repeating-linear-gradient(0deg, var(--red-check) 0 24px, transparent 24px 48px),
-    repeating-linear-gradient(90deg, var(--red-check) 0 24px, transparent 24px 48px);
+    linear-gradient(45deg, rgba(0,0,0,.035) 0 14%, transparent 14% 50%, rgba(0,0,0,.035) 50% 64%, transparent 64%),
+    linear-gradient(180deg, var(--red-check) 0 50%, transparent 50%),
+    linear-gradient(90deg, var(--red-check) 0 50%, transparent 50%);
+  background-size:7px 7px, 48px 48px, 48px 48px;
+  background-position:0 0;
   border:4px solid var(--line);
   border-radius:var(--radius-wobbly);
   box-shadow: 0 2px 0 rgba(255,255,255,.15) inset, 10px 14px 0 rgba(15,10,6,.35), 0 30px 60px rgba(0,0,0,.35);
   transform:rotate(-.6deg);
+  transform-origin:0 0;   /* links oben drehen: Muster bleibt stehen, wenn sich Höhe oder Breite ändern */
 }
 .cloth > *{transform:rotate(.6deg)}
 
@@ -244,10 +248,7 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
   body{padding:14px 8px 28px}
   .cloth{margin-top:78px;padding:96px 12px 18px;transform:none;border-width:3px}
   .cloth > *{transform:none}
-  .cloth{background-image:
-    repeating-linear-gradient(45deg, rgba(0,0,0,.035) 0 1px, transparent 1px 5px),
-    repeating-linear-gradient(0deg, var(--red-check) 0 18px, transparent 18px 36px),
-    repeating-linear-gradient(90deg, var(--red-check) 0 18px, transparent 18px 36px);}
+  .cloth{background-size:7px 7px, 36px 36px, 36px 36px}
   .logo{width:156px;height:156px;margin-left:-78px;top:-74px}
   .card{padding:16px 14px;box-shadow:5px 6px 0 rgba(29,23,18,.32)}
   .lede{font-size:15.5px}
@@ -282,7 +283,7 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
 /* Desktop: Tischdecke fast bis zum Rand, Inhalt bleibt mittig */
 @media (min-width:900px){
   body{padding-left:3vw;padding-right:3vw}
-  .cloth{max-width:none;transform:rotate(-.25deg)}
+  .cloth{max-width:none;transform:rotate(-.25deg);transform-origin:0 0}
   .cloth > *{transform:rotate(.25deg)}
   .cloth > *:not(.logo){max-width:760px;margin-left:auto;margin-right:auto}
 }
@@ -310,6 +311,7 @@ body.team .card-suggest{display:none}
   background:rgba(232,149,140,.9);
   filter:blur(9px);
   animation:glow-breathe 7s ease-in-out infinite;
+  animation-delay:var(--glow-delay, 0s);
 }
 @keyframes glow-breathe{0%,100%{opacity:.4;inset:-5px}50%{opacity:.7;inset:-9px}}
 
@@ -784,7 +786,7 @@ function render() {
 
   list.querySelectorAll(".empty").forEach(e => e.remove());
   const existing = new Map([...list.querySelectorAll(".film")].map(el => [el.dataset.id, el]));
-  const frag = document.createDocumentFragment();
+  const order = [];
 
   for (const f of items) {
     let li = existing.get(f.id);
@@ -812,6 +814,7 @@ function render() {
     li.classList.toggle("top", podium && r <= 3);
     li.classList.toggle("crowned", podium && r <= 3);
     [1, 2, 3].forEach(n => li.classList.toggle("top" + n, podium && r === n));
+    if (podium && r === 1) li.style.setProperty("--glow-delay", `-${Date.now() % 7000}ms`);
     li.querySelector(".rank").textContent = hide ? "" : r;
     li.querySelector(".title").textContent = f.title;
     li.querySelector(".year").textContent = f.year ? `(${f.year})` : "";
@@ -824,10 +827,11 @@ function render() {
     btn.setAttribute("aria-label", `${f.title}${hide ? "" : `: ${f.votes} Stimmen`}. ${on ? "Stimme zurücknehmen" : "Hochvoten"}`);
     btn.title = on ? "Stimme zurücknehmen" : "Hochvoten";
     btn.querySelector(".count").textContent = f.votes;
-    frag.appendChild(li);
+    order.push(li);
   }
   existing.forEach(el => el.remove());
-  list.appendChild(frag);
+  // Nur verschieben, was wirklich die Position wechselt – sonst starten Animationen (Glühen) neu
+  order.forEach((li, i) => { if (list.children[i] !== li) list.insertBefore(li, list.children[i] || null); });
 
   if (!items.length) {
     const li = document.createElement("li"); li.className = "empty";
