@@ -11,7 +11,7 @@
    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;0,900;1,600&family=Karla:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;0,900;1,600&family=Karla:wght@400;500;700;800&display=block" rel="stylesheet">
 <style>
 :root{
   --navy:#363b8c;
@@ -183,7 +183,9 @@ input::placeholder{color:#9a95a6}
 ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 /* Top 10: darunter eingeklappt, Platz 11 schaut zu einem Drittel heraus */
 .list-wrap{position:relative}
-.list-wrap.foldable{padding-bottom:52px;transition:padding-bottom .5s ease}
+.list-wrap.foldable{padding-bottom:52px}
+.list-wrap.ready.foldable{transition:padding-bottom .5s ease}   /* erst nach dem Laden, sonst wächst die Seite beim Öffnen sichtbar nach */
+.list-wrap.sliding,.list-wrap.sliding::after{transition:none !important}
 .list-wrap.collapsed{padding-bottom:36px}
 .list-wrap.foldable ol.films{margin:-10px;padding:10px}
 .list-wrap.collapsed ol.films,.list-wrap.anim ol.films{overflow:hidden}
@@ -465,7 +467,7 @@ html.case-open{overflow:hidden}
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
   padding:calc(var(--r,52px) * .55 + 8px) calc(var(--r,52px) * .5 + 6px) calc(var(--r,52px) * .45 + 4px)}
-.case-x{position:absolute;top:calc(var(--r,52px) * .32);right:calc(var(--r,52px) * .32);width:48px;height:48px;display:grid;place-items:center;
+.case-x{position:absolute;top:calc(var(--r,52px) * .55 - 2px);   /* mittig zur ersten Titelzeile */right:calc(var(--r,52px) * .32);width:48px;height:48px;display:grid;place-items:center;
   background:#fff;color:var(--navy-ink);border:2.5px solid var(--line);border-radius:12px;box-shadow:3px 3px 0 var(--line);
   font-family:inherit;font-weight:800;font-size:18px;line-height:1;cursor:pointer;transition:transform .12s, box-shadow .12s, background .15s}
 .case-x svg{width:28px;height:28px}
@@ -1674,79 +1676,101 @@ addEventListener("resize", () => { if (caseState.layer) closeCase(); });
 
 /* ---------------- Top 10 + Aufklappen ---------------- */
 const TOP_N = 10;
-let expanded = false, foldAnim = null;   // foldAnim: laufender requestAnimationFrame
+let expanded = false, foldAnim = null;   // foldAnim: laufende Animation (hat .cancel())
 const bgShift = { body: 0, cx: 0, cy: 0 };  // Gegenverschiebung von Holz und Karomuster beim Zuklappen
-function updateFold() {
-  const wrap = $("#listWrap"), btn = $("#moreBtn"), list = $("#list");
-  const lis = [...list.children].filter(li => li.classList.contains("film"));
-  const extra = lis.length - TOP_N;
-  const foldable = extra > 0 && !state.q;
-  btn.hidden = !foldable;
-  wrap.classList.toggle("foldable", foldable);
-  wrap.classList.toggle("collapsed", foldable && !expanded);
-  btn.setAttribute("aria-expanded", expanded);
-  $("#moreLbl").textContent = expanded ? "Einklappen" : `${extra} weitere${extra === 1 ? "r" : ""} Vorschl${extra === 1 ? "ag" : "äge"}`;
-  lis.forEach((li, i) => li.toggleAttribute("inert", foldable && !expanded && i >= TOP_N));
-  if (!foldable) { list.style.maxHeight = ""; return; }
-  // Schnittkante: oberes Drittel von Platz 11 (wird immer gemessen, damit der Fade auch beim Einklappen stimmt)
-  const li = lis[TOP_N];
-  const third = li.offsetHeight / 3;
-  const h = li.offsetTop - list.offsetTop + third;
-  const fade = third + 16;
-  wrap.style.setProperty("--fade", Math.round(fade) + "px");
-  wrap.style.setProperty("--fade-top", Math.round(list.offsetTop + h - fade + 2) + "px");
-  list.style.maxHeight = expanded ? "" : h + "px";
-}
 function setExpanded(v, animate = true) {
   if (expanded === v) return;
-  const wrap = $("#listWrap"), list = $("#list");
+  const wrap = $("#listWrap"), list = $("#list"), btn = $("#moreBtn");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (foldAnim) { foldAnim.cancel(); foldAnim = null; }
   const from = list.getBoundingClientRect().height;
-  if (foldAnim) { cancelAnimationFrame(foldAnim); foldAnim = null; }
-  // Alles messen, BEVOR eingeklappt wird – sonst rechnet der Browser die Seite schon kürzer und springt nach oben
-  const btnTop = $("#moreBtn").getBoundingClientRect().top;
-  const keepPlace = !v && btnTop > 0 && btnTop < innerHeight;
-  const cloth = $(".cloth");
-  const tf = getComputedStyle(cloth).transform;
-  const inv = (tf && tf !== "none" ? new DOMMatrix(tf) : new DOMMatrix()).inverse();
+  const btnTop = btn.getBoundingClientRect().top;
+  // Zuklappen mit sichtbarem Pfeil: Das Bild bleibt stehen, nur der obere Teil rückt von oben nach
+  if (!v && animate && !reduce && btnTop > 0 && btnTop < innerHeight) { slideCollapse(); return; }
   expanded = v; updateFold();
   if (!animate || reduce) { wrap.classList.remove("anim"); list.style.height = ""; return; }
   const to = expanded ? list.scrollHeight : parseFloat(list.style.maxHeight);
   const dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;   // sanft an- und auslaufen
-  // Beim Zuklappen bleibt das sichtbare Bild stehen (Pfeil, Karten darunter, Holz und Karomuster),
-  // nur der obere Teil der Liste rückt von oben nach. Dafür scrollt die Seite im Gleichschritt mit,
-  // und Holz und Tischdecken-Muster werden um genau diese Strecke gegenverschoben.
-  const html = document.documentElement, sb = html.style.scrollBehavior, oa = html.style.overflowAnchor;
-  html.style.scrollBehavior = "auto";
-  html.style.overflowAnchor = "none";   // sonst korrigiert der Browser zusätzlich und schiebt die Seite zu weit
   wrap.classList.add("anim");
   list.style.height = from + "px";
-  let prev = from;
+  let raf = 0;
   const t0 = performance.now();
   const step = now => {
     const p = Math.min(1, (now - t0) / dur);
-    const h = from + (to - from) * ease(p);
-    const y0 = scrollY;                               // vor dem Verkleinern lesen (ganz unten kürzt der Browser sonst selbst)
-    list.style.height = h + "px";
-    if (keepPlace) {
-      window.scrollTo(0, y0 + (h - prev));
-      const s = y0 - scrollY;                       // so weit ist der Inhalt oben auf dem Bildschirm nach unten gerückt
-      if (s) {
-        bgShift.body -= s;
-        // Tischdecke ist leicht gedreht: Verschiebung in ihre eigenen Achsen umrechnen
-        const a = inv.transformPoint(new DOMPoint(0, -s)), o = inv.transformPoint(new DOMPoint(0, 0));
-        bgShift.cx += a.x - o.x; bgShift.cy += a.y - o.y;
-        document.body.style.backgroundPosition = `0 ${bgShift.body}px`;
-        cloth.style.backgroundPosition = `${bgShift.cx}px ${bgShift.cy}px`;
-      }
-    }
-    prev = h;
-    if (p < 1) { foldAnim = requestAnimationFrame(step); return; }
+    list.style.height = from + (to - from) * ease(p) + "px";
+    if (p < 1) { raf = requestAnimationFrame(step); return; }
     foldAnim = null; list.style.height = ""; wrap.classList.remove("anim");
-    html.style.scrollBehavior = sb; html.style.overflowAnchor = oa;
   };
-  foldAnim = requestAnimationFrame(step);
+  raf = requestAnimationFrame(step);
+  foldAnim = { cancel: () => { cancelAnimationFrame(raf); list.style.height = ""; wrap.classList.remove("anim"); } };
+}
+
+/* Zuklappen ohne Ruckeln:
+   1. Die Seite wird in EINEM Schritt eingeklappt und um dieselbe Strecke hochgescrollt – Pfeil, Karten darunter,
+      Holz und Karomuster stehen danach exakt wie vorher (Holz und Muster werden gegenverschoben).
+   2. Alles oberhalb der Schnittkante wird optisch an seine alte Stelle zurückgesetzt und gleitet dann per
+      Grafikkarte (translate) nach unten. An der Schnittkante verschwinden die Filme unter dem Ausblendverlauf. */
+function slideCollapse() {
+  const wrap = $("#listWrap"), list = $("#list"), btn = $("#moreBtn"), cloth = $(".cloth");
+  const card = wrap.closest(".card");
+  const movers = [];
+  for (const el of cloth.children) { if (el === card) break; movers.push(el); }
+  for (const el of card.children) { if (el === wrap) break; movers.push(el); }
+  movers.push(list);
+  const pos = el => { const r = el.getBoundingClientRect(); return [r.left, r.top]; };
+  const corner = () => [cloth.offsetLeft - scrollX, cloth.offsetTop - scrollY];   // Drehpunkt der Tischdecke = Musterursprung
+  const bottom = () => card.getBoundingClientRect().bottom;   // was unter der Liste kommt, bleibt stehen
+  const before = movers.map(pos), b0 = bottom(), c0 = corner(), y0 = scrollY;
+  const from = list.getBoundingClientRect().height;
+
+  const html = document.documentElement, sb = html.style.scrollBehavior, oa = html.style.overflowAnchor;
+  html.style.scrollBehavior = "auto"; html.style.overflowAnchor = "none";
+  wrap.classList.add("sliding");
+  expanded = false; updateFold();
+  const to = parseFloat(list.style.maxHeight);
+  // Liste hat schon ihre Endhöhe, zeigt aber vorerst alles; abgeschnitten wird gleich an der Kante
+  list.style.maxHeight = "none"; list.style.height = to + "px"; list.style.overflow = "visible";
+  // Einmal hochscrollen, dann auf den Pixel nachjustieren
+  window.scrollTo(0, y0 - (from - to));
+  window.scrollTo(0, scrollY + (bottom() - b0));
+  // Holz und Karomuster gegenverschieben
+  const s = y0 - scrollY;
+  bgShift.body -= s;
+  const tf = getComputedStyle(cloth).transform;
+  const inv = (tf && tf !== "none" ? new DOMMatrix(tf) : new DOMMatrix()).inverse();
+  const local = (dx, dy) => { const a = inv.transformPoint(new DOMPoint(dx, dy)), o = inv.transformPoint(new DOMPoint(0, 0)); return [a.x - o.x, a.y - o.y]; };
+  const c1 = corner(), [cdx, cdy] = local(c0[0] - c1[0], c0[1] - c1[1]);
+  bgShift.cx += cdx; bgShift.cy += cdy;
+  document.body.style.backgroundPosition = `0 ${bgShift.body}px`;
+  cloth.style.backgroundPosition = `${bgShift.cx}px ${bgShift.cy}px`;
+
+  // Alles oberhalb der Kante optisch zurück an die alte Stelle, dann nach unten gleiten lassen
+  const dist = Math.abs(from - to);
+  const timing = { duration: Math.min(900, 450 + dist * 0.25), easing: "cubic-bezier(.45,0,.2,1)" };
+  const anims = movers.map((el, i) => {
+    const now = pos(el);
+    const dx = before[i][0] - now[0], dy = before[i][1] - now[1];
+    if (Math.abs(dx) < .5 && Math.abs(dy) < .5) return null;
+    // Kinder der Tischdecke liegen in ihrem gedrehten Koordinatensystem
+    const [lx, ly] = el.parentElement === cloth ? local(dx, dy) : [dx, dy];
+    return el.animate([{ translate: `${lx}px ${ly}px` }, { translate: "0px 0px" }], timing);
+  }).filter(Boolean);
+  // Die Liste wird an der festen Kante abgeschnitten: ihr Ausschnitt wandert gegenläufig zur Verschiebung mit
+  const rest = before[movers.length - 1][1] - pos(list)[1];
+  anims.push(list.animate([{ clipPath: `inset(-100000px -60px ${rest}px -60px)` }, { clipPath: "inset(-100000px -60px 0px -60px)" }], timing));
+
+  let done = false;
+  const finish = () => {
+    if (done) return; done = true;
+    anims.forEach(a => a.cancel());
+    list.style.height = ""; list.style.overflow = "";
+    wrap.classList.remove("sliding");
+    html.style.scrollBehavior = sb; html.style.overflowAnchor = oa;
+    foldAnim = null; updateFold();
+  };
+  foldAnim = { cancel: finish };
+  Promise.all(anims.map(a => a.finished)).then(finish, () => {});
 }
 $("#moreBtn").addEventListener("click", () => setExpanded(!expanded));
 // Höhen ändern sich noch nach dem ersten Zeichnen (Schrift, Cover, Fensterbreite) → Schnittkante neu messen
@@ -1754,6 +1778,7 @@ const foldRO = new ResizeObserver(() => { if (!foldAnim) updateFold(); });
 foldRO.observe($("#listWrap"));
 new MutationObserver(() => $("#list").querySelectorAll(".film").forEach(li => foldRO.observe(li))).observe($("#list"), { childList: true });
 document.fonts?.ready.then(() => updateFold());
+setTimeout(() => $("#listWrap").classList.add("ready"), 1500);   // Polster-Übergang erst, wenn die Seite steht
 
 /* ---------------- Autocomplete (TMDB) ---------------- */
 
