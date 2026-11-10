@@ -301,6 +301,17 @@ body.team.votes-off .hidden-note{display:block}
 .teambar{flex-wrap:wrap}
 
 
+/* Backlog-Abgleich */
+.link-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.link-item{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
+.link-item .poster{width:38px;box-shadow:none;border-width:1.5px}
+.link-item .src{font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.link-item select{font-size:14.5px;padding:8px 10px;border-width:2px;border-radius:10px}
+.link-item.none{opacity:.6}
+.link-pick{display:flex;gap:6px;align-items:center}
+.link-pick select{flex:1;min-width:0}
+.link-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+
 /* Team-Modus: Vorschlagen ausblenden */
 body.team .card-suggest{display:none}
 
@@ -492,6 +503,14 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <ol class="films" id="list" aria-live="polite"></ol>
   </section>
 
+  <section class="card" id="linkCard" hidden>
+    <h2><span class="num">🔗</span>Backlog mit TMDB verknüpfen <span class="badge" id="linkCount">0</span></h2>
+    <p class="hint" style="margin:-6px 0 12px">Diese besprochenen Filme haben noch keine TMDB-Nummer. Erst mit Nummer erkennt die Seite sie zuverlässig – egal in welcher Sprache jemand den Titel eingibt, und ohne andere Verfilmungen mit gleichem Titel zu blockieren.</p>
+    <div class="link-row"><button class="btn small" type="button" id="linkLoad">Nächste 25 abgleichen</button><span class="hint" id="linkStatus"></span></div>
+    <ul class="link-list" id="linkList"></ul>
+    <div class="link-row" id="linkSaveRow" hidden><button class="btn" type="button" id="linkSave">Auswahl speichern</button></div>
+  </section>
+
   <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
     <h2 id="h-wheel"><span class="num">🎡</span>Auf dem Rad <span class="wheel-slots" id="wheelSlots"><i></i><i></i></span></h2>
     <p class="hint" style="margin:-6px 0 14px">Höchstens zwei Community-Filme gleichzeitig. Kommt ein dritter dazu, fragen wir, welcher besprochen wurde.</p>
@@ -572,10 +591,12 @@ function demoBackend() {
     [8, "Toni Erdmann", 2016], [9, "Pulp Fiction", 1994], [10, "Portrait einer jungen Frau in Flammen", 2019],
     [11, "Aftersun", 2022], [12, "Das Leben der Anderen", 2006], [13, "Paris, je t'aime", 2006], [14, "Paris brennt", 1990],
     [15, "In the Mood for Love", 2000], [16, "Victoria", 2015], [17, "Oppenheimer", 2023], [18, "Anatomie eines Falls", 2023],
+    [101, "Godzilla", 1954], [102, "Godzilla", 2014], [103, "Godzilla Minus One", 2023], [104, "Weapons – Die Stunde des Verschwindens", 2025],
   ].map(([tmdb_id, title, year]) => ({ tmdb_id, title, year, poster: null, original_title: title, title_en: title }));
   const alt = { 2: ["기생충", "Parasite"], 3: ["Lola rennt", "Run Lola Run"], 6: ["Der Himmel über Berlin", "Wings of Desire"],
     10: ["Portrait de la jeune fille en feu", "Portrait of a Lady on Fire"], 12: ["Das Leben der Anderen", "The Lives of Others"],
-    15: ["花樣年華", "In the Mood for Love"], 18: ["Anatomie d'une chute", "Anatomy of a Fall"] };
+    15: ["花樣年華", "In the Mood for Love"], 18: ["Anatomie d'une chute", "Anatomy of a Fall"],
+    101: ["ゴジラ", "Godzilla"], 103: ["ゴジラ-1.0", "Godzilla Minus One"], 104: ["Weapons", "Weapons"] };
   catalog.forEach(c => { if (alt[c.tmdb_id]) [c.original_title, c.title_en] = alt[c.tmdb_id]; });
   const mk = (i, note, votes, hAgo, extra = {}) => ({
     id: "d" + i, title: catalog[i - 1].title, year: catalog[i - 1].year, tmdb_id: i, poster_path: null,
@@ -588,6 +609,10 @@ function demoBackend() {
     mk(9, "Der Klassiker muss aufs Rad.", 15, 300, { on_wheel_at: new Date(now - 3 * day).toISOString() }),
     mk(11, null, 17, 400, { discussed_at: new Date(now - 6 * day).toISOString().slice(0, 10), episode: "Folge 24", episode_url: "https://example.com/folge-24" }),
     mk(12, null, 11, 600, { discussed_at: new Date(now - 20 * day).toISOString().slice(0, 10), episode: "Folge 22" }),
+    { id: "b1", title: "Godzilla", year: null, tmdb_id: null, poster_path: null, note: null, votes: 0,
+      created_at: new Date(now - 900 * h).toISOString(), discussed_at: new Date(now - 14 * day).toISOString().slice(0, 10), episode: "Folge 60" },
+    { id: "b2", title: "Weapons", year: null, tmdb_id: null, poster_path: null, note: null, votes: 0,
+      created_at: new Date(now - 990 * h).toISOString(), discussed_at: new Date(now - 450 * day).toISOString().slice(0, 10), episode: "Folge 29" },
     mk(16, null, 9, 900, { discussed_at: new Date(now - 34 * day).toISOString().slice(0, 10), episode: "Folge 20" }),
   ];
   let pending = [
@@ -630,6 +655,7 @@ function demoBackend() {
     async remove(id) { films = films.filter(x => x.id !== id); pending = pending.filter(x => x.id !== id); mine.delete(id); emit(); },
     async toWheel(id) { Object.assign(films.find(x => x.id === id), { on_wheel_at: new Date().toISOString() }); emit(); },
     async offWheel(id) { films.find(x => x.id === id).on_wheel_at = null; emit(); },
+    async link(id, fields) { Object.assign(films.find(x => x.id === id), fields); emit(); },
     async discuss(id, extra) {
       Object.assign(films.find(x => x.id === id), { discussed_at: new Date().toISOString().slice(0, 10) }, extra); emit(); },
     async vote(id, on) {
@@ -719,6 +745,7 @@ function supabaseBackend() {
     async remove(id) { must(await sb.from("films").delete().eq("id", id)); },
     async toWheel(id) { must(await sb.from("films").update({ on_wheel_at: new Date().toISOString() }).eq("id", id)); },
     async offWheel(id) { must(await sb.from("films").update({ on_wheel_at: null }).eq("id", id)); },
+    async link(id, fields) { must(await sb.from("films").update(fields).eq("id", id)); },
     async discuss(id, extra) {
       must(await sb.from("films").update({ discussed_at: new Date().toISOString().slice(0, 10), ...extra }).eq("id", id));
     },
@@ -863,6 +890,9 @@ function renderTeam() {
   const card = $("#pendingCard");
   card.hidden = !state.isAdmin;
   renderWheel();
+  const unlinked = state.done.filter(f => !f.tmdb_id).length;
+  $("#linkCard").hidden = !state.isAdmin || (!unlinked && !linkRows.length);
+  $("#linkCount").textContent = unlinked;
   $("#votesToggle").textContent = state.showVotes ? "👁 Stimmen: sichtbar" : "🙈 Stimmen: ausgeblendet";
   if (!state.isAdmin) return;
   $("#pendCount").textContent = state.pending.length;
@@ -881,6 +911,91 @@ function renderTeam() {
         </div></div>
     </li>`).join("");
 }
+
+/* ---------------- Backlog mit TMDB verknüpfen ---------------- */
+let linkRows = [];
+function renderLink() {
+  const list = $("#linkList");
+  list.innerHTML = linkRows.map((r, i) => {
+    const sel = r.choice >= 0 ? r.cands[r.choice] : null;
+    const opts = r.cands.map((c, j) => `<option value="${j}" ${j === r.choice ? "selected" : ""}>${esc(c.title)}${c.year ? ` (${c.year})` : ""}${c.title_en && c.title_en !== c.title ? ` · ${esc(c.title_en)}` : ""}</option>`).join("");
+    return `<li class="link-item${sel ? "" : " none"}">
+      ${posterHTML(sel?.poster, sel ? sel.title : r.film.title, "w92")}
+      <div><div class="src">${esc(r.film.title)}${r.film.year ? ` (${r.film.year})` : ""} · ${esc(r.film.episode || "")}</div>
+        <div class="link-pick"><select data-i="${i}" aria-label="TMDB-Treffer für ${esc(r.film.title)}">${opts}<option value="-1" ${r.choice < 0 ? "selected" : ""}>– keine Zuordnung –</option></select>
+        <button type="button" class="mini" data-search="${i}" title="Selbst bei TMDB suchen" aria-label="Selbst bei TMDB suchen">🔍</button></div></div></li>`;
+  }).join("");
+  $("#linkSaveRow").hidden = !linkRows.length;
+}
+// Manuelle Suche, falls der richtige Film nicht unter den Vorschlägen ist
+$("#linkList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-search]"); if (!b) return;
+  const r = linkRows[+b.dataset.search];
+  const v = await dialog({ title: "Selbst bei TMDB suchen", confirm: "Suchen",
+    text: `Für „${r.film.title}“ (${r.film.episode || "Backlog"}). Tipp: Originaltitel oder englischen Titel probieren, ohne Jahreszahl.`,
+    fields: [{ name: "q", label: "Suchbegriff", value: r.film.title, required: true, max: 80 }] });
+  if (!v) return;
+  b.disabled = true;
+  let res = [];
+  try { res = await api.search(v.q); } catch (err) { console.warn(err); }
+  b.disabled = false;
+  if (!res.length) { toast(`Keine TMDB-Treffer für „${v.q}“.`, true); return; }
+  // neue Treffer nach oben, bisherige dahinter (ohne Doppelte)
+  const seen = new Set(res.map(c => c.tmdb_id));
+  r.cands = [...res, ...r.cands.filter(c => !seen.has(c.tmdb_id))];
+  r.choice = 0;
+  renderLink();
+  toast(`${res.length} ${res.length === 1 ? "Treffer" : "Treffer"} – bitte die richtige Version auswählen.`);
+});
+$("#linkList").addEventListener("change", e => {
+  const i = e.target.dataset.i; if (i == null) return;
+  linkRows[+i].choice = +e.target.value; renderLink();
+});
+$("#linkLoad").addEventListener("click", async () => {
+  if (!tmdbOn || tmdbBroken) { toast("Die TMDB-Suche ist gerade nicht erreichbar.", true); return; }
+  const todo = state.done.filter(f => !f.tmdb_id).slice(0, 25);
+  if (!todo.length) { toast("Alles verknüpft!"); return; }
+  const btn = $("#linkLoad"); btn.disabled = true; linkRows = []; renderLink();
+  let k = 0;
+  // drei Suchen parallel, damit es nicht ewig dauert
+  const worker = async () => {
+    while (k < todo.length) {
+      const film = todo[k++];
+      let cands = [];
+      try { cands = await api.search(film.title); } catch (e) { console.warn(e); }
+      let choice = cands.length ? 0 : -1;
+      if (film.year) { const j = cands.findIndex(c => c.year === film.year); choice = j; }   // Jahr bekannt: nur exakter Treffer vorauswählen
+      linkRows.push({ film, cands, choice });
+      $("#linkStatus").textContent = `Gleiche ab … ${linkRows.length}/${todo.length}`;
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  linkRows.sort((a, b) => todo.indexOf(a.film) - todo.indexOf(b.film));
+  $("#linkStatus").textContent = "Bitte prüfen: richtige Version wählen oder „keine Zuordnung“.";
+  btn.disabled = false; renderLink();
+});
+$("#linkSave").addEventListener("click", async () => {
+  const rows = linkRows.filter(r => r.choice >= 0);
+  const btn = $("#linkSave"); btn.disabled = true; busy++;
+  let ok = 0; const failed = [];
+  for (const r of rows) {
+    const c = r.cands[r.choice];
+    try {
+      await api.link(r.film.id, { tmdb_id: c.tmdb_id, poster_path: c.poster || null, year: c.year || null,
+        title: c.title, original_title: c.original_title || null, title_en: c.title_en || null });
+      ok++;
+    } catch (e) {
+      console.error(e);
+      // z. B. gleicher Film schon vorhanden (doppelter Eintrag) – dann nur Nummer weglassen
+      failed.push(`${r.film.title}${e.code === "23505" ? " (gibt es schon)" : ""}`);
+    }
+  }
+  busy--; btn.disabled = false;
+  linkRows = []; renderLink();
+  $("#linkStatus").textContent = failed.length ? `Nicht gespeichert: ${failed.join(", ")}` : "";
+  toast(`${ok} ${ok === 1 ? "Film" : "Filme"} verknüpft${failed.length ? `, ${failed.length} nicht` : ""}.`, !!failed.length);
+  refresh();
+});
 
 function renderWheel() {
   const card = $("#wheelCard");
@@ -1080,17 +1195,28 @@ async function onVote(e) {
 }
 
 // Gibt es den Film schon? (offen oder besprochen)
-function findDupe(title, tmdb_id, year) {
+// Gibt es den Film schon? Reihenfolge:
+// 1. Gleiche TMDB-Nummer = sicher derselbe Film.
+// 2. TMDB-Vorschlag gegen Eintrag OHNE Nummer: nur bei gleichem Titel UND gleichem Jahr
+//    (sonst würde z. B. „Godzilla“ ohne Jahr jeden Godzilla-Film blockieren).
+// 3. Frei getippter Titel: Titelvergleich wie gehabt.
+function findDupe(title, tmdb_id, year, alts = []) {
   const pool = [...state.films.map(f => ({ ...f, _done: false })), ...state.wheel.map(f => ({ ...f, _wheel: true })),
                 ...state.done.map(f => ({ ...f, _done: true }))];
-  if (tmdb_id) { const hit = pool.find(f => f.tmdb_id === tmdb_id); if (hit) return hit; }
-  const n = norm(title); if (n.length < 2) return null;
-  return pool.find(f => [f.title, f.original_title, f.title_en].some(x => x && norm(x) === n) && (!year || !f.year || f.year === year)) || null;
+  const names = [title, ...alts].filter(Boolean).map(norm).filter(n => n.length >= 2);
+  const sameTitle = f => [f.title, f.original_title, f.title_en].some(x => x && names.includes(norm(x)));
+  if (tmdb_id) {
+    return pool.find(f => f.tmdb_id === tmdb_id)
+        || pool.find(f => !f.tmdb_id && f.year && year && f.year === year && sameTitle(f))
+        || null;
+  }
+  if (!names.length) return null;
+  return pool.find(f => sameTitle(f) && (!year || !f.year || f.year === year)) || null;
 }
 function checkDupe() {
   const box = $("#dupe");
   const p = state.picked;
-  const d = p ? findDupe(p.title, p.tmdb_id, p.year) : findDupe($("#fTitle").value, null, null);
+  const d = p ? findDupe(p.title, p.tmdb_id, p.year, [p.original_title, p.title_en]) : findDupe($("#fTitle").value, null, null);
   box.innerHTML = "";
   if (!d) { box.classList.remove("show"); return; }
   const span = document.createElement("span");
@@ -1148,7 +1274,7 @@ function acRender(msg) {
   if (msg) { acList.innerHTML = `<li class="msg">${esc(msg)}</li>`; }
   else {
     acList.innerHTML = acItems.map((m, i) => {
-      const d = findDupe(m.title, m.tmdb_id, m.year);
+      const d = findDupe(m.title, m.tmdb_id, m.year, [m.original_title, m.title_en]);
       let tag = "";
       if (d && d._wheel) tag = `<span class="tag done">Gerade auf dem Rad</span>`;
       else if (d && d._done) {
@@ -1239,7 +1365,7 @@ $("#suggestForm").addEventListener("submit", async e => {
   if (!title) { fTitle.focus(); toast("Welcher Film soll's denn sein?", true); return; }
   const year = p?.year ?? null;   // Jahr kommt nur noch von TMDB
 
-  const d = findDupe(title, p?.tmdb_id, year);
+  const d = findDupe(title, p?.tmdb_id, year, [p?.original_title, p?.title_en]);
   if (d && d._wheel) { toast(`„${d.title}“ ist gerade auf dem Glücksrad.`); return; }
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + d.episode : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
