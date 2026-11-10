@@ -190,7 +190,10 @@ ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .list-wrap.foldable{padding-bottom:52px}
 .list-wrap.ready.foldable{transition:padding-bottom .5s ease}   /* erst nach dem Laden, sonst wächst die Seite beim Öffnen sichtbar nach */
 .list-wrap.sliding,.list-wrap.sliding::after{transition:none !important}
-.list-wrap.sliding{display:flow-root;margin-top:-10px}   /* Zuklappen: Rahmen um die Liste, ohne dass sich das Layout verschiebt */
+.list-wrap.sliding{display:flow-root;margin-top:-10px}
+/* Ausblendverlauf immer über den Filmen – Safari legt die gleitende Liste sonst als eigene Ebene darüber */
+.list-wrap.foldable::after{z-index:1}
+.list-wrap.sliding::after{will-change:transform}   /* Zuklappen: Rahmen um die Liste, ohne dass sich das Layout verschiebt */
 .list-wrap.collapsed{padding-bottom:36px}
 .list-wrap.foldable ol.films{margin:-10px;padding:10px}
 .list-wrap.collapsed ol.films,.list-wrap.anim ol.films{overflow:hidden}
