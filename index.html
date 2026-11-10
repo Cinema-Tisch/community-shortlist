@@ -1678,6 +1678,27 @@ addEventListener("resize", () => { if (caseState.layer) closeCase(); });
 const TOP_N = 10;
 let expanded = false, foldAnim = null;   // foldAnim: laufende Animation (hat .cancel())
 const bgShift = { body: 0, cx: 0, cy: 0 };  // Gegenverschiebung von Holz und Karomuster beim Zuklappen
+function updateFold() {
+  const wrap = $("#listWrap"), btn = $("#moreBtn"), list = $("#list");
+  const lis = [...list.children].filter(li => li.classList.contains("film"));
+  const extra = lis.length - TOP_N;
+  const foldable = extra > 0 && !state.q;
+  btn.hidden = !foldable;
+  wrap.classList.toggle("foldable", foldable);
+  wrap.classList.toggle("collapsed", foldable && !expanded);
+  btn.setAttribute("aria-expanded", expanded);
+  $("#moreLbl").textContent = expanded ? "Einklappen" : `${extra} weitere${extra === 1 ? "r" : ""} Vorschl${extra === 1 ? "ag" : "äge"}`;
+  lis.forEach((li, i) => li.toggleAttribute("inert", foldable && !expanded && i >= TOP_N));
+  if (!foldable) { list.style.maxHeight = ""; return; }
+  // Schnittkante: oberes Drittel von Platz 11 (wird immer gemessen, damit der Fade auch beim Einklappen stimmt)
+  const li = lis[TOP_N];
+  const third = li.offsetHeight / 3;
+  const h = li.offsetTop - list.offsetTop + third;
+  const fade = third + 16;
+  wrap.style.setProperty("--fade", Math.round(fade) + "px");
+  wrap.style.setProperty("--fade-top", Math.round(list.offsetTop + h - fade + 2) + "px");
+  list.style.maxHeight = expanded ? "" : h + "px";
+}
 function setExpanded(v, animate = true) {
   if (expanded === v) return;
   const wrap = $("#listWrap"), list = $("#list"), btn = $("#moreBtn");
