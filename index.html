@@ -428,12 +428,25 @@ body.team .pill-name{cursor:default}
 .cover:hover .disc,.cover:has(.poster:focus-visible) .disc{transform:translate(28%,-50%)}
 /* wie eine DVD-Hülle: leicht im Uhrzeigersinn gekippt, links sieht man die Kante */
 .cover:hover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line)}
-.cover:has(.lifted) .disc{opacity:0;transition:none}
+.cover:has(.lifted) .disc{opacity:0;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .12s .2s}
+.cover.landing .disc{opacity:1;transition:transform .4s cubic-bezier(.3,1.2,.5,1), opacity .12s !important}
+.cover.tuck .disc{transform:translate(-50%,-50%) !important;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .12s .2s !important}
+.cover.tuck .poster[data-tmdb]{transform:none !important}
 /* der Text rückt ein Stück zur Seite und macht der Scheibe Platz */
 .film .info{transition:transform .45s cubic-bezier(.3,1.2,.5,1)}
 .film:has(.cover:hover .poster[data-tmdb]) .info,.film:has(.poster[data-tmdb]:focus-visible) .info{transform:translateX(30px)}
 @media (max-width:560px){.film:has(.cover:hover .poster[data-tmdb]) .info{transform:translateX(24px)}}
 @media (prefers-reduced-motion:reduce){.disc,.film .info{transition:none}}
+/* Touch-Geräte (kein Hover): dauerhaft wie die Endposition beim Drüberfahren mit der Maus */
+@media (hover:none){
+  .cover:has(.poster[data-tmdb]) .disc{transform:translate(28%,-50%);transition:none}
+  .cover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line);transition:none}
+  .film:has(.poster[data-tmdb]) .info{transform:none !important;margin-left:30px;transition:none}
+}
+@media (hover:none) and (max-width:560px){
+  .film:has(.poster[data-tmdb]) .info{margin-left:24px}
+}
+
 .poster.lifted{visibility:hidden}
 html.case-open{overflow:hidden}
 .case-layer{position:fixed;inset:0;z-index:70}
@@ -452,9 +465,10 @@ html.case-open{overflow:hidden}
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
   padding:calc(var(--r,52px) * .55 + 8px) calc(var(--r,52px) * .5 + 6px) calc(var(--r,52px) * .45 + 4px)}
-.case-x{position:absolute;top:calc(var(--r,52px) * .32);right:calc(var(--r,52px) * .32);width:44px;height:44px;display:grid;place-items:center;
+.case-x{position:absolute;top:calc(var(--r,52px) * .32);right:calc(var(--r,52px) * .32);width:48px;height:48px;display:grid;place-items:center;
   background:#fff;color:var(--navy-ink);border:2.5px solid var(--line);border-radius:12px;box-shadow:3px 3px 0 var(--line);
   font-family:inherit;font-weight:800;font-size:18px;line-height:1;cursor:pointer;transition:transform .12s, box-shadow .12s, background .15s}
+.case-x svg{width:28px;height:28px}
 .case-x:hover{background:var(--navy-soft)}
 .case-x:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--line)}
 .case-title{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:24px;line-height:1.15;color:var(--navy-ink);margin:0 52px 4px 0;min-height:44px}
@@ -1575,8 +1589,10 @@ function fillCase(rear, d) {
   if (d.lang === "en") { const n = document.createElement("div"); n.className = "case-note"; n.textContent = "Nur auf Englisch bei TMDB"; text.after(n); }
 }
 async function openCase(poster) {
-  if (caseState.layer) return;
+  if (caseState.layer || caseState.opening) return;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Gleichzeitig mit dem Abheben schiebt sich die DVD zurück in die Hülle
+  poster.closest(".cover")?.classList.add("tuck");
   const r = poster.getBoundingClientRect(), box = caseBox();
   const img = poster.querySelector("img");
   const src = img?.src ? img.src.replace(/\/w\d+\//, "/w500/") : "";
@@ -1588,7 +1604,7 @@ async function openCase(poster) {
       <div class="case-inner">
         <div class="case-face case-front">${src ? `<img src="${esc(src)}" alt="">` : `<div class="ph">${esc((norm(title)[0] || "?").toUpperCase())}</div>`}</div>
         <div class="case-face case-rear">
-          <button type="button" class="case-x" aria-label="Schließen">✕</button>
+          <button type="button" class="case-x" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></button>
           <h3 class="case-title"></h3><div class="case-alt"></div>
           <div class="case-meta" hidden></div>
           <div class="case-text"></div>
@@ -1623,6 +1639,7 @@ function closeCase() {
   const cs = layer.querySelector(".case");
   const done = () => {
     layer.remove(); poster.classList.remove("lifted");
+    poster.closest(".cover")?.classList.remove("tuck", "landing");
     document.documentElement.classList.remove("case-open");
     caseState.layer = caseState.poster = null; caseState.closing = false;
     if (poster.isConnected && poster.tabIndex >= 0) poster.focus({ preventScroll: true });
@@ -1631,6 +1648,9 @@ function closeCase() {
   const r = poster.getBoundingClientRect();
   cs.style.transform = caseFromTransform(r, { left: parseFloat(cs.style.left), top: parseFloat(cs.style.top), width: cs.offsetWidth, height: cs.offsetHeight });
   layer.classList.remove("open"); layer.classList.add("closing");
+  // Kurz vor der Landung gleitet die DVD schon wieder heraus
+  const cover = poster.closest(".cover");
+  if (cover) setTimeout(() => { cover.classList.add("landing"); cover.classList.remove("tuck"); }, 380);
   let ended = false;
   cs.addEventListener("transitionend", e => { if (e.target === cs && e.propertyName === "transform" && !ended) { ended = true; done(); } });
   setTimeout(() => { if (!ended) { ended = true; done(); } }, 900);
