@@ -2,10 +2,13 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Cinema-Tisch · Community-Shortlist</title>
 <meta name="description" content="Schlagt Filme fürs Cinema-Tisch-Glücksrad vor und votet eure Favoriten hoch.">
-<meta name="theme-color" content="#4f4132">
+<meta name="theme-color" content="#725942">
 <meta name="robots" content="noindex, nofollow">
    <link rel="icon" type="image/png" href="favicon.png?v=3">
    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -29,7 +32,7 @@
   --radius-wobbly: 26px 14px 30px 12px / 14px 28px 12px 24px;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;background-color:#725942}
 body{
   margin:0;min-height:100vh;
   font-family:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -41,7 +44,7 @@ body{
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='900'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.13 0.004' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.14 0 0 0 0 0.09 0 0 0 0 0.05 2.2 0 0 0 -0.85'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='610' height='1000'%3E%3Cfilter id='h'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.06 0.003' numOctaves='2' seed='19'/%3E%3CfeColorMatrix values='0 0 0 0 0.62 0 0 0 0 0.48 0 0 0 0 0.33 0 2 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23h)'/%3E%3C/svg%3E"),
     repeating-linear-gradient(90deg, #6e543d 0 241px, #7c6046 241px 482px, #654c37 482px 723px, #775b42 723px 964px);
-  padding:28px 14px 40px;
+  padding:calc(28px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));
 }
 ::selection{background:var(--navy);color:#fff}
 
@@ -292,7 +295,7 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 @media (max-width:560px){
-  body{padding:14px 8px 28px}
+  body{padding:calc(14px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px))}
   .cloth{margin-top:78px;padding:96px 12px 18px;transform:none;border-width:3px}
   .cloth > *{transform:none}
   .cloth{background-size:7px 7px, 36px 36px, 36px 36px}
@@ -365,18 +368,39 @@ body.team .card-suggest{display:none}
 /* Platz 1: dezentes, ruhiges Wabern in Rot (zwischen Top-3-Rosa und Tischdecken-Rot) */
 .film.top1{position:relative;will-change:auto}
 .film.top1::before{
-  content:"";position:absolute;inset:-6px;border-radius:19px;z-index:-1;pointer-events:none;
+  content:"";position:absolute;inset:-7px;border-radius:19px;z-index:-1;pointer-events:none;
   background:rgba(232,149,140,.9);
   filter:blur(9px);
   animation:glow-breathe 7s ease-in-out infinite;
   animation-delay:var(--glow-delay, 0s);
 }
-@keyframes glow-breathe{0%,100%{opacity:.4;inset:-5px}50%{opacity:.7;inset:-9px}}
+@keyframes glow-breathe{0%,100%{opacity:.4;transform:scale(.992,.97)}50%{opacity:.7;transform:scale(1.008,1.03)}}
+html.case-busy .film.top1::before{animation-play-state:paused}
 
 /* Rad-Pool */
 .wheel-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .wheel-item{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:#fff;border:2.5px solid var(--line);border-radius:14px;padding:11px;box-shadow:3px 3px 0 rgba(29,23,18,.22)}
 .wheel-item .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.wheel-item .who-badge{margin-left:8px;vertical-align:middle}
+/* Köpfe: wer hatte den Film auf dem Rad */
+.who{display:flex;gap:8px;flex-wrap:wrap}
+.who-item{appearance:none;display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:2.5px solid var(--line);border-radius:14px;
+  padding:6px 8px 5px;min-width:74px;font:inherit;font-size:12.5px;font-weight:800;color:var(--line);cursor:pointer;box-shadow:2px 2px 0 var(--line);
+  transition:transform .12s, box-shadow .12s, background .15s}
+.who-item:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--line)}
+.who-item[aria-checked="true"]{background:var(--navy-soft);border-color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--navy), 2px 2px 0 var(--navy)}
+.who-face{width:46px;height:46px;border-radius:50%;border:2px solid var(--line);object-fit:cover;display:grid;place-items:center;background:var(--cream);font-size:22px;line-height:1}
+.who.small .who-item{min-width:0;padding:4px 6px 3px;font-size:11.5px;border-width:2px;border-radius:11px}
+.who.small .who-face{width:34px;height:34px;font-size:17px}
+.who-badge{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);overflow:hidden;background:var(--cream);
+  font-size:13px;line-height:1;padding:0;cursor:pointer}
+.who-badge img{width:100%;height:100%;object-fit:cover;display:block}
+.pick-item-row{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
+.pick-item-row .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.pick-item-row .s{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px}
+.pick-item-row .warn{color:var(--red-deep)}
+.pick-item-row .tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:560px){.pick-item-row{grid-template-columns:1fr}.pick-item-row .tools{justify-content:flex-start}}
 .wheel-slots{display:flex;gap:6px;margin-left:auto}
 .wheel-slots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);background:#fff}
 .wheel-slots i.on{background:var(--red)}
@@ -446,7 +470,7 @@ body.team .pill-name{cursor:default}
 .cover:has(.lifted) .disc{opacity:0;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .08s}
 .cover.landing .disc{opacity:1;transition:transform .4s cubic-bezier(.3,1.2,.5,1), opacity .12s !important}
 .cover.tuck .disc{visibility:hidden;transform:translate(-50%,-50%) !important;transition:transform .28s cubic-bezier(.5,0,.6,1), opacity .08s !important}
-.cover.tuck .poster[data-tmdb]{transform:none !important}
+.cover.tuck .disc,.cover.landing .disc{will-change:transform,opacity}
 /* der Text rückt ein Stück zur Seite und macht der Scheibe Platz */
 .film .info{transition:transform .45s cubic-bezier(.3,1.2,.5,1)}
 .film:has(.cover:hover .poster[data-tmdb]) .info,.film:has(.poster[data-tmdb]:focus-visible) .info{transform:translateX(30px)}
@@ -454,10 +478,8 @@ body.team .pill-name{cursor:default}
 @media (prefers-reduced-motion:reduce){.disc,.film .info{transition:none}}
 /* Touch-Geräte (kein Hover): dauerhaft wie die Endposition beim Drüberfahren mit der Maus */
 @media (hover:none){
-  /* Nach dem Schließen des Klappentexts gleiten Cover und DVD sanft zurück in die Schräglage */
   .cover:has(.poster[data-tmdb]) .disc{transform:translate(28%,-50%);transition:transform .9s cubic-bezier(.22,.8,.3,1) .1s, opacity .12s}
   .cover .poster[data-tmdb]{transform:translateY(-1px) rotate(6deg);box-shadow:-3px 2px 0 var(--line);transition:transform .4s cubic-bezier(.3,1.2,.5,1), box-shadow .4s}
-  .cover.tuck .poster[data-tmdb]{transition:none !important}   /* beim Öffnen sofort gerade, damit die Hülle sauber startet */
   .film:has(.poster[data-tmdb]) .info{transform:none !important;margin-left:30px;transition:none}
 }
 /* Teambereich am Handy: keine DVD, damit die Knöpfe Platz haben */
@@ -470,17 +492,24 @@ body.team .pill-name{cursor:default}
 }
 
 .poster.lifted{visibility:hidden}
-html.case-open{overflow:hidden}
+@media (hover:hover){html.case-open{overflow:hidden}}
+.case-layer{touch-action:none}
+.case-text{touch-action:pan-y}
 .case-layer{position:fixed;inset:0;z-index:70}
 .case-dim{position:absolute;inset:0;background:rgba(20,14,8,.55);opacity:0;transition:opacity .45s ease}
 .case-layer.open .case-dim{opacity:1}
-.case{position:absolute;transform-origin:0 0;perspective:1600px;transition:transform .7s cubic-bezier(.5,0,.15,1)}
+.case{position:absolute;transform-origin:50% 50%;perspective:1600px;transition:transform .7s cubic-bezier(.5,0,.15,1);will-change:transform}
 .case-layer.closing .case{transition:transform .6s cubic-bezier(.5,0,.3,1)}
-.case-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.45,0,.2,1)}
+.case-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.45,0,.2,1);will-change:transform}
+.case-layer.settled .case,.case-layer.settled .case-inner{will-change:auto}
 .case-layer.open .case-inner{transform:rotateY(180deg);transition-delay:.1s}
 .case-layer.closing .case-inner{transition-duration:.6s}
 .case-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:3px solid var(--line);
   border-radius:var(--r,52px);overflow:hidden;box-shadow:8px 10px 0 rgba(0,0,0,.35)}
+/* Rand und Schatten wachsen beim Abheben aus denen des kleinen Covers und werden beim Landen wieder zu ihnen */
+.case-face{transition:border-width .3s ease, box-shadow .3s ease}
+.case-layer:not(.open) .case-face{border-width:var(--bwS,3px);box-shadow:var(--shS,none)}
+.case-layer.closing .case-face{transition:border-width .26s ease .32s, box-shadow .26s ease .32s}
 .case-front{background:var(--navy)}
 .case-front img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .case-front .hi{opacity:0;transition:opacity .25s ease}
@@ -502,7 +531,7 @@ html.case-open{overflow:hidden}
 .case-meta{display:flex;align-items:baseline;gap:4px 14px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--navy);padding:8px 0;border-top:2px dashed rgba(29,23,18,.25);border-bottom:2px dashed rgba(29,23,18,.25);margin-bottom:12px}
 .case-text{flex:1;overflow:auto;font-size:15px;line-height:1.58;color:var(--line);overscroll-behavior:contain;padding-right:4px}
 .case-load{color:var(--muted)}
-.case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
+.case-layer.settled .case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
 .case-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
 .case-src{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center}
 .case-layer.reduce .case,.case-layer.reduce .case-inner,.case-layer.reduce .case-dim{transition:none}
@@ -659,9 +688,19 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <div class="link-row" id="linkSaveRow" hidden><button class="btn" type="button" id="linkSave">Auswahl speichern</button></div>
   </section>
 
+  <section class="card" id="pickCard" hidden>
+    <h2><span class="num">👥</span>Alte Radfilme zuordnen <span class="badge" id="pickCount">–</span></h2>
+    <p class="hint" style="margin:-6px 0 12px">Wer hatte welchen Film aufs Rad gesetzt? Die Liste kommt aus den Shownotes aller Folgen („Glücksradfilme:“). Ein Klick auf den Kopf speichert sofort. Die Zuordnung seht nur ihr.</p>
+    <div class="link-row"><button class="btn small" type="button" id="pickLoad">Aus den Shownotes laden</button><span class="hint" id="pickStatus"></span></div>
+    <ul class="link-list" id="pickList"></ul>
+    <div class="link-row" id="pickMoreRow" hidden><button class="btn small" type="button" id="pickMore">Nächste 25</button><button class="mini" type="button" id="pickAll"></button></div>
+    <p class="hint" id="pickStats" style="margin:12px 0 0" hidden></p>
+  </section>
+
   <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
-    <h2 id="h-wheel"><span class="num">🎡</span>Auf dem Rad <span class="wheel-slots" id="wheelSlots"><i></i><i></i></span></h2>
-    <p class="hint" style="margin:-6px 0 14px">Höchstens zwei Community-Filme gleichzeitig. Kommt ein dritter dazu, fragen wir, welcher besprochen wurde.</p>
+    <h2 id="h-wheel"><span class="num">🎡</span>Auf dem Rad <span class="wheel-slots" id="wheelSlots" title="Community-Plätze"><i></i><i></i></span></h2>
+    <p class="hint" style="margin:-6px 0 12px">Alle Filme, die gerade auf dem Rad sind – nur ihr seht diese Liste. Besucher sehen bei der Suche lediglich „Gerade auf dem Rad“. Höchstens zwei Community-Filme gleichzeitig (die Punkte oben).</p>
+    <div class="link-row" style="margin-bottom:12px"><button class="btn small" type="button" id="wheelSync">🔄 Mit den Shownotes abgleichen</button><span class="hint" id="wheelSyncStatus"></span></div>
     <ul class="wheel-list" id="wheelList"></ul>
   </section>
 
@@ -692,7 +731,7 @@ const USE_TMDB     = true;   // Cover + Vorschläge beim Tippen (braucht die Edg
 
 const $ = (s, el = document) => el.querySelector(s);
 const IMG = "https://image.tmdb.org/t/p/";
-const state = { films: [], done: [], wheel: [], pending: [], isAdmin: false, showVotes: true, mine: new Set(), q: "", lastIds: new Set(), firstRender: true, picked: null, showAllDone: false };
+const state = { films: [], done: [], wheel: [], pending: [], isAdmin: false, showVotes: true, mine: new Set(), q: "", lastIds: new Set(), firstRender: true, picked: null, showAllDone: false, picks: new Map(), picksReady: true };
 
 const norm = s => (s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
   .replace(/^(der|die|das|the|a|an|le|la|les|el)\s+/, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
@@ -784,6 +823,14 @@ function demoBackend() {
     { id: "p2", title: "asdfgh lol", year: null, note: null, tmdb_id: null, poster_path: null, created_at: new Date(now - 0.3 * h).toISOString() },
   ];
   let admin = false, showVotes = true;
+  const picks = new Map([["d9", { picked_by: "community", feed_title: "Pulp Fiction", wheel_since: "Folge 60" }]]);
+  // Demo-Shownotes (live kommen sie aus dem Acast-Feed)
+  const demoFeed = [
+    { n: 62, episode: "Folge 62", url: "https://example.com/folge-62", date: new Date(now - 2 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Oppenheimer", "Anatomie eines Falls", "Lola rennt"] },
+    { n: 61, episode: "Folge 61", url: null, date: null, titles: ["Pulp Fiction", "Oppenheimer", "Victoria", "Godzila"] },
+    { n: 60, episode: "Folge 60", url: null, date: null, titles: ["Pulp Fiction", "Victoria", "Godzilla", "Das Leben der Anderen"] },
+    { n: 59, episode: "Folge 59", url: null, date: null, titles: ["Victoria", "Godzilla", "Das Leben der Anderen", "Der schwarze Diamant"] },
+  ];
   const mine = new Set();
   let listener = () => {};
   const emit = () => listener();
@@ -801,7 +848,8 @@ function demoBackend() {
       return { films: copy.filter(f => !f.discussed_at && !f.on_wheel_at), wheel: copy.filter(f => f.on_wheel_at && !f.discussed_at).sort((a, b) => a.on_wheel_at.localeCompare(b.on_wheel_at)),
         done: copy.filter(f => f.discussed_at)
         .sort((a, b) => b.discussed_at.localeCompare(a.discussed_at)), mine: new Set(mine),
-        pending: admin ? pending.map(p => ({ ...p })) : [], isAdmin: admin, showVotes };
+        pending: admin ? pending.map(p => ({ ...p })) : [], isAdmin: admin, showVotes,
+        picks: admin ? new Map([...picks].map(([k, v]) => [k, { ...v }])) : new Map(), picksReady: true };
     },
     async add({ title, year, note, tmdb_id, poster_path, original_title, title_en }) {
       const base = { id: "d" + Date.now(), title, year, note, tmdb_id, poster_path, original_title, title_en, created_at: new Date().toISOString() };
@@ -819,7 +867,12 @@ function demoBackend() {
       if (fields.status === "approved" && pending.includes(f)) { pending = pending.filter(x => x !== f); delete f.status; films.push({ votes: 0, ...f }); }
       emit(); },
     async remove(id) { films = films.filter(x => x.id !== id); pending = pending.filter(x => x.id !== id); mine.delete(id); emit(); },
-    async toWheel(id) { Object.assign(films.find(x => x.id === id), { on_wheel_at: new Date().toISOString() }); emit(); },
+    async toWheel(id) { Object.assign(films.find(x => x.id === id), { on_wheel_at: new Date().toISOString() });
+      if (!picks.has(id)) picks.set(id, { picked_by: "community" }); emit(); },
+    async setPick(id, fields) { picks.set(id, { ...(picks.get(id) || {}), ...fields }); emit(); },
+    async addWheel(film, pick) { const id = "d" + Date.now(); films.push({ ...film, id, votes: 0, note: null, created_at: new Date().toISOString(), on_wheel_at: new Date().toISOString() });
+      picks.set(id, pick); emit(); return id; },
+    async feed() { await new Promise(r => setTimeout(r, 300)); return demoFeed.map(e => ({ ...e, titles: [...e.titles] })); },
     async offWheel(id) { films.find(x => x.id === id).on_wheel_at = null; emit(); },
     async link(id, fields) { Object.assign(films.find(x => x.id === id), fields); emit(); },
     async addBacklog(film) { films.push({ ...film, id: "d" + Date.now(), votes: 0, created_at: new Date().toISOString() }); emit(); },
@@ -880,7 +933,7 @@ function supabaseBackend() {
       if (session && !session.user.is_anonymous) await checkAdmin();
     },
     async load() {
-      const [r1, r2, r3, r4, r5, r6] = await Promise.all([
+      const [r1, r2, r3, r4, r5, r6, r7] = await Promise.all([
         sb.from("film_ranking").select(cols),
         sb.from("film_discussed").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url,followups").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
@@ -888,10 +941,14 @@ function supabaseBackend() {
               : Promise.resolve({ data: [], error: null }),
         sb.from("settings").select("show_votes").eq("id", 1).maybeSingle(),
         sb.from("film_wheel").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,on_wheel_at,votes").order("on_wheel_at"),
+        admin ? sb.from("film_picks").select("film_id,picked_by,feed_title,wheel_since") : Promise.resolve({ data: [], error: null }),
       ]);
       for (const r of [r1, r2, r3, r4, r6]) if (r.error) throw r.error;
       const showVotes = r5.error || !r5.data ? true : r5.data.show_votes !== false;   // fehlt die Tabelle: Stimmen zeigen
-      return { films: r1.data, done: r2.data, mine: new Set(r3.data.map(v => v.film_id)), pending: r4.data, wheel: r6.data, isAdmin: admin, showVotes };
+      // fehlt die Tabelle film_picks noch (setup.sql nicht neu ausgeführt), läuft der Rest trotzdem
+      const picks = new Map((r7.error ? [] : r7.data).map(p => [p.film_id, p]));
+      return { films: r1.data, done: r2.data, mine: new Set(r3.data.map(v => v.film_id)), pending: r4.data, wheel: r6.data, isAdmin: admin, showVotes,
+        picks, picksReady: !r7.error };
     },
     async add(film) {
       await ensureUser();
@@ -916,7 +973,21 @@ function supabaseBackend() {
     async approve(id) { must(await sb.from("films").update({ status: "approved" }).eq("id", id)); },
     async update(id, fields) { must(await sb.from("films").update(fields).eq("id", id)); },
     async remove(id) { must(await sb.from("films").delete().eq("id", id)); },
-    async toWheel(id) { must(await sb.from("films").update({ on_wheel_at: new Date().toISOString() }).eq("id", id)); },
+    async toWheel(id) { must(await sb.from("films").update({ on_wheel_at: new Date().toISOString() }).eq("id", id));
+      // kommt von der Shortlist → Community (eine vorhandene Zuordnung bleibt); ohne Tabelle kein Fehler
+      await sb.from("film_picks").upsert({ film_id: id, picked_by: "community" }, { onConflict: "film_id", ignoreDuplicates: true }); },
+    async setPick(id, fields) {
+      must(await sb.from("film_picks").upsert({ film_id: id, ...fields, updated_at: new Date().toISOString() }, { onConflict: "film_id" })); },
+    async addWheel(film, pick) {
+      const { data, error } = await sb.from("films").insert({ ...film, on_wheel_at: new Date().toISOString(), created_by: uid }).select("id").single();
+      if (error) throw error;
+      must(await sb.from("film_picks").upsert({ film_id: data.id, ...pick }, { onConflict: "film_id" }));
+      return data.id; },
+    async feed() {
+      const { data, error } = await sb.functions.invoke("tmdb-search", { body: { feed: true } });
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error(data?.error || "Die Edge Function „tmdb-search“ kennt den Feed noch nicht – bitte die neue Version einspielen.");
+      return data; },
     async offWheel(id) { must(await sb.from("films").update({ on_wheel_at: null }).eq("id", id)); },
     async link(id, fields) { must(await sb.from("films").update(fields).eq("id", id)); },
     async addBacklog(film) { must(await sb.from("films").insert({ ...film, created_by: uid })); },
@@ -1096,7 +1167,7 @@ function renderTeam() {
   $("#teambar").classList.toggle("show", state.isAdmin);
   const card = $("#pendingCard");
   card.hidden = !state.isAdmin;
-  renderWheel();
+  renderWheel(); renderPick();
   const unlinked = state.done.filter(f => !f.tmdb_id).length;
   $("#linkCard").hidden = !state.isAdmin || (!unlinked && !linkRows.length);
   $("#linkCount").textContent = unlinked;
@@ -1270,24 +1341,42 @@ $("#backlogAdd").addEventListener("click", async () => {
   }
 });
 
+/* Wer hatte den Film auf dem Rad? (nur fürs Team – steht in der geschützten Tabelle film_picks) */
+const WHO = {
+  max: { label: "Max", img: "data:image/webp;base64,UklGRlIOAABXRUJQVlA4IEYOAADQOQCdASpwAHAAPmEmjkUkIiEYLC7UQAYEtgBWGZyEk9u8za0/5D8GfuXxTJj+3D9r93fzT9F3mEfrP0xfMj50vpE/ynqFfzD/L9bh6GH65enR7Mv9x/8H7d+zNdIPCvye++vcnmw9Q+ZH8v+/f6Hzl8V/lB/e+od7D/z+YI+1X1//V/bv6fv9p6a/Xb2Av1Q/3HIu+d+wB+gfVf/sf/Z5hvzn/G/+T/LfAR/Nf7B/xP8B+SXJKqYuW3sZkbTtTWv05f7dHBXN//6P6Nw/NqIkNFUdjck9ZR+VxKGFjzz+DNwBA2uGsGINBhtS8nzG+fB+nRwTqY5SPa0lfQL18I6BEt5Spz41rVR/saSDYhXCJDK85iEiHurLcGug4CgtYah+WR3E9g8hyAkdXEhHVfSEU6LguCjj4voMftyPHSMQAGsRU3nZzLnDQEl9HvVUREL/qDGeXoRDsVOGe61IjrQQYfjZGRrc9D45Zc6vBKS2Mw5qH7cmd/Uy1Qs3Wp6pgkStJ/G07Gf/7vE5tBiNXRHzH8IC430I5qJrAJk7G1kmcwlq48Mta1/5N7PoyZR+BR8Jiy1kuY80t1h8spASOC7gY4NHv7FYQmTvmXcdutHQwbAyZzp2gYAA/vys7MigGCm1seFkLCCjpQA8ilKXj3Q8GLZ5fvcH133IKBC3/+vJN5CbA/pSnaPywT+oTNuV8nEKoDk2TizfkH3bKsGGF40WBINtd6/dtY+NEa8WDpjqt9z3ajFjW8a1fTR0PpBkhaDsbEgZykjEa86gINPFQj+e7kg2X7WSpdREHm4k+ePo/105Ie2cqLzSed3sBz7rwukkmm61QowtGpv2JL26XfvG6G/X0U1Zy3B62WiKL5n3e3rvVfYXOKMNRIlLPt4VmzWNpRLYjvqKDjop32xPO4sXpzcbxw7JMi1hqbbJXo56/aqQx6YCXb3SNMFM6QvT7aTougdStcvDCDcT6QxhlHBK7RT+DtuGrZ7ecQI3+V5KAL2LhEOGPJ1CMlIoaZQV24zWiKDMZlwC2FwpyUAbiiB6nTVVr7C95XeWPi3eM+KUn1DS+Cw8CzBijKoY7cHY2+CzvzVgEUiY7h7g5QRBiiymvpO2yQEWiO0rG6qvL3ylrQPdAHj7L9VPbEA8PjI3wIn4nwA8qhQCPjxsz8zSoIenCQIzcN0OvFjTAbWFrXHWLxfnc8P/jhJvR9nYe6TG/xi6bWzPlPy/h7h2bMCqhFgsRGN5sbNZVpHUpa6hO56qZoWRdwt4hppb4B+M9NPKJZ8B8FgtCcT8g1mY5RsGLzQQf6edM2zDqcLHFEOT72A8R8bkjPNb2rRyFkhCcgbb2xEbpEPPyXyr4KI8Xp8l9EEdsgGs44o/s3gbr3IkySu0WYeZ8/E/Z9mPtf278lajU+6ZJBrFYWjIGu1zF72fTNVs9pYnju3GUM65mD5QIp6rtaFeSeRW9spyEDOjvi+/3Id7IAssxRDRGC9yENKJv4mJjsM7ErraFJVy7uOHthI3khijseDvm78UsEJefimvvgJgdHX1GlsI6Bdm5dNd/8SFsocVSw0JvYqZFWadBDdePuuvk+DWBKzwuUP9nPHpt3nzfLeyX8a1NOI0R7vTWos8q7EaJCuCjiFPlAmTLGHDauSk5orEZfNzDnOWJhU42MtNCqVkoJlzqKCiYCYpzhhVLjE05IclKyqDSRnNYz/TGDraB+bjtJG19O+Ng7BQoaZ1z8e9obXB2P0+UjAx6lm5M9TWrSjY112S9FUgorzdCfMj445QqcxOb20gtCF7tSeosWWCF9j0Um24g2aHqmFiKAJqvqJliLcYj4T9q+7Rloy67BSWlpMk1jgh+OZ+LmhMXhFkqMix0vlkAhxKN0oA/J92/G5CdEeCXT773mlqnmvMYnVLFjb7X/8DAmkdDrhz/M4sjn8gEhZArjWehKyBrTCQ+f29WcWNWKkqh5mCn6mGwDkTVkeq3jAmpa+IIouKvpG1P6qWPgGdB/UJkRITBGIkYpDweWMeIEEAE3rrCU2Utz92C8XDdx9K9voLsdvXgHzrLv6yn//JgNIqoQcmLQgWpfFdalAGEF1Je0fykhnJtoC8nT6BkPmSSNRWlQmCc8ec6Gw8OTYGVerHeEAOjKVM4vrdtfwidkibRotctPbq8065Lyo17UJE7Wr6gevLGYwhUmEbQoEafDTQXCncdB63KsEBDJs1MxBa7ZXop227JDYWGXAdCConrloFcj53Yz8WX10D/EuotEJ2UDIDxKU3320wv5m/r/8rOP8n34rYHs/xJ65lD54FrDbFvVoO0zSaqUIJXhMjzYYJcO3Mucp2TBN9W+oy8VP/zqyTmLjrC0y4xT8klsb18byf0zn5SZj6PWKnQ9SKKFaAJTUgHOyf5PbPC8Wv77wdQvCxcLWOVLkSbSf6zpky8L0IxyfCOkf0J85TLfwiJ0llqiIS0Bfw7yNT13/4EfbIBQqxVTMrPZBpT3iaxo8SBkgfrYVt0QiXZSxvp9As9CSMefUZVydE5tGbV4oyZh1bEV0FfPulPhVxHdcWM+YtkiIXlIQyRjp5I9/y/vEPkgWUWgrZ1xSIpFE2j9Ie2W0lHjfnrBWF6Jdf42HnkPzRfkJ0399lEj/NA3HQEYe7/BB2ff09j6JvKAJLvF3zj/pZbnCX2Vz144Bcd3VqKAKId0DpnkiCQYKHqWhIQyu5vbOV3nfSKUenfIklGdFc/ZPzgAQcPx3UZf4HtiMymAlzB2sKfax+sVdCuRSa5eANiqHBq11PO+voZ1nQl7lc1T8issBrKyIlFDY53/5iBZiA5bks/E5+BtC0LXjtTErptGfSlLjcnifp8RfR5vPt20GK739AqnWuKW9JE+yHA0Udb+2v+vaBsRh4AH5PN9WSOXIL3sL67aEkNxfmXRK+Fn7KQ/jh0W+PI0nwAACdsDQGzOPiv3R7hg5kb5nqS5cvSoeN5iulamh1rOJy74LOVDkkZHvCy0w4+HzHoLqZU9FD6aPHNr5OdZ7Opd89svrcfo4uktDoIfIcTOIWNh2o/d7ganBW971YZs1h9LLoUQ83LPRNAkiQ0Z+vwzy61x2/6S8NHVvLquuBw4cxw5OMwF+QZEm93m0agjA90Khsh5N8l3Ad0T1qQCTYIbjKf576xW/v3KkoB1JF26Ip0YsNRngvfeKZX+KsgkBxCfYZYv/6yoGMfqeqilG+eJuLGu7VmxAzfumfdG32L9Ex19JihHnRoztmIwU7XWLrjsT2Ah/wuL5aEXw7TnX9/fDOgWM3bYfE5VDRmx5QfB77FYNV9am/sh5+wN89bs/khx94+f5c28WWzzwWPBSTj+zNH67vOWI+s5+3h/N0LvQy9UlpvOIffHzx60joHLz02riLipnz+8Pfw7EoP7/U0j6g+WB6qrSZv+ZMHEkxk4lr8GGzm/tu3mwsmyIahhurLiagtrCLZ3vMRXltBbpAbPnNkGVFgpAx0ZHXtAyPaHxT23n/8SP1TSnBpEw5Wg/RTJSLbAxW6+WGZd0/iH7e1Uxhyu63NpAdMa52qZAVk7+i2WtpKXh3WnCR9oLSCtt+gadWxl8+t6fgCPFhPnukPj7ihMZltnB9sSjwUjF1pymQCKTV8jTYWMqc5uySeOzVPvcRur2CcA22QIaNrS548jplObRUQAzNpm40EQkaPq3R7VDoFul/okMUtkr095lAaNrYQxoevmv+7TR/M6vnVtk48XPTZOh04Js34tJJ3sGCbcpDeVTIfm26LeweC1sE0Bl6cbbQvRB39Jqjn36rw27PpKfLpUVCxS7HNgfF7+LLVdqLThBi9TztyE6YYpNnWkb/U9eh+x7Sxzz5f4sy87T/iPYsAvYqc24pjNfy5WKUY3UvjhsKgLS8hUVcuN6gDxsrUU+tKs2Z9I0n69Gj1XS8vtHAEh3zLkA8/4xGiRcQW5r0Rtd94xxj2ohLHavHM+ESktJOj1eAFqcw2pbgx5j56QL23t3bTKWL4SpwYPKaxBRQ5PBVoIUYW2el+Hg1QEms6JtaEoN3B609dIo4C7g504554kZCX/8SVIfSCAaPxUG7S4Hz7weAn/cqQQSTbMrLujUysQ27f14fi4nEQgnvvFCBQ2U38aVaPvp7/aIeJeRfgHy3/5Ug7Pk2ZyFam/PGKmQQQ8uw2MW1l6D4Z8hFCXm4jiUweyCLDbAZ/JhH2uQkB8GKKmTrSNQ0m/hGdwID1OHrkHfff6tq/8hn9//JMpdIbi//UXaTFHTI1RhoMinCYsFYrWQvNTZQANB0nt/iqKDZrZWAumpodzFDVIWogQKvR8X3kz1uTdXL5FDR7WaGPb3hicKgL3BjZmyo8k/qH34OTvmJLgdOak3WRinfR+thBM7sh0mSiEdP/4a/5pbWVpUs+sbtPMwl0jyfn5SCyq1kDOYnh685sFLsUp6nkVW6xFcyJSB1GshbNaLiJqEVqf4vzPpI87+fstFg+EihRKpId1dOsFU2VEGPhOGvLVwwVmJqjh0lDbsZC3avMBMaB8StmEaWYoBevkuzga/2+Sx7ArY77FH6RJppuissHlCSm2y6BBbpKcqXDxyu/FEjKNN4UJdrCP9z/mAh/w0xAm0laImF/agzRLx65KMT1FAIC59pWcHDVjAWO4JYju1IEnXHJYGCry9OdM8mYXKJp33dKKm/c6zfwEcxRL2VZRzZa/H4euCb/Vn7kiidhe2qEXJP/7OL8RgJuMBdg0pWGMZsPVdD1fI6ylXvh5wiXbwIrkR7ItAOlfrbGxdkPc2rkCBXUUyGJp3Tzj6iOg+vnTKdlz1EITA4icIIAQuraP5V68Q/yX0hYDulyCMGgmZXHEgR9+Iv9cE4dhEL21rmj41Ewn7N4UAGD6gAAAA=" },
+  vincent: { label: "Vincent", img: "data:image/webp;base64,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" },
+  community: { label: "Community", emoji: "👥" },
+};
+const whoFace = k => WHO[k].img ? `<img class="who-face" src="${WHO[k].img}" alt="">` : `<span class="who-face" aria-hidden="true">${WHO[k].emoji}</span>`;
+const whoButtons = sel => Object.keys(WHO).map(k =>
+  `<button type="button" class="who-item" role="radio" aria-checked="${sel === k}" data-value="${k}">${whoFace(k)}${WHO[k].label}</button>`).join("");
+const pickOf = f => state.picks.get(f.id) || null;
+const isCommunity = f => (pickOf(f)?.picked_by || "community") === "community";   // ohne Zuordnung: kam von der Shortlist
+const epNum = e => +((e || "").match(/(\d+)/) || [])[1] || 0;
+
 function renderWheel() {
   const card = $("#wheelCard");
   card.hidden = !state.isAdmin;
   if (!state.isAdmin) return;
-  [...$("#wheelSlots").children].forEach((d, i) => d.classList.toggle("on", i < state.wheel.length));
+  const comm = state.wheel.filter(isCommunity).length;
+  [...$("#wheelSlots").children].forEach((d, i) => d.classList.toggle("on", i < comm));
   const list = $("#wheelList");
-  if (!state.wheel.length) { list.innerHTML = `<li class="pend-empty">Gerade ist kein Community-Film auf dem Rad.</li>`; return; }
-  list.innerHTML = state.wheel.map(f => `
+  if (!state.wheel.length) { list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Abgleichen“ holt ihr die Filme aus den Shownotes.</li>`; return; }
+  list.innerHTML = state.wheel.map(f => {
+    const p = pickOf(f), who = p?.picked_by, c = isCommunity(f);
+    return `
     <li class="wheel-item" data-id="${esc(f.id)}">
       ${posterHTML(f.poster_path, f.title, "w92")}
-      <div><div><span class="title">${esc(titleParts(f).main)}</span>${f.year ? `<span class="year">(${f.year})</span>` : ""}</div>
+      <div><div><span class="title">${esc(titleParts(f).main)}</span>${f.year ? `<span class="year">(${f.year})</span>` : ""}
+          <button type="button" class="who-badge" data-wact="who" title="${who ? WHO[who].label : "Noch nicht zugeordnet"} – ändern" aria-label="Zuordnung ändern">${who ? (WHO[who].img ? `<img src="${WHO[who].img}" alt="">` : WHO[who].emoji) : "?"}</button></div>
         ${titleParts(f).sub ? `<div class="alt">${esc(titleParts(f).sub)}</div>` : ""}
-        <div class="added">aufs Rad gekommen ${ago(f.on_wheel_at)} · ${f.votes} ${f.votes === 1 ? "Stimme" : "Stimmen"}</div>
+        <div class="added">${p?.wheel_since ? `auf dem Rad seit ${esc(p.wheel_since)}` : `aufs Rad gekommen ${ago(f.on_wheel_at)}`}${c ? ` · ${f.votes} ${f.votes === 1 ? "Stimme" : "Stimmen"}` : ""}</div>
         <div class="actions">
           <button type="button" class="mini ok" data-wact="discuss">✓ Besprochen</button>
-          <button type="button" class="mini" data-wact="back">↩ Zurück auf die Liste</button>
+          ${c ? `<button type="button" class="mini" data-wact="back">↩ Zurück auf die Liste</button>`
+              : `<button type="button" class="mini danger" data-wact="drop">🗑 Vom Rad nehmen</button>`}
         </div></div>
-    </li>`).join("");
+    </li>`; }).join("");
 }
 const episodeFields = [
   { name: "episode", label: "Folge", placeholder: "z. B. Folge 25", optional: true, max: 60 },
@@ -1301,10 +1390,234 @@ $("#wheelList").addEventListener("click", async e => {
   const b = e.target.closest("[data-wact]"); if (!b) return;
   const id = b.closest(".wheel-item").dataset.id, f = state.wheel.find(x => x.id === id); if (!f) return;
   if (b.dataset.wact === "back") { teamDo(() => api.offWheel(id), `„${f.title}“ ist wieder auf der Liste.`); return; }
+  if (b.dataset.wact === "who") {
+    if (!needPicks()) return;
+    const v = await dialog({ title: `Von wem kam „${f.title}“?`, confirm: "Speichern", text: "Das seht nur ihr.",
+      fields: [{ name: "who", label: "Aufs Rad gesetzt von", type: "who", value: pickOf(f)?.picked_by || "", required: true }] });
+    if (v) teamDo(() => api.setPick(id, { picked_by: v.who }), "Gespeichert.");
+    return;
+  }
+  if (b.dataset.wact === "drop") {
+    const ok = await dialog({ title: "Vom Rad nehmen?", confirm: "Entfernen", danger: true,
+      text: `„${f.title}“ wird vom Rad genommen und gelöscht, ohne ins Backlog zu wandern. Wurde der Film besprochen, nimm stattdessen „Besprochen“.` });
+    if (ok) teamDo(() => api.remove(id), `„${f.title}“ ist vom Rad.`);
+    return;
+  }
   const v = await dialog({ title: `„${f.title}“ besprochen`, confirm: "Ins Backlog",
     text: "Der Film verlässt das Rad und landet im Backlog. Folge und Link könnt ihr auch später in Supabase nachtragen.", fields: episodeFields });
   if (!v || !checkUrl(v)) return;
   teamDo(() => api.discuss(id, { episode: v.episode || null, episode_url: v.episode_url || null }), `„${f.title}“ ist im Backlog.`);
+});
+
+/* ---------------- Rad ↔ Shownotes ---------------- */
+function needPicks() {
+  if (state.picksReady) return true;
+  toast("Dafür fehlt noch die Tabelle für die Zuordnung – bitte die neue setup.sql in Supabase ausführen.", true);
+  return false;
+}
+function lev(a, b) {
+  if (a === b) return 0;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+const near = (a, b) => a === b || (Math.min(a.length, b.length) >= 6 && Math.abs(a.length - b.length) <= 2 && lev(a, b) <= 2);
+// Passt ein Titel aus den Shownotes zu diesem Film? (fuzzy: auch mit Tippfehlern wie „Midsomar“)
+function feedMatch(f, t, fuzzy = false) {
+  const n = norm(t), ts = [f.title, f.original_title, f.title_en, pickOf(f)?.feed_title].filter(Boolean).map(norm);
+  return ts.includes(n) || (fuzzy && ts.some(x => near(x, n)));
+}
+const reload = async () => { Object.assign(state, await api.load()); render(); };
+const today = () => new Date().toISOString().slice(0, 10);
+
+$("#wheelSync").addEventListener("click", async () => {
+  if (!needPicks()) return;
+  const btn = $("#wheelSync"), st = $("#wheelSyncStatus");
+  btn.disabled = true; st.textContent = "Lese die Shownotes …";
+  let eps;
+  try { eps = await api.feed(); }
+  catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
+  finally { btn.disabled = false; st.textContent = ""; }
+  const ep = eps.find(e => e.titles.length);
+  if (!ep) { toast("In den Shownotes steht kein Abschnitt „Glücksradfilme:“.", true); return; }
+  const matched = new Map(), news = [], justDone = [];
+  for (const t of ep.titles) {
+    const free = w => !matched.has(w.id);
+    const f = state.wheel.find(w => free(w) && feedMatch(w, t)) || state.wheel.find(w => free(w) && feedMatch(w, t, true));
+    if (f) { matched.set(f.id, t); continue; }
+    // steht noch in den Shownotes, ist aber gerade erst besprochen worden (diese oder letzte Folge): kein neuer Film
+    if (ep.n && state.done.some(d => feedMatch(d, t) && epNum(d.episode) >= ep.n - 1)) justDone.push(t); else news.push(t);
+  }
+  const gone = state.wheel.filter(w => !matched.has(w.id));
+  if (!news.length && !gone.length) { toast(`Das Rad ist auf dem Stand von ${ep.episode}.`); return; }
+  if (justDone.length) console.info("Schon besprochen, übersprungen:", justDone);
+  const ok = await dialog({ title: `Abgleich mit ${ep.episode}`, confirm: "Durchgehen",
+    text: [news.length ? `Neu auf dem Rad: ${news.join(", ")}.` : "",
+           gone.length ? `Nicht mehr in den Shownotes: ${gone.map(f => f.title).join(", ")}.` : "",
+           justDone.length ? `Gerade erst besprochen, bleibt im Backlog: ${justDone.join(", ")}.` : "",
+           "Ihr bestätigt jeden Film einzeln – nichts passiert automatisch."].filter(Boolean).join(" ") });
+  if (!ok) return;
+  busy++;
+  try {
+    for (const t of news) if (await syncAdd(t, ep) === "stop") return;
+    for (const f of gone) if (await syncGone(f, ep) === "stop") return;
+    toast("Abgleich fertig.");
+  } catch (e) {
+    console.error(e);
+    toast(e.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (e.message || "Fehler"), true);
+  } finally { busy--; await reload().catch(() => {}); }
+});
+
+async function syncAdd(t, ep) {
+  const onList = state.films.find(f => feedMatch(f, t)) || state.films.find(f => feedMatch(f, t, true));
+  let res = [];
+  if (tmdbOn && !tmdbBroken) { try { res = await api.search(t, { tv: true }); } catch (err) { console.warn(err); } }
+  const options = [];
+  const was = state.done.find(f => feedMatch(f, t)) || state.done.find(f => feedMatch(f, t, true));
+  if (was && !onList) options.push({ value: "skip", label: titleParts(was).main, sub: `Schon besprochen${was.episode ? " in " + epText(was) : ""} → nicht aufs Rad setzen`,
+    poster: was.poster_path, tmdb_id: was.tmdb_id, tmdb_type: was.tmdb_type });
+  if (onList) options.push({ value: "list", label: titleParts(onList).main, sub: `Von der Shortlist · ${onList.votes} ${onList.votes === 1 ? "Stimme" : "Stimmen"}`,
+    poster: onList.poster_path, tmdb_id: onList.tmdb_id, tmdb_type: onList.tmdb_type });
+  res.forEach((c, j) => options.push(pickOption(c, j)));
+  options.push({ value: "free", label: "Ohne TMDB eintragen", sub: `„${t}“`, free: true });
+  if (!(was && !onList)) options.push({ value: "skip", label: "Überspringen", sub: "diesen Film jetzt nicht aufs Rad setzen", free: true });
+  let v;
+  for (;;) {
+    v = await dialog({ title: `Neu auf dem Rad: „${t}“`, confirm: "Übernehmen",
+      text: `Aus den Shownotes von ${ep.episode}. Richtige Version wählen und zuordnen – die Zuordnung seht nur ihr. „Abbrechen“ beendet den Abgleich.`,
+      fields: [{ name: "pick", label: "Film", type: "pick", options },
+               { name: "who", label: "Aufs Rad gesetzt von", type: "who", value: onList ? "community" : "" }] });
+    if (!v) return "stop";
+    if (v.pick === "skip" || v.who) break;
+    toast("Bitte noch zuordnen: Max, Vincent oder Community.", true);
+  }
+  if (v.pick === "skip") return;
+  const pick = { picked_by: v.who, feed_title: t, wheel_since: ep.episode };
+  if (v.pick === "list") { await api.toWheel(onList.id); await api.setPick(onList.id, pick); }
+  else {
+    const c = v.pick === "free" ? null : res[+v.pick];
+    const film = c
+      ? { title: c.title, year: c.year || null, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null,
+          original_title: c.original_title || null, title_en: c.title_en || null }
+      : { title: t, year: null, tmdb_id: null, tmdb_type: "movie", poster_path: null, original_title: null, title_en: null };
+    const d = c ? findDupe(c.title, c.tmdb_id, c.year, [c.original_title, c.title_en], c.tmdb_type) : null;
+    if (d && d._wheel) await api.setPick(d.id, { feed_title: t });                      // steht schon drauf, nur anders geschrieben
+    else if (d && d._done) toast(`„${d.title}“ wurde schon besprochen${d.episode ? " (" + epText(d) + ")" : ""} – nicht aufs Rad gesetzt.`, true);
+    else if (d) { await api.toWheel(d.id); await api.setPick(d.id, pick); }
+    else await api.addWheel(film, pick);
+  }
+  await reload();
+}
+
+async function syncGone(f, ep) {
+  const c = isCommunity(f);
+  const v = await dialog({ title: `Nicht mehr dabei: „${f.title}“`, confirm: "Übernehmen",
+    text: `„${f.title}“ steht nicht mehr in den Shownotes von ${ep.episode}. Was ist passiert? „Abbrechen“ beendet den Abgleich.`,
+    fields: [
+      { name: "act", label: "Der Film …", type: "select", options: [
+        { value: "discuss", label: "wurde gezogen und besprochen → ins Backlog" },
+        { value: "drop", label: c ? "wurde nur ausgetauscht → zurück auf die Shortlist" : "wurde nur ausgetauscht → vom Rad löschen" },
+        { value: "keep", label: "ist noch auf dem Rad → nichts ändern" }] },
+      { name: "episode", label: "Besprochen in", value: ep.episode, optional: true, max: 60 },
+      { name: "date", label: "Erschienen am", type: "date", value: ep.date || today(), optional: true },
+      { name: "episode_url", label: "Link zur Folge", type: "url", value: ep.url || "", optional: true },
+    ] });
+  if (!v) return "stop";
+  if (v.act === "keep") return;
+  if (v.act === "drop") await (c ? api.offWheel(f.id) : api.remove(f.id));
+  else {
+    if (!checkUrl(v)) return;
+    await api.discuss(f.id, { discussed_at: v.date || today(), episode: v.episode || null, episode_url: v.episode_url || null });
+  }
+  await reload();
+}
+
+/* ---------------- Alte Radfilme zuordnen ---------------- */
+let pickRows = null, pickShown = 25, pickShowAll = false;
+const pickTouched = new Set();
+const pickFilm = r => r.filmId ? [...state.done, ...state.wheel].find(f => f.id === r.filmId) : null;
+
+function buildPickRows(eps) {
+  const cands = [];
+  for (const e of eps.slice().sort((a, b) => (a.n || 0) - (b.n || 0)))
+    for (const t of e.titles) {
+      const k = norm(t); if (!k) continue;
+      const c = cands.find(c => c.key === k) || cands.find(c => near(c.key, k));
+      if (c) c.last = e.n; else cands.push({ title: t, key: k, first: e.n, last: e.n });
+    }
+  const pool = [...state.done, ...state.wheel];
+  for (const c of cands) {
+    let hits = pool.filter(f => feedMatch(f, c.title));
+    if (!hits.length) hits = pool.filter(f => feedMatch(f, c.title, true));
+    // am ehesten: der Film, der nach seiner Zeit auf dem Rad besprochen wurde
+    const after = hits.filter(f => f.discussed_at && epNum(f.episode) >= c.first).sort((a, b) => epNum(a.episode) - epNum(b.episode));
+    c.filmId = (hits.find(f => norm(pickOf(f)?.feed_title) === c.key) || after[0] || hits.find(f => !f.discussed_at) || hits[0])?.id || null;
+  }
+  return cands.sort((a, b) => b.last - a.last || b.first - a.first);
+}
+function renderPick() {
+  const card = $("#pickCard");
+  card.hidden = !state.isAdmin;
+  if (!state.isAdmin) return;
+  const counts = { max: 0, vincent: 0, community: 0 };
+  state.picks.forEach(p => { if (counts[p.picked_by] != null) counts[p.picked_by]++; });
+  const total = counts.max + counts.vincent + counts.community;
+  $("#pickCount").textContent = total;
+  const stats = $("#pickStats");
+  stats.hidden = !total;
+  stats.textContent = `Bisher zugeordnet: Max ${counts.max} · Vincent ${counts.vincent} · Community ${counts.community}`;
+  const list = $("#pickList");
+  if (!pickRows) { list.innerHTML = ""; $("#pickMoreRow").hidden = true; return; }
+  const open = pickRows.filter(r => pickShowAll || pickTouched.has(r.key) || !pickOf(pickFilm(r) || {})?.picked_by);
+  const rows = open.slice(0, pickShown);
+  $("#pickStatus").textContent = `${pickRows.length} Radfilme in den Shownotes, ${pickRows.filter(r => !pickOf(pickFilm(r) || {})?.picked_by).length} noch offen`;
+  $("#pickMoreRow").hidden = false;
+  $("#pickMore").hidden = open.length <= pickShown;
+  $("#pickAll").textContent = pickShowAll ? "Nur offene zeigen" : "Auch zugeordnete zeigen";
+  list.innerHTML = rows.length ? rows.map(r => {
+    const f = pickFilm(r), who = f ? pickOf(f)?.picked_by : null;
+    const span = r.first === r.last ? `Folge ${r.first}` : `Folge ${r.first}–${r.last}`;
+    return `<li class="pick-item-row" data-key="${esc(r.key)}">
+      <div><div class="t">${f ? esc(titleParts(f).main) + (f.year ? ` <span class="year">(${f.year})</span>` : "") : "„" + esc(r.title) + "“"}</div>
+        <div class="s">${f ? `auf dem Rad: ${span} · ${f.discussed_at ? "besprochen" + (f.episode ? " in " + esc(f.episode) : "") : "noch auf dem Rad"}${norm(f.title) !== r.key ? ` · Shownotes: „${esc(r.title)}“` : ""}`
+                         : `<span class="warn">auf dem Rad: ${span} · nicht im Backlog gefunden – über 🔍 zuordnen</span>`}</div></div>
+      <div class="tools"><div class="who small" role="radiogroup" aria-label="Aufs Rad gesetzt von">${f ? whoButtons(who) : ""}</div>
+        <button type="button" class="mini" data-pk="find" title="Anderen Film aus dem Backlog wählen" aria-label="Anderen Film wählen">🔍</button></div>
+    </li>`; }).join("") : `<li class="pend-empty">Alles zugeordnet.</li>`;
+}
+$("#pickLoad").addEventListener("click", async () => {
+  if (!needPicks()) return;
+  const btn = $("#pickLoad"); btn.disabled = true; $("#pickStatus").textContent = "Lese die Shownotes aller Folgen …";
+  try { pickRows = buildPickRows(await api.feed()); pickShown = 25; }
+  catch (e) { console.error(e); $("#pickStatus").textContent = ""; toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); }
+  finally { btn.disabled = false; }
+  renderPick();
+});
+$("#pickMore").addEventListener("click", () => { pickShown += 25; renderPick(); });
+$("#pickAll").addEventListener("click", () => { pickShowAll = !pickShowAll; renderPick(); });
+$("#pickList").addEventListener("click", async e => {
+  const li = e.target.closest(".pick-item-row"); if (!li) return;
+  const r = pickRows.find(x => x.key === li.dataset.key); if (!r) return;
+  const w = e.target.closest(".who-item");
+  if (w) {
+    const f = pickFilm(r); if (!f) return;
+    pickTouched.add(r.key);
+    teamDo(() => api.setPick(f.id, { picked_by: w.dataset.value, feed_title: r.title, wheel_since: `Folge ${r.first}` }));
+    return;
+  }
+  if (e.target.closest("[data-pk=find]")) {
+    const pool = [...state.wheel, ...state.done].sort((a, b) => titleParts(a).main.localeCompare(titleParts(b).main, "de"));
+    const v = await dialog({ title: `Welcher Film ist „${r.title}“?`, confirm: "Übernehmen",
+      text: "Wähle den passenden Eintrag aus dem Backlog. Fehlt er dort, trag ihn erst über „＋ Film ins Backlog“ ein.",
+      fields: [{ name: "film", label: "Film", type: "select", value: r.filmId || "",
+        options: [{ value: "", label: "– kein Film –" }, ...pool.map(f => ({ value: f.id, label: `${titleParts(f).main}${f.year ? ` (${f.year})` : ""} · ${f.discussed_at ? f.episode || "besprochen" : "auf dem Rad"}` }))] }] });
+    if (!v) return;
+    r.filmId = v.film || null; pickTouched.add(r.key); renderPick();
+  }
 });
 
 // Kleiner Dialog statt alert/confirm/prompt
@@ -1312,7 +1625,9 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
   const back = $("#modalBack"), m = $("#modal");
   m.innerHTML = `<h3 id="mTitle"></h3>${text ? "<p></p>" : ""}
     ${fields.map((f, i) => `<div class="field"><label for="mf${i}">${esc(f.label)}${f.optional ? ' <span class="opt">(optional)</span>' : ""}</label>
-      ${f.type === "pick"
+      ${f.type === "who"
+        ? `<div class="who" id="mf${i}" role="radiogroup" data-value="${esc(f.value || "")}">${whoButtons(f.value)}</div>`
+        : f.type === "pick"
         ? `<div class="pick" id="mf${i}" role="radiogroup" data-value="${esc(f.options[0]?.value ?? "")}">${f.options.map((o, j) => `
             <button type="button" class="pick-item" role="radio" aria-checked="${j === 0}" data-value="${esc(o.value)}">
               ${o.free ? `<div class="poster free"><div class="ph">?</div></div>` : posterHTML(o.poster, o.label, "w92", o.tmdb_id ? { id: o.tmdb_id, type: o.tmdb_type, title: o.label, sub: o.sub } : null)}
@@ -1327,11 +1642,12 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
   m.querySelector("h3").textContent = title;
   if (text) m.querySelector("p").textContent = text;
   m.querySelector("[type=submit]").textContent = confirm;
-  fields.forEach((f, i) => { if (f.type !== "pick" && (f.value != null || f.type !== "select")) m.querySelector("#mf" + i).value = f.value ?? ""; });
-  m.querySelectorAll(".pick").forEach(p => p.addEventListener("click", e => {
-    const it = e.target.closest(".pick-item"); if (!it) return;
+  const isGroup = f => f.type === "pick" || f.type === "who";
+  fields.forEach((f, i) => { if (!isGroup(f) && (f.value != null || f.type !== "select")) m.querySelector("#mf" + i).value = f.value ?? ""; });
+  m.querySelectorAll(".pick,.who").forEach(p => p.addEventListener("click", e => {
+    const it = e.target.closest(".pick-item,.who-item"); if (!it) return;
     p.dataset.value = it.dataset.value;
-    p.querySelectorAll(".pick-item").forEach(x => x.setAttribute("aria-checked", x === it));
+    p.querySelectorAll(".pick-item,.who-item").forEach(x => x.setAttribute("aria-checked", x === it));
   }));
   fields.forEach((f, i) => { if (f.hint) { const h = document.createElement("div"); h.className = "fhint"; h.textContent = f.hint; m.querySelector("#mf" + i).after(h); } });
   back.classList.add("show");
@@ -1344,7 +1660,7 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
     back.onclick = e => { if (e.target === back) close(null); };
     m.onsubmit = e => {
       e.preventDefault();
-      const vals = {}; fields.forEach((f, i) => { const el = m.querySelector("#mf" + i); vals[f.name] = (f.type === "pick" ? el.dataset.value : el.value).trim(); });
+      const vals = {}; fields.forEach((f, i) => { const el = m.querySelector("#mf" + i); vals[f.name] = (isGroup(f) ? el.dataset.value : el.value).trim(); });
       const bad = fields.find(f => f.required && !vals[f.name]);
       if (bad) { const er = $("#mErr"); er.textContent = `Bitte „${bad.label}“ ausfüllen.`; er.classList.add("show"); return; }
       close(vals);
@@ -1377,14 +1693,15 @@ async function onAdminAction(e) {
   const act = e.currentTarget.dataset.act, id = e.currentTarget.closest(".film").dataset.id;
   const f = state.films.find(x => x.id === id); if (!f) return;
   if (act === "wheel") {
-    if (state.wheel.length < 2) {
+    const comm = state.wheel.filter(isCommunity);
+    if (comm.length < 2) {
       teamDo(() => api.toWheel(id), `„${f.title}“ ist jetzt auf dem Rad.`);
       return;
     }
     // Rad ist voll: einer der beiden muss besprochen worden sein
     const v = await dialog({ title: "Das Rad ist voll", confirm: `„${f.title}“ aufs Rad`,
       text: `Auf dem Rad sind schon zwei Community-Filme. Welcher wurde besprochen? Er wandert ins Backlog, „${f.title}“ nimmt seinen Platz ein.`,
-      fields: [{ name: "done", label: "Besprochen wurde", type: "select", options: state.wheel.map(w => ({ value: w.id, label: w.title })) },
+      fields: [{ name: "done", label: "Besprochen wurde", type: "select", options: comm.map(w => ({ value: w.id, label: w.title })) },
                ...episodeFields] });
     if (!v || !checkUrl(v)) return;
     const old = state.wheel.find(w => w.id === v.done);
@@ -1590,8 +1907,24 @@ function fmtRuntime(min) {
 }
 const caseState = { layer: null, poster: null, closing: false };
 
-function caseFromTransform(r, box) {
-  return `translate(${r.left - box.left}px, ${r.top - box.top}px) scale(${r.width / box.width}, ${r.height / box.height})`;
+// Lage des kleinen Covers in der Liste: Mitte, Größe, Neigung und Schatten (am Handy liegt es schräg)
+function posterPose(poster) {
+  const r = poster.getBoundingClientRect(), cs = getComputedStyle(poster);
+  const m = new DOMMatrixReadOnly(cs.transform === "none" ? undefined : cs.transform);
+  return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: poster.offsetWidth, h: poster.offsetHeight,
+           angle: Math.atan2(m.b, m.a) * 180 / Math.PI, shadow: cs.boxShadow };
+}
+// Die große Hülle so verkleinern, verschieben und neigen, dass sie genau auf dem kleinen Cover liegt
+function caseFromPose(p, box) {
+  const dx = p.cx - (box.left + box.width / 2), dy = p.cy - (box.top + box.height / 2);
+  return `translate(${dx}px, ${dy}px) rotate(${p.angle}deg) scale(${p.w / box.width}, ${p.h / box.height})`;
+}
+// Rand und Schatten so umrechnen, dass sie verkleinert genauso aussehen wie beim kleinen Cover
+function smallFace(cs, p, box) {
+  const k = p.w / box.width;
+  cs.style.setProperty("--bwS", (2 / k).toFixed(2) + "px");
+  cs.style.setProperty("--shS", !p.shadow || p.shadow === "none" ? "none"
+    : p.shadow.replace(/(-?[\d.]+)px/g, (_, n) => (n / k).toFixed(2) + "px"));
 }
 function caseBox() {
   const vw = innerWidth, vh = innerHeight;
@@ -1618,9 +1951,10 @@ function fillCase(rear, d) {
 async function openCase(poster) {
   if (caseState.layer || caseState.opening) return;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Lage erst messen, solange das Cover noch so liegt, wie man es sieht (am Handy schräg)
+  const pose = posterPose(poster), box = caseBox();
   // Gleichzeitig mit dem Abheben schiebt sich die DVD zurück in die Hülle
   poster.closest(".cover")?.classList.add("tuck");
-  const r = poster.getBoundingClientRect(), box = caseBox();
   const img = poster.querySelector("img");
   // Sofort das schon geladene kleine Cover zeigen, das große (w500) blendet darüber ein, sobald es fertig ist –
   // sonst blitzt beim ersten Öffnen der blaue Platzhalter auf
@@ -1649,19 +1983,27 @@ async function openCase(poster) {
   const rear = layer.querySelector(".case-rear");
   const cached = detailCache.get(poster.dataset.ttype + ":" + poster.dataset.tmdb);
   fillCase(rear, cached instanceof Promise ? undefined : cached);
-  cs.style.transform = caseFromTransform(r, box);
+  cs.style.transform = caseFromPose(pose, box); smallFace(cs, pose, box);
   document.body.appendChild(layer);
   const hi = layer.querySelector(".case-front .hi");
-  if (hi) { hi.src = src; hi.decode().then(() => hi.classList.add("on"), () => hi.classList.add("on")); }
+  const loadHi = () => { if (hi && caseState.layer === layer) { hi.src = src; hi.decode().then(() => hi.classList.add("on"), () => hi.classList.add("on")); } };
+  // Touch-Geräte: das große Cover erst nach der Landung laden, damit der Flug nicht ruckelt (das kleine ist schon da)
+  const hiLater = lo && matchMedia("(hover: none)").matches;
   document.documentElement.classList.add("case-open");
   caseState.layer = layer; caseState.poster = poster;
   poster.classList.add("lifted");
-  void cs.offsetWidth;                       // Startzustand zeichnen, dann losfliegen
+  document.documentElement.classList.add("case-busy");
+  const settle = new Promise(r => setTimeout(r, reduce ? 0 : 760));
+  settle.then(() => { if (caseState.layer === layer) { layer.classList.add("settled"); document.documentElement.classList.remove("case-busy"); } });
+  if (hiLater) settle.then(loadHi); else loadHi();
+  // Startzustand erst wirklich zeichnen lassen, dann losfliegen – sonst verschluckt das Handy die ersten Bilder
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  if (caseState.layer !== layer) return;
   layer.classList.add("open"); cs.style.transform = "";
   layer.querySelector(".case-dim").onclick = closeCase;
   layer.querySelector(".case-x").onclick = closeCase;
   setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
-  const d = await loadDetails(poster.dataset.tmdb, poster.dataset.ttype);
+  const [d] = await Promise.all([loadDetails(poster.dataset.tmdb, poster.dataset.ttype), settle]);
   if (caseState.layer === layer) { rear.querySelector(".case-note")?.remove(); fillCase(rear, d); }
 }
 function closeCase() {
@@ -1671,19 +2013,22 @@ function closeCase() {
   const cs = layer.querySelector(".case");
   const done = () => {
     layer.remove(); poster.classList.remove("lifted");
+    document.documentElement.classList.remove("case-busy");
     poster.closest(".cover")?.classList.remove("tuck", "landing");
     document.documentElement.classList.remove("case-open");
     caseState.layer = caseState.poster = null; caseState.closing = false;
     if (poster.isConnected && poster.tabIndex >= 0) poster.focus({ preventScroll: true });
   };
   if (layer.classList.contains("reduce") || !poster.isConnected) { done(); return; }
-  const r = poster.getBoundingClientRect();
-  cs.style.transform = caseFromTransform(r, { left: parseFloat(cs.style.left), top: parseFloat(cs.style.top), width: cs.offsetWidth, height: cs.offsetHeight });
-  layer.classList.remove("open"); layer.classList.add("closing");
-  // Kurz vor der Landung gleitet die DVD schon wieder heraus
-  // (Am Handy erst nach dem Landen: dann gleiten Cover und DVD gemeinsam in die Schräglage, siehe done())
+  // Landen genau in der Ruhelage des Covers – am Handy also schon schräg, mit demselben Schatten
+  const pose = posterPose(poster), box = { left: parseFloat(cs.style.left), top: parseFloat(cs.style.top), width: cs.offsetWidth, height: cs.offsetHeight };
+  smallFace(cs, pose, box);
+  cs.style.transform = caseFromPose(pose, box);
+  layer.classList.remove("open", "settled"); layer.classList.add("closing");
+  document.documentElement.classList.add("case-busy");
+  // Auf dem letzten Stück gleitet die DVD schon heraus – sie ist draußen, wenn die Hülle aufsetzt
   const cover = poster.closest(".cover");
-  if (cover && !matchMedia("(hover: none)").matches) setTimeout(() => { cover.classList.add("landing"); cover.classList.remove("tuck"); }, 380);
+  if (cover) setTimeout(() => { cover.classList.add("landing"); cover.classList.remove("tuck"); }, 360);
   // Gelandet: Das echte Cover liegt deckend darunter (die DVD bleibt verdeckt), die Hülle darüber blendet aus –
   // so erscheint der Rahmen weich statt schlagartig
   let ended = false;
@@ -1716,7 +2061,10 @@ addEventListener("keydown", e => {
   const p = caseTarget(e);
   if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openCase(p); }
 }, true);
-addEventListener("resize", () => { if (caseState.layer) closeCase(); });
+let caseW = innerWidth;
+addEventListener("resize", () => { if (innerWidth !== caseW) { caseW = innerWidth; if (caseState.layer) closeCase(); } });
+// Touch: Seite dahinter nicht mitscrollen lassen (nur der Klappentext selbst scrollt)
+document.addEventListener("touchmove", e => { if (caseState.layer && !e.target.closest?.(".case-text")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Top 10 + Aufklappen ---------------- */
 const TOP_N = 10;
