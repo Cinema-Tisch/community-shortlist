@@ -531,7 +531,7 @@ body.team .pill-name{cursor:default}
 .case-meta{display:flex;align-items:baseline;gap:4px 14px;flex-wrap:wrap;font-size:13px;font-weight:800;color:var(--navy);padding:8px 0;border-top:2px dashed rgba(29,23,18,.25);border-bottom:2px dashed rgba(29,23,18,.25);margin-bottom:12px}
 .case-text{flex:1;overflow:auto;font-size:15px;line-height:1.58;color:var(--line);overscroll-behavior:contain;padding-right:4px}
 .case-load{color:var(--muted)}
-.case-layer.settled .case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
+.case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
 .case-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
 .case-src{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center}
 .case-layer.reduce .case,.case-layer.reduce .case-inner,.case-layer.reduce .case-dim{transition:none}
@@ -2003,7 +2003,7 @@ async function openCase(poster) {
   layer.querySelector(".case-dim").onclick = closeCase;
   layer.querySelector(".case-x").onclick = closeCase;
   setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
-  const [d] = await Promise.all([loadDetails(poster.dataset.tmdb, poster.dataset.ttype), settle]);
+  const d = await loadDetails(poster.dataset.tmdb, poster.dataset.ttype);
   if (caseState.layer === layer) { rear.querySelector(".case-note")?.remove(); fillCase(rear, d); }
 }
 function closeCase() {
