@@ -516,12 +516,12 @@ body.team .pill-name{cursor:default}
 .case-front img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .case-front .hi{opacity:0;transition:opacity .25s ease}
 .case-front .hi.on{opacity:1}
-/* Safari (iPhone): Bilder mit eigener Ebene scheinen sonst beim Umdrehen durch die Rückseite.
-   Deshalb Rückseite auch für die Bilder ausblenden und die Vorderseite unsichtbar machen, sobald sie wegschaut
-   (Drehung erreicht 90° nach ca. 0,36 s beim Öffnen bzw. 0,22 s beim Schließen) */
-.case-front img,.case-front .ph{backface-visibility:hidden;-webkit-backface-visibility:hidden}
-.case-layer.open .case-front{visibility:hidden;transition:visibility 0s .42s, border-width .3s ease, box-shadow .3s ease}
-.case-layer.closing .case-front{visibility:visible;transition:visibility 0s .2s, border-width .3s ease, box-shadow .3s ease}
+/* Safari: Bilder mit eigener Ebene scheinen sonst beim Umdrehen durch die Rückseite. Deshalb wird die Vorderseite
+   genau in dem Moment unsichtbar, in dem sie hochkant steht (90°): beim Öffnen nach 0,358 s (0,1 s Pause + 0,7 s
+   Drehung, Kurve .45,0,.2,1 erreicht die Hälfte bei 36,9 %), beim Schließen ab 0,221 s wieder sichtbar.
+   Kein backface-visibility an den Bildern selbst – das gibt ihnen in Safari eine eigene Ebene, die erst recht durchscheint. */
+.case-layer.open .case-front{visibility:hidden;transition:visibility 0s .358s, border-width .3s ease, box-shadow .3s ease}
+.case-layer.closing .case-front{visibility:visible;transition:visibility 0s .221s, border-width .3s ease, box-shadow .3s ease}
 .case-front .ph{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:800 120px/1 "Playfair Display",Georgia,serif;
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
