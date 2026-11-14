@@ -1431,8 +1431,11 @@ function lev(a, b) {
 }
 const near = (a, b) => a === b || (Math.min(a.length, b.length) >= 6 && Math.abs(a.length - b.length) <= 2 && lev(a, b) <= 2);
 // Passt ein Titel aus den Shownotes zu diesem Film? (fuzzy: auch mit Tippfehlern wie „Midsomar“)
+// Schreibweisen aus den Shownotes, die diesem Film zugeordnet wurden (mehrere mit „ | “ getrennt)
+const joinFeed = (f, titles) => [...new Set([...(f ? feedTitles(f) : []), ...titles])].join(" | ");
+const feedTitles = f => (pickOf(f)?.feed_title || "").split(" | ").map(x => x.trim()).filter(Boolean);
 function feedMatch(f, t, fuzzy = false) {
-  const n = norm(t), ts = [f.title, f.original_title, f.title_en, pickOf(f)?.feed_title].filter(Boolean).map(norm);
+  const n = norm(t), ts = [f.title, f.original_title, f.title_en, ...feedTitles(f)].filter(Boolean).map(norm);
   return ts.includes(n) || (fuzzy && ts.some(x => near(x, n)));
 }
 const reload = async () => { Object.assign(state, await api.load()); render(); };
@@ -1509,7 +1512,7 @@ async function syncAdd(t, ep) {
           original_title: c.original_title || null, title_en: c.title_en || null }
       : { title: t, year: null, tmdb_id: null, tmdb_type: "movie", poster_path: null, original_title: null, title_en: null };
     const d = c ? findDupe(c.title, c.tmdb_id, c.year, [c.original_title, c.title_en], c.tmdb_type) : null;
-    if (d && d._wheel) await api.setPick(d.id, { feed_title: t });                      // steht schon drauf, nur anders geschrieben
+    if (d && d._wheel) await api.setPick(d.id, { feed_title: joinFeed(d, [t]) });                      // steht schon drauf, nur anders geschrieben
     else if (d && d._done) toast(`„${d.title}“ wurde schon besprochen${d.episode ? " (" + epText(d) + ")" : ""} – nicht aufs Rad gesetzt.`, true);
     else if (d) { await api.toWheel(d.id); await api.setPick(d.id, pick); }
     else await api.addWheel(film, pick);
@@ -1541,7 +1544,7 @@ async function syncGone(f, ep) {
 }
 
 /* ---------------- Alte Radfilme zuordnen ---------------- */
-let pickRows = null, pickShown = 25, pickShowAll = false, pickEps = [];
+let pickRows = null, pickShown = 25, pickShowAll = false, pickEps = [], pickFeed = null;
 const pickTouched = new Set();
 const pickFilm = r => r.filmId ? [...state.done, ...state.wheel].find(f => f.id === r.filmId) : null;
 
@@ -1555,20 +1558,37 @@ function buildPickRows(eps) {
     for (const t of e.titles) {
       const k = norm(t); if (!k) continue;
       const c = cands.find(c => c.key === k) || cands.find(c => near(c.key, k));
-      if (c) { if (c.last !== e.n) { c.count++; c.eps.push(e.n); } c.last = e.n; }
-      else cands.push({ title: t, key: k, first: e.n, last: e.n, count: 1, firstDate: e.date || null, eps: [e.n] });
+      if (c) { if (!c.eps.includes(e.n)) c.eps.push(e.n); }
+      else cands.push({ title: t, titles: [t], key: k, eps: [e.n] });
     }
+  // erste/letzte Folge, Anzahl, und die erste Folge danach, in der er fehlt = besprochen
+  const finish = c => {
+    c.eps.sort((a, b) => a - b);
+    c.first = c.eps[0]; c.last = c.eps[c.eps.length - 1]; c.count = c.eps.length;
+    c.firstDate = list.find(e => e.n === c.first)?.date || null;
+    const next = list.find(e => e.n > c.last);
+    c.doneN = next?.n || null; c.doneEpisode = next?.episode || null; c.doneDate = next?.date || null; c.doneUrl = next?.url || null;
+    return c;
+  };
   const pool = [...state.done, ...state.wheel];
   for (const c of cands) {
-    const next = list.find(e => e.n > c.last);          // erste Folge, in der der Film nicht mehr dabei ist
-    c.doneN = next?.n || null; c.doneEpisode = next?.episode || null; c.doneDate = next?.date || null; c.doneUrl = next?.url || null;
+    finish(c);
     let hits = pool.filter(f => feedMatch(f, c.title));
     if (!hits.length) hits = pool.filter(f => feedMatch(f, c.title, true));
     // Nur vorschlagen, was zeitlich passt: besprochen genau in dieser Folge – oder noch auf dem Rad
     const fits = f => c.doneN ? (f.discussed_at && (!f.episode || epNum(f.episode) === c.doneN)) : !f.discussed_at;
-    c.filmId = (hits.find(f => norm(pickOf(f)?.feed_title) === c.key) || hits.find(fits))?.id || null;
+    c.filmId = (hits.find(f => feedTitles(f).some(t => norm(t) === c.key)) || hits.find(fits))?.id || null;
   }
-  return cands.sort((a, b) => b.last - a.last || b.first - a.first);
+  // Verschiedene Schreibweisen, die demselben Film zugeordnet sind, werden zu einer Zeile zusammengefasst
+  const rows = [];
+  for (const c of cands) {
+    const same = c.filmId && rows.find(x => x.filmId === c.filmId);
+    if (!same) { rows.push(c); continue; }
+    same.titles.push(...c.titles);
+    for (const n of c.eps) if (!same.eps.includes(n)) same.eps.push(n);
+  }
+  rows.forEach(finish);
+  return rows.sort((a, b) => b.last - a.last || b.first - a.first);
 }
 /* Radzeit je Film speichern (für eine spätere „Tabelle der Ladenhüter“). Spalten in film_picks:
    wheel_first / wheel_last  erste und letzte Folge, in der er in den Shownotes stand
@@ -1640,7 +1660,7 @@ function renderPick() {
     const other = "";
     return `<li class="pick-item-row" data-key="${esc(r.key)}">
       <div><div class="t">${f ? esc(titleParts(f).main) + (f.year ? ` <span class="year">(${f.year})</span>` : "") : "„" + esc(r.title) + "“"}</div>
-        <div class="s">${when}${other}${f && norm(f.title) !== r.key ? ` · Shownotes: „${esc(r.title)}“` : ""}</div>
+        <div class="s">${when}${other}${f && (norm(f.title) !== r.key || r.titles.length > 1) ? ` · Shownotes: ${r.titles.map(t => `„${esc(t)}“`).join(", ")}` : ""}</div>
         ${f ? "" : `<div class="s"><span class="warn">Noch keinem Film zugeordnet – über 🔍 bei TMDB suchen</span></div>`}
         ${clash ? `<div class="clash"><span class="warn">Besprochen in welcher Folge?</span>
           <button type="button" class="mini${man ? " on" : ""}" data-pk="bl" aria-pressed="${man}">Backlog: Folge ${bn}</button>
@@ -1652,7 +1672,7 @@ function renderPick() {
 $("#pickLoad").addEventListener("click", async () => {
   if (!needPicks()) return;
   const btn = $("#pickLoad"); btn.disabled = true; $("#pickStatus").textContent = "Lese die Shownotes aller Folgen …";
-  try { pickRows = buildPickRows(await api.feed()); pickShown = 25; savePickStats(pickRows); }
+  try { pickFeed = await api.feed(); pickRows = buildPickRows(pickFeed); pickShown = 25; savePickStats(pickRows); }
   catch (e) { console.error(e); $("#pickStatus").textContent = ""; toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); }
   finally { btn.disabled = false; }
   renderPick();
@@ -1666,7 +1686,7 @@ $("#pickList").addEventListener("click", async e => {
   if (w) {
     const f = pickFilm(r); if (!f) return;
     pickTouched.add(r.key);
-    teamDo(() => api.setPick(f.id, { picked_by: w.dataset.value, feed_title: r.title, wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false && !pickOf(f)?.wheel_manual ? wheelStats(r) : {}) }));
+    teamDo(() => api.setPick(f.id, { picked_by: w.dataset.value, feed_title: joinFeed(f, r.titles), wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false && !pickOf(f)?.wheel_manual ? wheelStats(r) : {}) }));
     return;
   }
   if (e.target.closest("[data-pk=find]")) await pickSearch(r);
@@ -1726,10 +1746,30 @@ async function pickSearch(r) {
   const film = { title: c.title, year: c.year || null, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null,
                  original_title: c.original_title || null, title_en: c.title_en || null };
   const same = f => f.tmdb_id === film.tmdb_id && (f.tmdb_type || "movie") === film.tmdb_type;
-  const pick = { picked_by: v.who, feed_title: r.title, wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false ? wheelStats(r) : {}) };
+  const pick = { picked_by: v.who, wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false ? wheelStats(r) : {}) };
   let f = [...state.done, ...state.wheel].find(same);
+  // eigener Backlog-Eintrag dieser Schreibweise (noch ohne TMDB) – wird verknüpft statt einen neuen anzulegen
+  const pf = pickFilm(r);
+  const own = pf && !pf.tmdb_id ? pf : [...state.done, ...state.wheel].find(x => !x.tmdb_id && r.titles.some(t => feedMatch(x, t)));
   busy++;
   try {
+    if (!f && own) {
+      await api.link(own.id, film); await reload();
+      f = [...state.done, ...state.wheel].find(x => x.id === own.id) || null;
+    } else if (f && own && own.id !== f.id) {
+      // Den Film gibt es schon (z. B. unter anderer Schreibweise zugeordnet): doppelten Eintrag aufräumen
+      const sameEp = (own.episode || "") === (f.episode || "");
+      const v2 = await dialog({ title: "Doppelt im Backlog", confirm: "Übernehmen",
+        text: `„${own.title}“ (${own.episode || "ohne Folge"}) ist derselbe Film wie „${titleParts(f).main}“ (${f.discussed_at ? f.episode || "Backlog" : "auf dem Rad"}). Was soll mit dem Eintrag „${own.title}“ passieren?`,
+        fields: [{ name: "act", label: "Doppelter Eintrag", type: "select", options: [
+          ...(sameEp || !own.episode || !f.discussed_at ? [] : [{ value: "follow", label: `entfernen, ${own.episode} als Follow-up vermerken` }]),
+          { value: "remove", label: "entfernen (gleiche Besprechung)" },
+          { value: "keep", label: "behalten" }] }] });
+      if (v2?.act === "follow") { await api.setFollowups(f.id, addFollowup(f.followups, own.episode)); await api.remove(own.id); }
+      else if (v2?.act === "remove") await api.remove(own.id);
+      await reload();
+      f = [...state.done, ...state.wheel].find(x => x.id === f.id) || f;
+    }
     if (!f) {
       const d = findDupe(film.title, film.tmdb_id, film.year, [film.original_title, film.title_en], film.tmdb_type);
       if (d && (d._done || d._wheel)) {                    // schon da, nur noch ohne TMDB-Nummer: verknüpfen
@@ -1747,13 +1787,17 @@ async function pickSearch(r) {
       if (!f) { await reload(); f = [...state.done, ...state.wheel].find(same) || null; }
     }
     if (!f) { toast("Der Film ließ sich nicht eintragen.", true); return; }
-    await api.setPick(f.id, pick);
+    await api.setPick(f.id, { ...pick, feed_title: joinFeed(f, r.titles) });
     r.filmId = f.id; pickTouched.add(r.key);
     toast(`„${r.title}“ ist jetzt „${film.title}“${f.discussed_at ? ` (${f.episode || "Backlog"})` : " (auf dem Rad)"}.`);
   } catch (err) {
     console.error(err);
     toast(err.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (err.message || "Fehler"), true);
-  } finally { busy--; await reload().catch(() => {}); }
+  } finally {
+    busy--; await reload().catch(() => {});
+    // neu rechnen: Schreibweisen desselben Films werden zusammengefasst, Radzeit gilt für alle zusammen
+    if (pickFeed) { pickRows = buildPickRows(pickFeed); savePickStats(pickRows); renderPick(); }
+  }
 }
 
 // Kleiner Dialog statt alert/confirm/prompt
