@@ -399,6 +399,8 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .pick-item-row .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .pick-item-row .s{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px}
 .pick-item-row .warn{color:var(--red-deep)}
+.pick-item-row .clash{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;font-weight:700}
+.pick-item-row .clash .mini.on{background:var(--navy);color:#fff}
 .pick-item-row .tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 @media (max-width:560px){.pick-item-row{grid-template-columns:1fr}.pick-item-row .tools{justify-content:flex-start}}
 .wheel-slots{display:flex;gap:6px;margin-left:auto}
@@ -1539,7 +1541,7 @@ async function syncGone(f, ep) {
 }
 
 /* ---------------- Alte Radfilme zuordnen ---------------- */
-let pickRows = null, pickShown = 25, pickShowAll = false;
+let pickRows = null, pickShown = 25, pickShowAll = false, pickEps = [];
 const pickTouched = new Set();
 const pickFilm = r => r.filmId ? [...state.done, ...state.wheel].find(f => f.id === r.filmId) : null;
 
@@ -1547,13 +1549,14 @@ const pickFilm = r => r.filmId ? [...state.done, ...state.wheel].find(f => f.id 
 // fehlt, ist die Folge, in der er besprochen wurde.
 function buildPickRows(eps) {
   const list = eps.filter(e => e.n && e.titles.length).sort((a, b) => a.n - b.n);
+  pickEps = list;
   const cands = [];
   for (const e of list)
     for (const t of e.titles) {
       const k = norm(t); if (!k) continue;
       const c = cands.find(c => c.key === k) || cands.find(c => near(c.key, k));
-      if (c) { if (c.last !== e.n) c.count++; c.last = e.n; }
-      else cands.push({ title: t, key: k, first: e.n, last: e.n, count: 1, firstDate: e.date || null });
+      if (c) { if (c.last !== e.n) { c.count++; c.eps.push(e.n); } c.last = e.n; }
+      else cands.push({ title: t, key: k, first: e.n, last: e.n, count: 1, firstDate: e.date || null, eps: [e.n] });
     }
   const pool = [...state.done, ...state.wheel];
   for (const c of cands) {
@@ -1581,7 +1584,7 @@ async function savePickStats(rows) {
   if (state.statsReady === false) return;
   const keys = ["wheel_first", "wheel_last", "wheel_episodes", "wheel_done_in", "wheel_days"];
   const todo = rows.map(r => ({ f: pickFilm(r), st: wheelStats(r) }))
-    .filter(({ f, st }) => f && pickOf(f) && keys.some(k => (pickOf(f)[k] ?? null) !== st[k]));
+    .filter(({ f, st }) => f && pickOf(f) && !pickOf(f).wheel_manual && keys.some(k => (pickOf(f)[k] ?? null) !== st[k]));
   let n = 0;
   for (const { f, st } of todo) {
     try { await api.setPick(f.id, st); Object.assign(pickOf(f), st); n++; }
@@ -1629,12 +1632,19 @@ function renderPick() {
   list.innerHTML = rows.length ? rows.map(r => {
     const f = pickFilm(r), who = f ? pickOf(f)?.picked_by : null;
     const span = r.first === r.last ? `Folge ${r.first}` : `Folge ${r.first}–${r.last}`;
-    const when = `auf dem Rad: ${span} (${wheelSpan(r)}) · ${r.doneN ? `besprochen in ${esc(r.doneEpisode)}` : "noch auf dem Rad"}`;
-    const other = f && r.doneN && f.episode && epNum(f.episode) !== r.doneN ? ` · <span class="warn">im Backlog steht ${esc(f.episode)}</span>` : "";
+    const pk = f ? pickOf(f) : null, man = !!pk?.wheel_manual && pk.wheel_first != null;
+    const bn = f?.discussed_at && f.episode ? epNum(f.episode) : 0, clash = !!(f && r.doneN && bn && bn !== r.doneN);
+    const when = man
+      ? `auf dem Rad: ${pk.wheel_first === pk.wheel_last ? `Folge ${pk.wheel_first}` : `Folge ${pk.wheel_first}–${pk.wheel_last}`} (${pk.wheel_episodes} ${pk.wheel_episodes === 1 ? "Folge" : "Folgen"}${pk.wheel_days != null ? ` · ${pk.wheel_days} Tage` : ""}) · ${pk.wheel_done_in ? `besprochen in Folge ${pk.wheel_done_in}` : "noch auf dem Rad"} · laut Backlog`
+      : `auf dem Rad: ${span} (${wheelSpan(r)}) · ${r.doneN ? `besprochen in ${esc(r.doneEpisode)}` : "noch auf dem Rad"}`;
+    const other = "";
     return `<li class="pick-item-row" data-key="${esc(r.key)}">
       <div><div class="t">${f ? esc(titleParts(f).main) + (f.year ? ` <span class="year">(${f.year})</span>` : "") : "„" + esc(r.title) + "“"}</div>
         <div class="s">${when}${other}${f && norm(f.title) !== r.key ? ` · Shownotes: „${esc(r.title)}“` : ""}</div>
-        ${f ? "" : `<div class="s"><span class="warn">Noch keinem Film zugeordnet – über 🔍 bei TMDB suchen</span></div>`}</div>
+        ${f ? "" : `<div class="s"><span class="warn">Noch keinem Film zugeordnet – über 🔍 bei TMDB suchen</span></div>`}
+        ${clash ? `<div class="clash"><span class="warn">Besprochen in welcher Folge?</span>
+          <button type="button" class="mini${man ? " on" : ""}" data-pk="bl" aria-pressed="${man}">Backlog: Folge ${bn}</button>
+          <button type="button" class="mini${man ? "" : " on"}" data-pk="sn" aria-pressed="${!man}">Shownotes: Folge ${r.doneN}</button></div>` : ""}</div>
       <div class="tools"><div class="who small" role="radiogroup" aria-label="Aufs Rad gesetzt von">${f ? whoButtons(who) : ""}</div>
         <button type="button" class="mini" data-pk="find" title="Bei TMDB suchen oder Link einfügen" aria-label="Film bei TMDB suchen">🔍</button></div>
     </li>`; }).join("") : `<li class="pend-empty">Alles zugeordnet.</li>`;
@@ -1656,11 +1666,39 @@ $("#pickList").addEventListener("click", async e => {
   if (w) {
     const f = pickFilm(r); if (!f) return;
     pickTouched.add(r.key);
-    teamDo(() => api.setPick(f.id, { picked_by: w.dataset.value, feed_title: r.title, wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false ? wheelStats(r) : {}) }));
+    teamDo(() => api.setPick(f.id, { picked_by: w.dataset.value, feed_title: r.title, wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false && !pickOf(f)?.wheel_manual ? wheelStats(r) : {}) }));
     return;
   }
   if (e.target.closest("[data-pk=find]")) await pickSearch(r);
+  const ch = e.target.closest("[data-pk=bl],[data-pk=sn]");
+  if (ch) await pickResolve(r, ch.dataset.pk);
 });
+
+/* Widerspruch zwischen Backlog und Shownotes: Max entscheidet, wer recht hat.
+   „Backlog“: Radzeit endet vor der Backlog-Folge (wheel_manual = true, die Automatik lässt sie dann in Ruhe).
+   „Shownotes“: Die Folge im Backlog wird auf die berechnete Folge korrigiert. */
+function statsFor(r, doneN) {
+  const on = r.eps.filter(n => n < doneN);
+  if (!on.length) return { ...wheelStats(r), wheel_done_in: doneN };
+  const ep = pickEps.find(e => e.n === doneN);
+  const days = r.firstDate && ep?.date ? Math.round((new Date(ep.date) - new Date(r.firstDate)) / 864e5) : null;
+  return { wheel_first: on[0], wheel_last: on[on.length - 1], wheel_episodes: on.length, wheel_done_in: doneN, wheel_days: days };
+}
+async function pickResolve(r, which) {
+  const f = pickFilm(r); if (!f) return;
+  if (!pickOf(f)?.picked_by) { toast("Bitte den Film erst Max, Vincent oder der Community zuordnen.", true); return; }
+  const bn = epNum(f.episode);
+  pickTouched.add(r.key);
+  if (which === "bl") {
+    teamDo(() => api.setPick(f.id, { ...statsFor(r, bn), wheel_manual: true }), `Gespeichert: besprochen in Folge ${bn}, wie im Backlog.`);
+  } else {
+    const ep = pickEps.find(e => e.n === r.doneN);
+    teamDo(async () => {
+      await api.update(f.id, { episode: r.doneEpisode, discussed_at: ep?.date || f.discussed_at, episode_url: ep?.url || f.episode_url || null });
+      await api.setPick(f.id, { ...wheelStats(r), wheel_manual: false });
+    }, `Backlog korrigiert: besprochen in ${r.doneEpisode}.`);
+  }
+}
 
 /* Radfilm per TMDB-Suche (Titel oder Link) einem Film zuordnen – gibt es ihn im Backlog oder auf dem Rad schon,
    wird der vorhandene Eintrag genommen, sonst wird er mit der berechneten Folge ins Backlog (bzw. aufs Rad) eingetragen */
