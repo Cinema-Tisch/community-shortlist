@@ -516,6 +516,12 @@ body.team .pill-name{cursor:default}
 .case-front img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .case-front .hi{opacity:0;transition:opacity .25s ease}
 .case-front .hi.on{opacity:1}
+/* Safari (iPhone): Bilder mit eigener Ebene scheinen sonst beim Umdrehen durch die Rückseite.
+   Deshalb Rückseite auch für die Bilder ausblenden und die Vorderseite unsichtbar machen, sobald sie wegschaut
+   (Drehung erreicht 90° nach ca. 0,36 s beim Öffnen bzw. 0,22 s beim Schließen) */
+.case-front img,.case-front .ph{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.case-layer.open .case-front{visibility:hidden;transition:visibility 0s .42s, border-width .3s ease, box-shadow .3s ease}
+.case-layer.closing .case-front{visibility:visible;transition:visibility 0s .2s, border-width .3s ease, box-shadow .3s ease}
 .case-front .ph{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:800 120px/1 "Playfair Display",Georgia,serif;
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
@@ -679,7 +685,8 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   <section class="card" id="backlogCard" hidden>
     <h2><span class="num">📚</span>Backlog <span class="badge" id="doneCount">0</span></h2>
     <p class="hint" style="margin:-6px 0 12px">Ihr habt einen Film besprochen, der nicht über die Liste oder das Rad kam? Hier direkt eintragen. War er schon mal dran, wird die neue Folge als Follow-up vermerkt.</p>
-    <div class="link-row"><button class="btn" type="button" id="backlogAdd">＋ Film ins Backlog</button></div>
+    <div class="link-row"><button class="btn" type="button" id="backlogAdd">＋ Film ins Backlog</button>
+      <button class="btn small ghost" type="button" id="linkFill">🔗 Fehlende Links nachtragen</button><span class="hint" id="linkFillStatus"></span></div>
   </section>
 
   <section class="card" id="linkCard" hidden>
@@ -1159,6 +1166,41 @@ function titleParts(f) {
 }
 
 /* „Folge 39 (Follow-up Folge 41)“ – der Link bleibt bei der Hauptbesprechung */
+/* Feed (Shownotes aller Folgen) einmal pro Besuch laden – für automatische Links zu Folgen */
+let feedCache = null;
+function feedAll() {
+  if (!feedCache) feedCache = api.feed().catch(e => { feedCache = null; throw e; });
+  return feedCache;
+}
+async function feedEp(n) {
+  try { return (await feedAll()).find(e => e.n === n) || null; } catch (e) { console.warn(e); return null; }
+}
+$("#linkFill").addEventListener("click", async () => {
+  const todo = state.done.filter(f => epNum(f.episode) && !/^https:\/\//.test(f.episode_url || ""));
+  if (!todo.length) { toast("Alle Backlog-Einträge mit Folge haben schon einen Link."); return; }
+  const btn = $("#linkFill"), st = $("#linkFillStatus");
+  btn.disabled = true; st.textContent = "Lese die Shownotes …";
+  let eps;
+  try { eps = await feedAll(); }
+  catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
+  finally { btn.disabled = false; st.textContent = ""; }
+  const hits = todo.map(f => ({ f, ep: eps.find(e => e.n === epNum(f.episode) && e.url) })).filter(x => x.ep);
+  if (!hits.length) { toast(`${todo.length} Einträge ohne Link, aber im Feed passt keine Folge mit Link.`, true); return; }
+  const rest = todo.length - hits.length;
+  const ok = await dialog({ title: "Fehlende Links nachtragen", confirm: `${hits.length} Links eintragen`,
+    text: `${hits.length} von ${todo.length} Backlog-Einträgen ohne Link bekommen den Link ihrer Folge aus dem Feed.` +
+          (rest ? ` ${rest} bleiben ohne, weil ihre Folge im Feed nicht vorkommt oder dort keinen Link hat.` : "") });
+  if (!ok) return;
+  busy++; btn.disabled = true;
+  let n = 0;
+  try {
+    for (const { f, ep } of hits) { await api.link(f.id, { episode_url: ep.url }); n++; st.textContent = `${n}/${hits.length}`; }
+    toast(`${n} Links nachgetragen.`);
+  } catch (e) {
+    console.error(e); toast(`Nach ${n} Links abgebrochen: ` + (e.message || "Fehler"), true);
+  } finally { busy--; btn.disabled = false; st.textContent = ""; refresh(); }
+});
+
 function epText(d) {
   if (!d.episode) return "";
   return d.episode + (d.followups ? ` (Follow-up ${d.followups})` : "");
@@ -1830,6 +1872,21 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
     p.querySelectorAll(".pick-item,.who-item").forEach(x => x.setAttribute("aria-checked", x === it));
   }));
   fields.forEach((f, i) => { if (f.hint) { const h = document.createElement("div"); h.className = "fhint"; h.textContent = f.hint; m.querySelector("#mf" + i).after(h); } });
+  // Folge eingetragen, Link leer → Link (und Datum) der Folge aus dem Feed einsetzen
+  const fi = k => fields.findIndex(f => f.name === k);
+  const iEp = fi("episode"), iUrl = fi("episode_url"), iDate = fi("date");
+  if (iEp >= 0 && iUrl >= 0 && api.mode === "live" && state.isAdmin) {
+    const epEl = m.querySelector("#mf" + iEp), urlEl = m.querySelector("#mf" + iUrl), dateEl = iDate >= 0 ? m.querySelector("#mf" + iDate) : null;
+    let autoUrl = "", autoDate = dateEl?.value || "", seq = 0;
+    const fill = async () => {
+      const my = ++seq, n = epNum(epEl.value); if (!n) return;
+      const ep = await feedEp(n); if (my !== seq || !ep) return;
+      if (ep.url && (!urlEl.value || urlEl.value === autoUrl)) urlEl.value = autoUrl = ep.url;
+      if (dateEl && ep.date && dateEl.value === autoDate) dateEl.value = autoDate = ep.date;
+    };
+    epEl.addEventListener("input", fill); epEl.addEventListener("change", fill);
+    if (epEl.value) fill();
+  }
   back.classList.add("show");
   setTimeout(() => (m.querySelector("input") || m.querySelector("[type=submit]")).focus(), 30);
   return new Promise(resolve => {
