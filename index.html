@@ -1143,6 +1143,7 @@ function render() {
   });
 
   renderTeam();
+  if (coverIO) watchCovers();   // neue Cover in der Liste auch vorladen
   state.lastIds = new Set(state.films.map(f => f.id));
   state.firstRender = false;
   checkDupe();
@@ -2129,10 +2130,13 @@ function pickOption(c, j) {
   return { value: String(j), label: c.title, poster: c.poster, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type,
     sub: [c.year, c.title_en && c.title_en !== c.title ? c.title_en : null, c.tmdb_type === "tv" ? "Serie" : null].filter(Boolean).join(" · ") };
 }
-const detailCache = new Map();
+const detailCache = new Map(), detailData = new Map();   // laufende Abrufe / fertige Inhaltsangaben
 function loadDetails(id, type) {
   const key = type + ":" + id;
-  if (!detailCache.has(key)) detailCache.set(key, api.details(id, type).catch(err => { console.warn(err); detailCache.delete(key); return null; }));
+  if (detailData.has(key)) return Promise.resolve(detailData.get(key));
+  if (!detailCache.has(key)) detailCache.set(key, api.details(id, type)
+    .then(d => { detailData.set(key, d); return d; })
+    .catch(err => { console.warn(err); detailCache.delete(key); return null; }));
   return detailCache.get(key);
 }
 function fmtRuntime(min) {
@@ -2240,8 +2244,9 @@ async function openCase(poster) {
   layer.querySelector(".case-title").textContent = title;
   const alt = layer.querySelector(".case-alt"); alt.textContent = sub; alt.hidden = !sub;
   const rear = layer.querySelector(".case-rear");
-  const cached = detailCache.get(poster.dataset.ttype + ":" + poster.dataset.tmdb);
-  fillCase(rear, cached instanceof Promise ? undefined : cached);
+  const dKey = poster.dataset.ttype + ":" + poster.dataset.tmdb;
+  const ready = detailData.has(dKey);
+  fillCase(rear, ready ? detailData.get(dKey) : undefined);   // schon vorgeladen: Text steht sofort auf der Rückseite
   cs.style.transform = caseFromPose(pose, box); smallFace(cs, pose, box);
   document.body.appendChild(layer);
   const hi = layer.querySelector(".case-front .hi");
@@ -2263,11 +2268,12 @@ async function openCase(poster) {
   layer.querySelector(".case-dim").onclick = closeCase;
   layer.querySelector(".case-x").onclick = closeCase;
   setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
-  // Die Inhaltsangabe wird erst nach der Landung eingesetzt (Text mitten im Flug lässt die Hülle ruckeln) und blendet weich ein
-  // Kommt sie, solange die Rückseite noch unsichtbar ist (erstes Drittel des Flugs), fällt das Einsetzen nicht auf.
-  const t0 = performance.now();
+  watchCovers();
+  if (ready) return;
+  // Noch nicht da: Kommt der Text, solange die Rückseite noch unsichtbar ist (vor der halben Drehung), wird er
+  // sofort eingesetzt – das sieht man nicht. Sonst erst nach der Landung, weich eingeblendet (mitten im Flug ruckelt es).
   const d = await loadDetails(poster.dataset.tmdb, poster.dataset.ttype);
-  const late = !reduce && performance.now() - t0 > 280;
+  const late = !reduce && getComputedStyle(rear).visibility !== "hidden";
   if (late) await settle;
   if (caseState.layer === layer && !caseState.closing) {
     rear.querySelector(".case-note")?.remove(); fillCase(rear, d);
@@ -2314,12 +2320,42 @@ function closeCase() {
   setTimeout(land, 900);
 }
 const caseTarget = e => e.target.closest?.(".poster[data-tmdb]");
-// Großes Cover schon beim Drüberfahren oder Antippen vorladen
+/* Vorladen: großes Cover und Inhaltsangabe, damit beim Umdrehen alles schon da ist.
+   1. sobald jemand mit der Maus über ein Cover fährt, es antippt oder per Tastatur ansteuert
+   2. nach dem ersten Klappentext zusätzlich die Cover, die gerade im Bild sind – im Leerlauf, höchstens zwei
+      gleichzeitig. (Erst danach, weil die Inhaltsangabe eine anonyme Anmeldung braucht: Bots und Besucher,
+      die nur schauen, sollen keine anlegen.) */
 const preloaded = new Set();
-document.addEventListener("pointerover", e => {
-  const src = caseTarget(e)?.querySelector("img")?.src?.replace(/\/w\d+\//, "/w500/");
+function prefetch(p) {
+  if (!p?.dataset.tmdb) return;
+  const src = p.querySelector("img")?.src?.replace(/\/w\d+\//, "/w500/");
   if (src && !preloaded.has(src)) { preloaded.add(src); new Image().src = src; }
-}, { passive: true });
+  return loadDetails(p.dataset.tmdb, p.dataset.ttype);
+}
+for (const ev of ["pointerover", "pointerdown", "focusin"])
+  document.addEventListener(ev, e => prefetch(caseTarget(e)), { passive: true });
+let coverIO = null;
+const prefetchQueue = [];
+let prefetchBusy = 0;
+const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
+function pumpPrefetch() {
+  while (prefetchBusy < 2 && prefetchQueue.length && !document.documentElement.classList.contains("case-busy")) {
+    const p = prefetchQueue.shift();
+    if (!p.isConnected || detailData.has(p.dataset.ttype + ":" + p.dataset.tmdb)) continue;
+    prefetchBusy++;
+    idle(() => Promise.resolve(prefetch(p)).finally(() => { prefetchBusy--; pumpPrefetch(); }), { timeout: 2000 });
+  }
+  if (prefetchQueue.length && document.documentElement.classList.contains("case-busy")) setTimeout(pumpPrefetch, 900);
+}
+function watchCovers() {
+  if (!coverIO) coverIO = new IntersectionObserver(es => {
+    for (const e of es) if (e.isIntersecting) { coverIO.unobserve(e.target); prefetchQueue.push(e.target); }
+    pumpPrefetch();
+  }, { rootMargin: "200px 0px" });
+  document.querySelectorAll(".films .poster[data-tmdb]").forEach(p => {
+    if (!detailData.has(p.dataset.ttype + ":" + p.dataset.tmdb)) coverIO.observe(p);
+  });
+}
 document.addEventListener("click", e => {
   const p = caseTarget(e); if (!p) return;
   e.preventDefault(); e.stopPropagation();
