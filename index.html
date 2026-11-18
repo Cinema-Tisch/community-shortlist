@@ -397,6 +397,35 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .who-badge{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);overflow:hidden;background:var(--cream);
   font-size:13px;line-height:1;padding:0;cursor:pointer}
 .who-badge img{width:100%;height:100%;object-fit:cover;display:block}
+/* Folgen einlesen */
+.arch-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:14px;font-weight:600}
+.arch-item b{font-weight:800}
+.arch-item .st{color:var(--muted);font-size:13px}
+.arch-item.done{background:#f3f7f1}
+.arch-item .mini{margin-left:auto}
+.ep-review{margin:14px 0;padding:12px;border:2.5px solid var(--navy);border-radius:14px;background:var(--navy-soft)}
+.ep-review h3{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:20px;color:var(--navy-ink);margin:0 0 4px}
+.ep-review .sub{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:10px}
+.ep-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ep-row{background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
+.ep-row.unsure{border-color:var(--red);box-shadow:inset 4px 0 0 var(--red)}
+.ep-row.segment{background:transparent;border-style:dashed;opacity:.75;padding:5px 10px}
+.ep-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;font-size:13.5px}
+.ep-head .ts{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}
+.ep-head .raw{font-weight:700}
+.ep-tag{font-size:11.5px;font-weight:800;border:1.5px solid var(--navy);color:var(--navy-ink);background:var(--navy-soft);border-radius:999px;padding:1px 7px}
+.ep-film{display:flex;align-items:center;gap:10px;margin-top:6px}
+.ep-film .poster{width:32px;border-width:1.5px;box-shadow:none}
+.ep-film .t{font-weight:800;font-size:14.5px;line-height:1.25}
+.ep-film .s{font-size:12.5px;color:var(--muted);font-weight:600}
+.ep-film .s.warn{color:var(--red-deep)}
+.ep-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:7px;font-size:12px;font-weight:700;color:var(--muted)}
+.ep-ctrl .mini.on{background:var(--navy);color:#fff}
+.ep-ctrl .sep{width:1px;height:18px;background:rgba(29,23,18,.2);margin:0 3px}
+.ep-ctrl .who-mini{padding:3px 6px}
+.ep-ctrl .who-mini .who-face{width:20px;height:20px;border-width:1.5px;font-size:12px}
+#archMoreRow [hidden]{display:none}
+.ep-save{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
 .pick-item-row{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
 .pick-item-row .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .pick-item-row .s{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -695,19 +724,20 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <div class="link-row" id="linkSaveRow" hidden><button class="btn" type="button" id="linkSave">Auswahl speichern</button></div>
   </section>
 
-  <section class="card" id="pickCard" hidden>
-    <h2><span class="num">👥</span>Alte Radfilme zuordnen <span class="badge" id="pickCount">–</span></h2>
-    <p class="hint" style="margin:-6px 0 12px">Wer hatte welchen Film aufs Rad gesetzt? Die Liste kommt aus den Shownotes aller Folgen („Glücksradfilme:“). Ein Klick auf den Kopf speichert sofort. Die Zuordnung seht nur ihr.</p>
-    <div class="link-row"><button class="btn small" type="button" id="pickLoad">Aus den Shownotes laden</button><span class="hint" id="pickStatus"></span></div>
-    <ul class="link-list" id="pickList"></ul>
-    <div class="link-row" id="pickMoreRow" hidden><button class="btn small" type="button" id="pickMore">Nächste 25</button><button class="mini" type="button" id="pickAll"></button></div>
-    <p class="hint" id="pickStats" style="margin:12px 0 0" hidden></p>
+  <section class="card" id="archCard" hidden>
+    <h2><span class="num">📥</span>Folgen einlesen <span class="badge" id="archCount">–</span></h2>
+    <p class="hint" style="margin:-6px 0 12px">Liest die Time-Stamps aus den Shownotes: welche Filme in welcher Folge besprochen wurden, welcher davon vom Glücksrad kam und wer ihn vorgestellt hat. Nach jeder neuen Folge einmal „Neue Folge einlesen“ – das bringt auch das Rad auf den neuen Stand. Nur ihr seht diesen Bereich.</p>
+    <div class="link-row"><button class="btn small" type="button" id="archNew">📥 Neue Folge einlesen</button><button class="btn small ghost" type="button" id="archLoad">📚 Archiv öffnen</button><span class="hint" id="archStatus"></span></div>
+    <p class="hint" id="bondStat" style="margin:10px 0 0" hidden></p>
+    <div id="archReview"></div>
+    <ul class="link-list" id="archList"></ul>
+    <div class="link-row" id="archMoreRow" hidden><button class="btn small" type="button" id="archMore">Weitere Folgen</button><button class="mini" type="button" id="archAll"></button></div>
   </section>
 
   <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
     <h2 id="h-wheel"><span class="num">🎡</span>Auf dem Rad <span class="wheel-slots" id="wheelSlots" title="Community-Plätze"><i></i><i></i></span></h2>
     <p class="hint" style="margin:-6px 0 12px">Alle Filme, die gerade auf dem Rad sind – nur ihr seht diese Liste. Besucher sehen bei der Suche lediglich „Gerade auf dem Rad“. Höchstens zwei Community-Filme gleichzeitig (die Punkte oben).</p>
-    <div class="link-row" style="margin-bottom:12px"><button class="btn small" type="button" id="wheelSync">🔄 Mit den Shownotes abgleichen</button><span class="hint" id="wheelSyncStatus"></span></div>
+    <div class="link-row" style="margin-bottom:12px"><button class="btn small" type="button" id="wheelSync">📥 Neue Folge einlesen</button><span class="hint" id="wheelSyncStatus"></span></div>
     <ul class="wheel-list" id="wheelList"></ul>
   </section>
 
@@ -787,11 +817,13 @@ function demoBackend() {
     [11, "Aftersun", 2022], [12, "Das Leben der Anderen", 2006], [13, "Paris, je t'aime", 2006], [14, "Paris brennt", 1990],
     [15, "In the Mood for Love", 2000], [16, "Victoria", 2015], [17, "Oppenheimer", 2023], [18, "Anatomie eines Falls", 2023],
     [101, "Godzilla", 1954], [102, "Godzilla", 2014], [103, "Godzilla Minus One", 2023], [104, "Weapons – Die Stunde des Verschwindens", 2025],
+    [646, "James Bond jagt Dr. No", 1962], [657, "Liebesgrüße aus Moskau", 1963],
   ].map(([tmdb_id, title, year]) => ({ tmdb_id, title, year, poster: null, original_title: title, title_en: title }));
   const alt = { 2: ["기생충", "Parasite"], 3: ["Lola rennt", "Run Lola Run"], 6: ["Der Himmel über Berlin", "Wings of Desire"],
     10: ["Portrait de la jeune fille en feu", "Portrait of a Lady on Fire"], 12: ["Das Leben der Anderen", "The Lives of Others"],
     15: ["花樣年華", "In the Mood for Love"], 18: ["Anatomie d'une chute", "Anatomy of a Fall"],
-    101: ["ゴジラ", "Godzilla"], 103: ["ゴジラ-1.0", "Godzilla Minus One"], 104: ["Weapons", "Weapons"] };
+    101: ["ゴジラ", "Godzilla"], 103: ["ゴジラ-1.0", "Godzilla Minus One"], 104: ["Weapons", "Weapons"],
+    646: ["Dr. No", "Dr. No"], 657: ["From Russia with Love", "From Russia with Love"] };
   catalog.forEach(c => { if (alt[c.tmdb_id]) [c.original_title, c.title_en] = alt[c.tmdb_id]; });
   catalog.forEach(c => { c.tmdb_type = "movie"; });
   const tvCatalog = [{ tmdb_id: 317152, tmdb_type: "tv", title: "Mesut Özil – Zu Gast bei Freunden", original_title: "Mesut Özil – Zu Gast bei Freunden",
@@ -833,11 +865,17 @@ function demoBackend() {
   const picks = new Map([["d9", { picked_by: "community", feed_title: "Pulp Fiction", wheel_since: "Folge 60" }]]);
   // Demo-Shownotes (live kommen sie aus dem Acast-Feed)
   const demoFeed = [
-    { n: 62, episode: "Folge 62", url: "https://example.com/folge-62", date: new Date(now - 2 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Oppenheimer", "Anatomie eines Falls", "Lola rennt"] },
-    { n: 61, episode: "Folge 61", url: null, date: null, titles: ["Pulp Fiction", "Oppenheimer", "Victoria", "Godzila"] },
-    { n: 60, episode: "Folge 60", url: null, date: null, titles: ["Pulp Fiction", "Victoria", "Godzilla", "Das Leben der Anderen"] },
-    { n: 59, episode: "Folge 59", url: null, date: null, titles: ["Victoria", "Godzilla", "Das Leben der Anderen", "Der schwarze Diamant"] },
+    { n: 62, episode: "Folge 62", url: "https://example.com/folge-62", date: new Date(now - 2 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Oppenheimer", "Anatomie eines Falls", "Lola rennt"],
+      segments: [{ ts: "00:00:00", title: "Schnelle Intro" }, { ts: "00:03:55", title: "Trailer-Service" }, { ts: "00:08:25", title: "Toni Erdmann" },
+                 { ts: "00:19:35", title: "Bond-Briefing: Liebesgrüße aus Moskau" }, { ts: "00:39:30", title: "Victoria" }, { ts: "01:01:40", title: "Haben wir Avatar geschaut?" }, { ts: "01:03:10", title: "Glücksrad" }] },
+    { n: 61, episode: "Folge 61", url: "https://example.com/folge-61", date: new Date(now - 9 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Oppenheimer", "Victoria", "Godzila"],
+      segments: [{ ts: "00:00:00", title: "Wir lieben Weihnachten" }, { ts: "00:05:00", title: "Paris, Texas (Follow-up)" }, { ts: "00:20:00", title: "Bond-Briefing" }, { ts: "00:40:00", title: "Godzilla" }] },
+    { n: 60, episode: "Folge 60", url: null, date: new Date(now - 16 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Victoria", "Godzilla", "Das Leben der Anderen"],
+      segments: [{ ts: "00:07:55", title: "Aftersun" }, { ts: "00:30:00", title: "Das Leben der Anderen" }] },
+    { n: 59, episode: "Folge 59", url: null, date: new Date(now - 23 * day).toISOString().slice(0, 10), titles: ["Victoria", "Godzilla", "Das Leben der Anderen", "Der schwarze Diamant"], segments: [] },
   ];
+  let items = [];
+
   const mine = new Set();
   let listener = () => {};
   const emit = () => listener();
@@ -856,7 +894,8 @@ function demoBackend() {
         done: copy.filter(f => f.discussed_at)
         .sort((a, b) => b.discussed_at.localeCompare(a.discussed_at)), mine: new Set(mine),
         pending: admin ? pending.map(p => ({ ...p })) : [], isAdmin: admin, showVotes,
-        picks: admin ? new Map([...picks].map(([k, v]) => [k, { ...v }])) : new Map(), picksReady: true };
+        picks: admin ? new Map([...picks].map(([k, v]) => [k, { ...v }])) : new Map(), picksReady: true,
+        items: admin ? items.map(i => ({ ...i })) : [], itemsReady: true };
     },
     async add({ title, year, note, tmdb_id, poster_path, original_title, title_en }) {
       const base = { id: "d" + Date.now(), title, year, note, tmdb_id, poster_path, original_title, title_en, created_at: new Date().toISOString() };
@@ -882,7 +921,9 @@ function demoBackend() {
     async feed() { await new Promise(r => setTimeout(r, 300)); return demoFeed.map(e => ({ ...e, titles: [...e.titles] })); },
     async offWheel(id) { films.find(x => x.id === id).on_wheel_at = null; emit(); },
     async link(id, fields) { Object.assign(films.find(x => x.id === id), fields); emit(); },
-    async addBacklog(film) { films.push({ ...film, id: "d" + Date.now(), votes: 0, created_at: new Date().toISOString() }); emit(); },
+    async addBacklog(film) { const id = "d" + Date.now() + Math.random().toString(36).slice(2, 6);
+      films.push({ ...film, id, votes: 0, created_at: new Date().toISOString() }); emit(); return id; },
+    async saveItems(n, rows) { items = items.filter(i => i.episode_n !== n).concat(rows.map(r => ({ ...r }))); emit(); },
     async setFollowups(id, text) { films.find(x => x.id === id).followups = text; emit(); },
     async discuss(id, extra) {
       Object.assign(films.find(x => x.id === id), { discussed_at: new Date().toISOString().slice(0, 10) }, extra); emit(); },
@@ -894,7 +935,7 @@ function demoBackend() {
     },
     async search(q, opts = {}) {
       await new Promise(r => setTimeout(r, 150));
-      const n = norm(q);
+      const n = norm(q.replace(/\s+(19|20)\d\d$/, ""));
       const pool = opts.tv ? [...catalog, ...tvCatalog] : catalog;
       return pool.filter(c => [c.title, c.original_title, c.title_en].some(x => norm(x).includes(n))).slice(0, 8);
     },
@@ -940,7 +981,7 @@ function supabaseBackend() {
       if (session && !session.user.is_anonymous) await checkAdmin();
     },
     async load() {
-      const [r1, r2, r3, r4, r5, r6, r7] = await Promise.all([
+      const [r1, r2, r3, r4, r5, r6, r7, r8] = await Promise.all([
         sb.from("film_ranking").select(cols),
         sb.from("film_discussed").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,votes,discussed_at,episode,episode_url,followups").order("discussed_at", { ascending: false }),
         uid ? sb.from("votes").select("film_id").eq("voter_id", uid) : Promise.resolve({ data: [], error: null }),
@@ -949,13 +990,14 @@ function supabaseBackend() {
         sb.from("settings").select("show_votes").eq("id", 1).maybeSingle(),
         sb.from("film_wheel").select("id,title,year,note,tmdb_id,tmdb_type,poster_path,created_at,original_title,title_en,on_wheel_at,votes").order("on_wheel_at"),
         admin ? sb.from("film_picks").select("*") : Promise.resolve({ data: [], error: null }),
+        admin ? sb.from("episode_items").select("*") : Promise.resolve({ data: [], error: null }),
       ]);
       for (const r of [r1, r2, r3, r4, r6]) if (r.error) throw r.error;
       const showVotes = r5.error || !r5.data ? true : r5.data.show_votes !== false;   // fehlt die Tabelle: Stimmen zeigen
       // fehlt die Tabelle film_picks noch (setup.sql nicht neu ausgeführt), läuft der Rest trotzdem
       const picks = new Map((r7.error ? [] : r7.data).map(p => [p.film_id, p]));
       return { films: r1.data, done: r2.data, mine: new Set(r3.data.map(v => v.film_id)), pending: r4.data, wheel: r6.data, isAdmin: admin, showVotes,
-        picks, picksReady: !r7.error,
+        picks, picksReady: !r7.error, items: r8.error ? [] : r8.data, itemsReady: !r8.error,
         // gibt es die Spalten für die Radzeiten schon? (unbekannt, solange noch nichts zugeordnet ist)
         statsReady: r7.error || !r7.data.length ? undefined : "wheel_first" in r7.data[0] };
     },
@@ -999,7 +1041,14 @@ function supabaseBackend() {
       return data; },
     async offWheel(id) { must(await sb.from("films").update({ on_wheel_at: null }).eq("id", id)); },
     async link(id, fields) { must(await sb.from("films").update(fields).eq("id", id)); },
-    async addBacklog(film) { must(await sb.from("films").insert({ ...film, created_by: uid })); },
+    async addBacklog(film) {
+      const { data, error } = await sb.from("films").insert({ ...film, created_by: uid }).select("id").single();
+      if (error) throw error;
+      return data.id; },
+    // Time-Stamps einer Folge speichern (ersetzt, was für diese Folge schon gespeichert war)
+    async saveItems(n, rows) {
+      must(await sb.from("episode_items").delete().eq("episode_n", n));
+      if (rows.length) must(await sb.from("episode_items").insert(rows)); },
     async setFollowups(id, text) { must(await sb.from("films").update({ followups: text }).eq("id", id)); },
     async discuss(id, extra) {
       must(await sb.from("films").update({ discussed_at: new Date().toISOString().slice(0, 10), ...extra }).eq("id", id));
@@ -1212,11 +1261,13 @@ function renderTeam() {
   $("#teambar").classList.toggle("show", state.isAdmin);
   const card = $("#pendingCard");
   card.hidden = !state.isAdmin;
-  renderWheel(); renderPick();
+  renderWheel(); renderArch();
   const unlinked = state.done.filter(f => !f.tmdb_id).length;
   $("#linkCard").hidden = !state.isAdmin || (!unlinked && !linkRows.length);
   $("#linkCount").textContent = unlinked;
   $("#backlogCard").hidden = !state.isAdmin;
+  // „Fehlende Links nachtragen“ nur zeigen, solange es Backlog-Einträge mit Folge, aber ohne Link gibt
+  $("#linkFill").hidden = !state.done.some(f => epNum(f.episode) && !/^https:\/\//.test(f.episode_url || ""));
   $("#doneCount").textContent = state.done.length;
   $("#votesToggle").textContent = state.showVotes ? "👁 Stimmen: sichtbar" : "🙈 Stimmen: ausgeblendet";
   if (!state.isAdmin) return;
@@ -1406,7 +1457,7 @@ function renderWheel() {
   const comm = state.wheel.filter(isCommunity).length;
   [...$("#wheelSlots").children].forEach((d, i) => d.classList.toggle("on", i < comm));
   const list = $("#wheelList");
-  if (!state.wheel.length) { list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Abgleichen“ holt ihr die Filme aus den Shownotes.</li>`; return; }
+  if (!state.wheel.length) { list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Neue Folge einlesen“ holt ihr die Filme aus den Shownotes.</li>`; return; }
   list.innerHTML = state.wheel.map(f => {
     const p = pickOf(f), who = p?.picked_by, c = isCommunity(f);
     return `
@@ -1482,16 +1533,11 @@ function feedMatch(f, t, fuzzy = false) {
 const reload = async () => { Object.assign(state, await api.load()); render(); };
 const today = () => new Date().toISOString().slice(0, 10);
 
-$("#wheelSync").addEventListener("click", async () => {
+$("#wheelSync").addEventListener("click", () => openNewest());
+// Rad auf den Stand der Glücksradfilme einer Folge bringen (läuft nach dem Einlesen der neuesten Folge)
+async function wheelSyncFor(ep) {
   if (!needPicks()) return;
-  const btn = $("#wheelSync"), st = $("#wheelSyncStatus");
-  btn.disabled = true; st.textContent = "Lese die Shownotes …";
-  let eps;
-  try { eps = await api.feed(); }
-  catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
-  finally { btn.disabled = false; st.textContent = ""; }
-  const ep = eps.find(e => e.titles.length);
-  if (!ep) { toast("In den Shownotes steht kein Abschnitt „Glücksradfilme:“.", true); return; }
+  if (!ep?.titles.length) { toast("In den Shownotes steht kein Abschnitt „Glücksradfilme:“.", true); return; }
   const matched = new Map(), news = [], justDone = [];
   for (const t of ep.titles) {
     const free = w => !matched.has(w.id);
@@ -1503,7 +1549,7 @@ $("#wheelSync").addEventListener("click", async () => {
   const gone = state.wheel.filter(w => !matched.has(w.id));
   if (!news.length && !gone.length) { toast(`Das Rad ist auf dem Stand von ${ep.episode}.`); return; }
   if (justDone.length) console.info("Schon besprochen, übersprungen:", justDone);
-  const ok = await dialog({ title: `Abgleich mit ${ep.episode}`, confirm: "Durchgehen",
+  const ok = await dialog({ title: `Rad nach ${ep.episode}`, confirm: "Durchgehen",
     text: [news.length ? `Neu auf dem Rad: ${news.join(", ")}.` : "",
            gone.length ? `Nicht mehr in den Shownotes: ${gone.map(f => f.title).join(", ")}.` : "",
            justDone.length ? `Gerade erst besprochen, bleibt im Backlog: ${justDone.join(", ")}.` : "",
@@ -1518,7 +1564,7 @@ $("#wheelSync").addEventListener("click", async () => {
     console.error(e);
     toast(e.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (e.message || "Fehler"), true);
   } finally { busy--; await reload().catch(() => {}); }
-});
+}
 
 async function syncAdd(t, ep) {
   const onList = state.films.find(f => feedMatch(f, t)) || state.films.find(f => feedMatch(f, t, true));
@@ -1584,261 +1630,319 @@ async function syncGone(f, ep) {
   await reload();
 }
 
-/* ---------------- Alte Radfilme zuordnen ---------------- */
-let pickRows = null, pickShown = 25, pickShowAll = false, pickEps = [], pickFeed = null;
-const pickTouched = new Set();
-const pickFilm = r => r.filmId ? [...state.done, ...state.wheel].find(f => f.id === r.filmId) : null;
+/* ---------------- Folgen einlesen (Time-Stamps aus den Shownotes) ---------------- */
+/* Aufbau einer Folge: Intro, dann die Filme von Max und Vincent (Reihenfolge wechselt), dann der Glücksradfilm,
+   am Ende das Glücksrad. Der Glücksradfilm ist der Film aus den Time-Stamps, der in der VORHERIGEN Folge unter
+   „Glücksradfilme“ stand (vor Weihnachten wird nicht gedreht → die Weihnachtsfolge hat keinen Radfilm).
+   Gespeichert wird jede Zeile in der Tabelle episode_items (folgen.sql). */
 
-// Ein Film ist so lange auf dem Rad, wie er in den Shownotes steht. Die erste Folge danach, in der er
-// fehlt, ist die Folge, in der er besprochen wurde.
-function buildPickRows(eps) {
-  const list = eps.filter(e => e.n && e.titles.length).sort((a, b) => a.n - b.n);
-  pickEps = list;
-  const cands = [];
-  for (const e of list)
-    for (const t of e.titles) {
-      const k = norm(t); if (!k) continue;
-      const c = cands.find(c => c.key === k) || cands.find(c => near(c.key, k));
-      if (c) { if (!c.eps.includes(e.n)) c.eps.push(e.n); }
-      else cands.push({ title: t, titles: [t], key: k, eps: [e.n] });
-    }
-  // erste/letzte Folge, Anzahl, und die erste Folge danach, in der er fehlt = besprochen
-  const finish = c => {
-    c.eps.sort((a, b) => a - b);
-    c.first = c.eps[0]; c.last = c.eps[c.eps.length - 1]; c.count = c.eps.length;
-    c.firstDate = list.find(e => e.n === c.first)?.date || null;
-    const next = list.find(e => e.n > c.last);
-    c.doneN = next?.n || null; c.doneEpisode = next?.episode || null; c.doneDate = next?.date || null; c.doneUrl = next?.url || null;
-    return c;
-  };
-  const pool = [...state.done, ...state.wheel];
-  for (const c of cands) {
-    finish(c);
-    let hits = pool.filter(f => feedMatch(f, c.title));
-    if (!hits.length) hits = pool.filter(f => feedMatch(f, c.title, true));
-    // Nur vorschlagen, was zeitlich passt: besprochen genau in dieser Folge – oder noch auf dem Rad
-    const fits = f => c.doneN ? (f.discussed_at && (!f.episode || epNum(f.episode) === c.doneN)) : !f.discussed_at;
-    c.filmId = (hits.find(f => feedTitles(f).some(t => norm(t) === c.key)) || hits.find(fits))?.id || null;
-  }
-  // Verschiedene Schreibweisen, die demselben Film zugeordnet sind, werden zu einer Zeile zusammengefasst
-  const rows = [];
-  for (const c of cands) {
-    const same = c.filmId && rows.find(x => x.filmId === c.filmId);
-    if (!same) { rows.push(c); continue; }
-    same.titles.push(...c.titles);
-    for (const n of c.eps) if (!same.eps.includes(n)) same.eps.push(n);
-  }
-  rows.forEach(finish);
-  return rows.sort((a, b) => b.last - a.last || b.first - a.first);
+// James-Bond-Reihe fürs „Bond-Briefing“: deutscher Titel, englischer Titel (für die TMDB-Suche), Jahr (innerhalb der Reihe eindeutig)
+const BOND = [
+  ["James Bond jagt Dr. No", "Dr. No", 1962], ["Liebesgrüße aus Moskau", "From Russia with Love", 1963], ["Goldfinger", "Goldfinger", 1964],
+  ["Feuerball", "Thunderball", 1965], ["Man lebt nur zweimal", "You Only Live Twice", 1967], ["Im Geheimdienst Ihrer Majestät", "On Her Majesty's Secret Service", 1969],
+  ["Diamantenfieber", "Diamonds Are Forever", 1971], ["Leben und sterben lassen", "Live and Let Die", 1973], ["Der Mann mit dem goldenen Colt", "The Man with the Golden Gun", 1974],
+  ["Der Spion, der mich liebte", "The Spy Who Loved Me", 1977], ["Moonraker", "Moonraker", 1979], ["In tödlicher Mission", "For Your Eyes Only", 1981],
+  ["Octopussy", "Octopussy", 1983], ["Im Angesicht des Todes", "A View to a Kill", 1985], ["Der Hauch des Todes", "The Living Daylights", 1987],
+  ["Lizenz zum Töten", "Licence to Kill", 1989], ["GoldenEye", "GoldenEye", 1995], ["Der Morgen stirbt nie", "Tomorrow Never Dies", 1997],
+  ["Die Welt ist nicht genug", "The World Is Not Enough", 1999], ["Stirb an einem anderen Tag", "Die Another Day", 2002], ["Casino Royale", "Casino Royale", 2006],
+  ["Ein Quantum Trost", "Quantum of Solace", 2008], ["Skyfall", "Skyfall", 2012], ["Spectre", "Spectre", 2015], ["Keine Zeit zu sterben", "No Time to Die", 2021],
+];
+// Abschnitte, die sicher keine Filme sind (alles andere bestätigt ihr einmal, die Seite merkt es sich)
+const SEG_RE = /\b(intro|outro|gl(ü|ue)cksrad|trailer|exkurs|quiz|h(ö|oe)rer\w*|news|ank(ü|ue)ndigung\w*|ausblick|update|halbwissen|begr(ü|ue)(ß|ss)ung|verabschiedung)\b|\?\s*$/i;
+const tsSec = t => (t || "").split(":").reduce((a, x) => a * 60 + (+x || 0), 0);
+const cleanTitle = r => r.replace(/\bfollow[\s-]*up\b\s*[:\-–]?\s*/gi, "").replace(/\bbond[\s-]*briefing\b\s*[:\-–]?\s*/gi, "")
+  .replace(/\s*[([][^)\]]*[)\]]/g, "").replace(/[„“”"]/g, "").replace(/^[\s\-–—:·]+|[\s\-–—:·]+$/g, "").trim();
+const allFilms = () => [...state.done, ...state.wheel, ...state.films];
+const byId = id => allFilms().find(f => f.id === id) || null;
+const fups = f => (f.followups || "").split(/,\s*/).map(epNum).filter(Boolean);
+const filmFromC = c => ({ title: c.title, year: c.year || null, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null,
+  original_title: c.original_title || null, title_en: c.title_en || null });
+const itemsOf = n => (state.items || []).filter(i => i.episode_n === n).sort((a, b) => a.pos - b.pos);
+const PRES = { max: "Max", vincent: "Vincent", both: "beide" };
+
+let archEps = null, archShown = 20, archAll = false, review = null;
+
+function needItems() {
+  if (state.itemsReady) return true;
+  toast("Dafür fehlt noch die Tabelle für die Folgen – bitte folgen.sql einmal in Supabase ausführen.", true);
+  return false;
 }
-/* Radzeit je Film speichern (für eine spätere „Tabelle der Ladenhüter“). Spalten in film_picks:
-   wheel_first / wheel_last  erste und letzte Folge, in der er in den Shownotes stand
-   wheel_episodes            in wie vielen Folgen er auf dem Rad stand
-   wheel_done_in             Folge, in der er besprochen wurde (leer = noch auf dem Rad)
-   wheel_days                Tage von der ersten Folge bis zur Besprechung (leer = noch auf dem Rad oder Datum fehlt) */
-function wheelStats(r) {
-  const days = r.doneN && r.firstDate && r.doneDate ? Math.round((new Date(r.doneDate) - new Date(r.firstDate)) / 864e5) : null;
-  return { wheel_first: r.first, wheel_last: r.last, wheel_episodes: r.count, wheel_done_in: r.doneN, wheel_days: days };
+async function loadArchEps() {
+  if (archEps) return archEps;
+  const st = $("#archStatus"); st.textContent = "Lese die Shownotes …";
+  try { archEps = (await feedAll()).filter(e => e.n).sort((a, b) => b.n - a.n); }
+  finally { st.textContent = ""; }
+  if (!archEps.some(e => e.segments)) toast("Die Edge Function liefert noch keine Time-Stamps – bitte die neue tmdb-search.ts einspielen.", true);
+  return archEps;
 }
-// Nach dem Laden der Shownotes: bei allen schon zugeordneten Filmen die Radzeit nachtragen bzw. aktualisieren
-async function savePickStats(rows) {
-  if (state.statsReady === false) return;
-  const keys = ["wheel_first", "wheel_last", "wheel_episodes", "wheel_done_in", "wheel_days"];
-  const todo = rows.map(r => ({ f: pickFilm(r), st: wheelStats(r) }))
-    .filter(({ f, st }) => f && pickOf(f) && !pickOf(f).wheel_manual && keys.some(k => (pickOf(f)[k] ?? null) !== st[k]));
-  let n = 0;
-  for (const { f, st } of todo) {
-    try { await api.setPick(f.id, st); Object.assign(pickOf(f), st); n++; }
-    catch (e) {
-      console.error(e);
-      if (/wheel_|column|schema/i.test(e.message || "") || ["42703", "PGRST204"].includes(e.code)) {
-        state.statsReady = false;
-        toast("Für die Radzeiten fehlen noch Spalten – bitte radzeiten.sql einmal in Supabase ausführen.", true);
-      } else toast("Radzeiten ließen sich nicht speichern: " + (e.message || "Fehler"), true);
-      return;
-    }
-  }
-  if (n) console.info(`Radzeiten gespeichert: ${n}`);
+const prevList = n => archEps.filter(e => e.n < n && e.titles.length).sort((a, b) => b.n - a.n)[0] || null;
+
+// Bond-Briefing: welche Bond-Filme schon dran waren (über das Jahr) und welcher als Nächstes kommt – optional nur vor Folge „before“
+function bondState(before = Infinity) {
+  const years = new Set((state.items || []).filter(i => i.bond && i.film_id && i.episode_n < before).map(i => byId(i.film_id)?.year).filter(Boolean));
+  return { done: BOND.filter(b => years.has(b[2])).length, next: BOND.find(b => !years.has(b[2])) || null };
 }
-// „4 Folgen · ca. 3 Wochen“
-function wheelSpan(r) {
-  const n = r.count;   // Folgen, in denen er in den Shownotes stand
-  let s = `${n} ${n === 1 ? "Folge" : "Folgen"}`;
-  const end = r.doneDate || (r.doneN ? null : today());
-  if (r.firstDate && end) {
-    const d = Math.round((new Date(end) - new Date(r.firstDate)) / 864e5);
-    if (d >= 1) s += " · " + (d < 14 ? `${d} ${d === 1 ? "Tag" : "Tage"}` : d < 61 ? `ca. ${Math.round(d / 7)} Wochen` : `ca. ${Math.round(d / 30.4)} Monate`);
-  }
-  return s;
+
+// Wie lange stand der Radfilm auf dem Rad? Zusammenhängende Folgen vor Folge n, in deren Liste er stand
+function wheelRun(r, n) {
+  const f = r.film?.type === "db" ? byId(r.film.id) : null;
+  const names = [r.title, r.listTitle].filter(Boolean).map(norm);
+  const hit = t => names.some(x => near(x, norm(t))) || (f && feedMatch(f, t, true));
+  const run = [];
+  for (const e of archEps.filter(e => e.n < n && e.titles.length).sort((a, b) => b.n - a.n)) { if (e.titles.some(hit)) run.unshift(e); else break; }
+  if (!run.length) return null;
+  const ep = archEps.find(e => e.n === n);
+  const days = run[0].date && ep?.date ? Math.round((new Date(ep.date) - new Date(run[0].date)) / 864e5) : null;
+  return { wheel_first: run[0].n, wheel_last: run[run.length - 1].n, wheel_episodes: run.length, wheel_done_in: n, wheel_days: days, wheel_since: `Folge ${run[0].n}` };
 }
-function renderPick() {
-  const card = $("#pickCard");
+
+/* ---- Archiv-Liste ---- */
+function renderArch() {
+  const card = $("#archCard");
   card.hidden = !state.isAdmin;
   if (!state.isAdmin) return;
-  const counts = { max: 0, vincent: 0, community: 0 };
-  state.picks.forEach(p => { if (counts[p.picked_by] != null) counts[p.picked_by]++; });
-  const total = counts.max + counts.vincent + counts.community;
-  $("#pickCount").textContent = total;
-  const stats = $("#pickStats");
-  stats.hidden = !total;
-  stats.textContent = `Bisher zugeordnet: Max ${counts.max} · Vincent ${counts.vincent} · Community ${counts.community}`;
-  const list = $("#pickList");
-  if (!pickRows) { list.innerHTML = ""; $("#pickMoreRow").hidden = true; return; }
-  const open = pickRows.filter(r => pickShowAll || pickTouched.has(r.key) || !pickOf(pickFilm(r) || {})?.picked_by);
-  const rows = open.slice(0, pickShown);
-  $("#pickStatus").textContent = `${pickRows.length} Radfilme in den Shownotes, ${pickRows.filter(r => !pickOf(pickFilm(r) || {})?.picked_by).length} noch offen`;
-  $("#pickMoreRow").hidden = false;
-  $("#pickMore").hidden = open.length <= pickShown;
-  $("#pickAll").textContent = pickShowAll ? "Nur offene zeigen" : "Auch zugeordnete zeigen";
-  list.innerHTML = rows.length ? rows.map(r => {
-    const f = pickFilm(r), who = f ? pickOf(f)?.picked_by : null;
-    const span = r.first === r.last ? `Folge ${r.first}` : `Folge ${r.first}–${r.last}`;
-    const pk = f ? pickOf(f) : null, man = !!pk?.wheel_manual && pk.wheel_first != null;
-    const bn = f?.discussed_at && f.episode ? epNum(f.episode) : 0, clash = !!(f && r.doneN && bn && bn !== r.doneN);
-    const when = man
-      ? `auf dem Rad: ${pk.wheel_first === pk.wheel_last ? `Folge ${pk.wheel_first}` : `Folge ${pk.wheel_first}–${pk.wheel_last}`} (${pk.wheel_episodes} ${pk.wheel_episodes === 1 ? "Folge" : "Folgen"}${pk.wheel_days != null ? ` · ${pk.wheel_days} Tage` : ""}) · ${pk.wheel_done_in ? `besprochen in Folge ${pk.wheel_done_in}` : "noch auf dem Rad"} · laut Backlog`
-      : `auf dem Rad: ${span} (${wheelSpan(r)}) · ${r.doneN ? `besprochen in ${esc(r.doneEpisode)}` : "noch auf dem Rad"}`;
-    const other = "";
-    return `<li class="pick-item-row" data-key="${esc(r.key)}">
-      <div><div class="t">${f ? esc(titleParts(f).main) + (f.year ? ` <span class="year">(${f.year})</span>` : "") : "„" + esc(r.title) + "“"}</div>
-        <div class="s">${when}${other}${f && (norm(f.title) !== r.key || r.titles.length > 1) ? ` · Shownotes: ${r.titles.map(t => `„${esc(t)}“`).join(", ")}` : ""}</div>
-        ${f ? "" : `<div class="s"><span class="warn">Noch keinem Film zugeordnet – über 🔍 bei TMDB suchen</span></div>`}
-        ${clash ? `<div class="clash"><span class="warn">Besprochen in welcher Folge?</span>
-          <button type="button" class="mini${man ? " on" : ""}" data-pk="bl" aria-pressed="${man}">Backlog: Folge ${bn}</button>
-          <button type="button" class="mini${man ? "" : " on"}" data-pk="sn" aria-pressed="${!man}">Shownotes: Folge ${r.doneN}</button></div>` : ""}</div>
-      <div class="tools"><div class="who small" role="radiogroup" aria-label="Aufs Rad gesetzt von">${f ? whoButtons(who) : ""}</div>
-        <button type="button" class="mini" data-pk="find" title="Bei TMDB suchen oder Link einfügen" aria-label="Film bei TMDB suchen">🔍</button></div>
-    </li>`; }).join("") : `<li class="pend-empty">Alles zugeordnet.</li>`;
+  const done = new Set((state.items || []).map(i => i.episode_n));
+  $("#archCount").textContent = archEps ? `${archEps.filter(e => done.has(e.n)).length}/${archEps.length}` : done.size || "–";
+  const b = bondState(), bs = $("#bondStat");
+  bs.hidden = !state.itemsReady;
+  bs.textContent = `🕵️ Bond-Briefing: ${b.done} von ${BOND.length} besprochen` + (b.next ? ` · als Nächstes: ${b.next[0]} (${b.next[2]})` : " · alle durch!");
+  const list = $("#archList");
+  if (!archEps) { list.innerHTML = ""; $("#archMoreRow").hidden = true; return; }
+  const open = archEps.filter(e => archAll || !done.has(e.n));
+  list.innerHTML = open.slice(0, archShown).map(e => {
+    const it = itemsOf(e.n), films = it.filter(i => i.kind === "film").length;
+    const st = done.has(e.n) ? `✓ eingelesen · ${films} ${films === 1 ? "Film" : "Filme"}`
+             : e.segments?.length ? `offen · ${e.segments.length} Time-Stamps` : "keine Time-Stamps";
+    return `<li class="arch-item${done.has(e.n) ? " done" : ""}" data-n="${e.n}"><b>${esc(e.episode)}</b>
+      <span class="st">${e.date ? fmtDate(e.date) + " · " : ""}${st}</span>
+      ${e.segments?.length ? `<button type="button" class="mini" data-a="open">${done.has(e.n) ? "Ansehen" : "Einlesen"}</button>` : ""}</li>`;
+  }).join("") || `<li class="pend-empty">Alle Folgen sind eingelesen.</li>`;
+  $("#archMoreRow").hidden = false;
+  $("#archMore").hidden = open.length <= archShown;
+  $("#archAll").textContent = archAll ? "Nur offene zeigen" : "Auch eingelesene zeigen";
 }
-$("#pickLoad").addEventListener("click", async () => {
-  if (!needPicks()) return;
-  const btn = $("#pickLoad"); btn.disabled = true; $("#pickStatus").textContent = "Lese die Shownotes aller Folgen …";
-  try { pickFeed = await api.feed(); pickRows = buildPickRows(pickFeed); pickShown = 25; savePickStats(pickRows); }
-  catch (e) { console.error(e); $("#pickStatus").textContent = ""; toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); }
-  finally { btn.disabled = false; }
-  renderPick();
+$("#archLoad").addEventListener("click", async () => {
+  if (!needItems()) return;
+  try { await loadArchEps(); } catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
+  renderArch();
 });
-$("#pickMore").addEventListener("click", () => { pickShown += 25; renderPick(); });
-$("#pickAll").addEventListener("click", () => { pickShowAll = !pickShowAll; renderPick(); });
-$("#pickList").addEventListener("click", async e => {
-  const li = e.target.closest(".pick-item-row"); if (!li) return;
-  const r = pickRows.find(x => x.key === li.dataset.key); if (!r) return;
-  const w = e.target.closest(".who-item");
-  if (w) {
-    const f = pickFilm(r); if (!f) return;
-    pickTouched.add(r.key);
-    teamDo(() => api.setPick(f.id, { picked_by: w.dataset.value, feed_title: joinFeed(f, r.titles), wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false && !pickOf(f)?.wheel_manual ? wheelStats(r) : {}) }));
-    return;
-  }
-  if (e.target.closest("[data-pk=find]")) await pickSearch(r);
-  const ch = e.target.closest("[data-pk=bl],[data-pk=sn]");
-  if (ch) await pickResolve(r, ch.dataset.pk);
+$("#archMore").addEventListener("click", () => { archShown += 20; renderArch(); });
+$("#archAll").addEventListener("click", () => { archAll = !archAll; renderArch(); });
+$("#archList").addEventListener("click", e => {
+  const b = e.target.closest("[data-a=open]"); if (b) openReview(+b.closest(".arch-item").dataset.n);
 });
-
-/* Widerspruch zwischen Backlog und Shownotes: Max entscheidet, wer recht hat.
-   „Backlog“: Radzeit endet vor der Backlog-Folge (wheel_manual = true, die Automatik lässt sie dann in Ruhe).
-   „Shownotes“: Die Folge im Backlog wird auf die berechnete Folge korrigiert. */
-function statsFor(r, doneN) {
-  const on = r.eps.filter(n => n < doneN);
-  if (!on.length) return { ...wheelStats(r), wheel_done_in: doneN };
-  const ep = pickEps.find(e => e.n === doneN);
-  const days = r.firstDate && ep?.date ? Math.round((new Date(ep.date) - new Date(r.firstDate)) / 864e5) : null;
-  return { wheel_first: on[0], wheel_last: on[on.length - 1], wheel_episodes: on.length, wheel_done_in: doneN, wheel_days: days };
-}
-async function pickResolve(r, which) {
-  const f = pickFilm(r); if (!f) return;
-  if (!pickOf(f)?.picked_by) { toast("Bitte den Film erst Max, Vincent oder der Community zuordnen.", true); return; }
-  const bn = epNum(f.episode);
-  pickTouched.add(r.key);
-  if (which === "bl") {
-    teamDo(() => api.setPick(f.id, { ...statsFor(r, bn), wheel_manual: true }), `Gespeichert: besprochen in Folge ${bn}, wie im Backlog.`);
-  } else {
-    const ep = pickEps.find(e => e.n === r.doneN);
-    teamDo(async () => {
-      await api.update(f.id, { episode: r.doneEpisode, discussed_at: ep?.date || f.discussed_at, episode_url: ep?.url || f.episode_url || null });
-      await api.setPick(f.id, { ...wheelStats(r), wheel_manual: false });
-    }, `Backlog korrigiert: besprochen in ${r.doneEpisode}.`);
-  }
+$("#archNew").addEventListener("click", () => openNewest());
+async function openNewest() {
+  if (!needItems()) return;
+  feedCache = null; archEps = null;                    // neueste Folge: Feed frisch holen
+  try { await loadArchEps(); } catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
+  const ep = archEps[0];
+  if (!ep) return;
+  renderArch();
+  if (!ep.segments?.length) { toast(`${ep.episode} hat keine Time-Stamps – es wird nur das Rad abgeglichen.`); await wheelSyncFor(ep); return; }
+  await openReview(ep.n);
+  $("#archCard").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* Radfilm per TMDB-Suche (Titel oder Link) einem Film zuordnen – gibt es ihn im Backlog oder auf dem Rad schon,
-   wird der vorhandene Eintrag genommen, sonst wird er mit der berechneten Folge ins Backlog (bzw. aufs Rad) eingetragen */
-async function pickSearch(r) {
-  const s = await dialog({ title: `Welcher Film ist „${r.title}“?`, confirm: "Bei TMDB suchen",
+/* ---- Überprüfung einer Folge ---- */
+async function openReview(n) {
+  const ep = archEps.find(e => e.n === n); if (!ep) return;
+  const saved = itemsOf(n), prev = prevList(n);
+  const remembered = new Set((state.items || []).filter(i => i.kind === "segment").map(i => norm(i.raw)));
+  const rows = (ep.segments || []).map((sg, pos) => {
+    const r = { pos, ts: sg.ts, raw: sg.title, title: cleanTitle(sg.title), kind: "film", film: null, cands: null, sure: false, searching: false,
+      followup: /follow[\s-]*up/i.test(sg.title), bond: /\bbond\b|\b007\b/i.test(sg.title), wheel: false, listTitle: null, presented: null, wheelWho: null };
+    const sv = saved.find(i => i.pos === pos && norm(i.raw) === norm(sg.title));
+    if (sv) {
+      Object.assign(r, { kind: sv.kind, followup: sv.followup, bond: sv.bond, wheel: sv.wheel, presented: sv.presented_by, sure: true });
+      const f = sv.film_id && byId(sv.film_id);
+      if (f) { r.film = { type: "db", id: f.id }; r.wheelWho = pickOf(f)?.picked_by || null; }
+      else if (sv.kind === "film") r.sure = false;     // Film wurde inzwischen gelöscht
+      if (r.wheel && prev) r.listTitle = prev.titles.find(x => near(norm(x), norm(r.title))) || null;
+      return r;
+    }
+    // Bond-Briefing ohne Titel: nächsten Bond vorschlagen
+    if (r.bond && !r.title) { const nb = bondState(n).next; if (nb) { r.title = nb[0]; r.bondQuery = `${nb[1]} ${nb[2]}`; } }
+    if (tsSec(sg.ts) === 0 || !r.title || (!r.bond && SEG_RE.test(sg.title)) || remembered.has(norm(sg.title))) { r.kind = "segment"; r.sure = true; return r; }
+    if (prev) { const t = prev.titles.find(x => near(norm(x), norm(r.title))); if (t) { r.wheel = true; r.listTitle = t; } }
+    const pool = allFilms();
+    const exact = pool.find(f => feedMatch(f, r.title)) || (r.listTitle && pool.find(f => feedMatch(f, r.listTitle)));
+    const m = exact || pool.find(f => feedMatch(f, r.title, true));
+    if (m) {
+      r.film = { type: "db", id: m.id };
+      if (state.wheel.includes(m)) r.wheel = true;
+      r.wheelWho = pickOf(m)?.picked_by || null;
+      const isDone = state.done.includes(m), dn = epNum(m.episode);
+      if (isDone && dn && dn < n && !fups(m).includes(n)) r.followup = true;   // war früher schon dran → Follow-up
+      // sicher: exakter Treffer, der schon zu dieser Folge gehört, auf dem Rad oder auf der Shortlist steht – oder als Follow-up angekündigt ist
+      r.sure = !!exact && (!isDone || !dn || dn === n || fups(m).includes(n) || (dn < n && /follow[\s-]*up/i.test(sg.title)));
+    }
+    return r;
+  });
+  review = { ep, rows };
+  renderReview();
+  // Unbekannte Filme: TMDB-Treffer vorschlagen (bitte prüfen)
+  for (const r of rows) if (r.kind === "film" && !r.film) await suggestTmdb(r);
+}
+async function suggestTmdb(r) {
+  if (!tmdbOn || tmdbBroken) return;
+  r.searching = true; renderReview();
+  let res = [];
+  try { res = await api.search(r.bondQuery || r.title, { tv: !r.bond }); } catch (e) { console.warn(e); }
+  if (r.bondQuery) { const y = +r.bondQuery.slice(-4); res.sort((a, b) => (b.year === y) - (a.year === y)); }
+  r.searching = false; r.cands = res;
+  const c = res[0];
+  if (c) {
+    const d = findDupe(c.title, c.tmdb_id, c.year, [c.original_title, c.title_en], c.tmdb_type);
+    r.film = d ? { type: "db", id: d.id } : { type: "tmdb", c };
+  }
+  r.sure = false;
+  if (review?.rows.includes(r)) renderReview();
+}
+function rowFilmHTML(r) {
+  if (!r.film) return `<div class="ep-film"><div class="s warn">${r.searching ? "Suche bei TMDB …" : "Kein Film gefunden – über 🔍 suchen oder „Kein Film“"}</div></div>`;
+  let poster, t, sub, warn = false;
+  if (r.film.type === "db") {
+    const f = byId(r.film.id);
+    if (!f) return `<div class="ep-film"><div class="s warn">Film nicht mehr vorhanden</div></div>`;
+    poster = posterHTML(f.poster_path, f.title, "w92"); t = titleParts(f).main + (f.year ? ` (${f.year})` : "");
+    const dn = epNum(f.episode), N = review.ep.n;
+    sub = state.done.includes(f) ? (dn === N ? `im Backlog · ${epText(f)}` : dn ? `im Backlog · ${epText(f)}` + (dn > N ? ` → wird Hauptfolge, ${f.episode} Follow-up` : r.followup ? " → Follow-up" : "") : "im Backlog, ohne Folge")
+        : state.wheel.includes(f) ? "auf dem Rad → kommt ins Backlog" : "auf der Shortlist → kommt ins Backlog";
+    warn = !!dn && dn !== N && !r.followup && dn < N;
+  } else if (r.film.type === "tmdb") {
+    const c = r.film.c; poster = posterHTML(c.poster, c.title, "w92"); t = c.title + (c.year ? ` (${c.year})` : ""); sub = "neu von TMDB → kommt ins Backlog";
+  } else { poster = `<div class="poster"><div class="ph">?</div></div>`; t = r.film.title; sub = "ohne TMDB → kommt ins Backlog"; }
+  return `<div class="ep-film">${poster}<div><div class="t">${esc(t)}</div><div class="s${warn ? " warn" : ""}">${esc(sub)}${r.sure ? "" : " · bitte prüfen"}</div></div></div>`;
+}
+function renderReview() {
+  const box = $("#archReview");
+  if (!review) { box.innerHTML = ""; return; }
+  const { ep, rows } = review;
+  const open = rows.filter(r => r.kind === "film" && (!r.sure || !r.film)).length, busyRow = rows.some(r => r.searching);
+  const wheelRow = rows.find(r => r.kind === "film" && r.wheel);
+  box.innerHTML = `<div class="ep-review">
+    <h3>${esc(ep.episode)}</h3>
+    <div class="sub">${ep.date ? fmtDate(ep.date) + " · " : ""}${rows.filter(r => r.kind === "film").length} Filme erkannt${wheelRow ? "" : " · kein Glücksradfilm"}${itemsOf(ep.n).length ? " · schon eingelesen" : ""}</div>
+    <ul class="ep-rows">${rows.map((r, i) => r.kind === "segment"
+      ? `<li class="ep-row segment" data-i="${i}"><div class="ep-head"><span class="ts">${esc(r.ts)}</span><span class="raw">${esc(r.raw)}</span>
+          <span class="ep-tag">kein Film</span><button type="button" class="mini" data-r="seg">Ist doch ein Film</button></div></li>`
+      : `<li class="ep-row${r.sure && r.film ? "" : " unsure"}" data-i="${i}">
+          <div class="ep-head"><span class="ts">${esc(r.ts)}</span><span class="raw">${esc(r.raw)}</span>
+            ${r.wheel ? `<span class="ep-tag">🎡 Glücksradfilm</span>` : ""}${r.bond ? `<span class="ep-tag">🕵️ Bond-Briefing</span>` : ""}${r.followup ? `<span class="ep-tag">↩ Follow-up</span>` : ""}</div>
+          ${rowFilmHTML(r)}
+          <div class="ep-ctrl">
+            ${r.film && !r.sure ? `<button type="button" class="mini ok" data-r="ok">✓ passt</button>` : ""}
+            <button type="button" class="mini" data-r="find" title="Bei TMDB suchen oder Link einfügen">🔍</button>
+            <button type="button" class="mini" data-r="seg">Kein Film</button><span class="sep"></span>
+            <button type="button" class="mini${r.followup ? " on" : ""}" data-r="fu">↩ Follow-up</button>
+            <button type="button" class="mini${r.wheel ? " on" : ""}" data-r="wheel">🎡 Radfilm</button>
+            <button type="button" class="mini${r.bond ? " on" : ""}" data-r="bond">🕵️ Bond</button><span class="sep"></span>
+            vorgestellt von ${Object.entries(PRES).map(([k, l]) => `<button type="button" class="mini${r.presented === k ? " on" : ""}" data-p="${k}">${l}</button>`).join("")}
+            ${r.wheel ? `<span class="sep"></span>aufs Rad gesetzt von ${Object.keys(WHO).map(k => `<button type="button" class="mini who-mini${r.wheelWho === k ? " on" : ""}" data-w="${k}" title="${WHO[k].label}">${whoFace(k)}</button>`).join("")}` : ""}
+          </div></li>`).join("")}</ul>
+    <div class="ep-save"><button type="button" class="btn" data-r="save" ${open || busyRow ? "disabled" : ""}>${esc(ep.episode)} übernehmen</button>
+      <button type="button" class="btn ghost small" data-r="close">Schließen</button>
+      <span class="hint">${busyRow ? "Suche läuft …" : open ? `${open} ${open === 1 ? "Zeile" : "Zeilen"} noch prüfen (rot markiert)` : "Alles geprüft."}</span></div>
+  </div>`;
+}
+$("#archReview").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b || !review) return;
+  const li = b.closest(".ep-row"), r = li ? review.rows[+li.dataset.i] : null;
+  if (b.dataset.r === "close") { review = null; renderReview(); return; }
+  if (b.dataset.r === "save") { await saveReview(); return; }
+  if (!r) return;
+  if (b.dataset.p) r.presented = r.presented === b.dataset.p ? null : b.dataset.p;
+  else if (b.dataset.w) r.wheelWho = b.dataset.w;
+  else switch (b.dataset.r) {
+    case "ok": r.sure = true; break;
+    case "fu": r.followup = !r.followup; break;
+    case "bond": r.bond = !r.bond; break;
+    case "wheel": r.wheel = !r.wheel; if (r.wheel && !r.listTitle) r.listTitle = prevList(review.ep.n)?.titles.find(x => near(norm(x), norm(r.title))) || null; break;
+    case "seg":
+      if (r.kind === "segment") { r.kind = "film"; r.title = r.title || r.raw; r.sure = false; renderReview(); if (!r.film) await suggestTmdb(r); return; }
+      r.kind = "segment"; r.sure = true; break;
+    case "find": await rowSearch(r); break;
+  }
+  renderReview();
+});
+async function rowSearch(r) {
+  const s = await dialog({ title: `Welcher Film ist „${r.raw}“?`, confirm: "Bei TMDB suchen",
     text: "Tipps: Jahreszahl anhängen („The King 2019“), Original- oder englischen Titel probieren – oder den Link von der TMDB-Seite einfügen.",
-    fields: [{ name: "q", label: "Titel oder TMDB-Link", value: r.title, required: true, max: 200 }] });
+    fields: [{ name: "q", label: "Titel oder TMDB-Link", value: r.title || r.raw, required: true, max: 200 }] });
   if (!s) return;
   let res = [];
   if (tmdbOn && !tmdbBroken) { try { res = await api.search(s.q, { tv: true }); } catch (err) { console.warn(err); } }
-  if (!res.length) { toast(`Keine TMDB-Treffer für „${s.q}“.`, true); return; }
-  const old = r.filmId ? pickOf(pickFilm(r) || {})?.picked_by || "" : "";
-  let v;
-  for (;;) {
-    v = await dialog({ title: "Richtige Version wählen", confirm: "Zuordnen",
-      text: r.doneN ? `Auf dem Rad ${r.first === r.last ? `in Folge ${r.first}` : `von Folge ${r.first} bis ${r.last}`}, besprochen in ${r.doneEpisode}.`
-                    : `Seit Folge ${r.first} auf dem Rad.`,
-      fields: [{ name: "pick", label: "Film", type: "pick", options: res.map(pickOption) },
-               { name: "who", label: "Aufs Rad gesetzt von", type: "who", value: old }] });
-    if (!v) return;
-    if (v.who) break;
-    toast("Bitte noch zuordnen: Max, Vincent oder Community.", true);
+  const isLink = /themoviedb\.org/i.test(s.q), free = isLink ? "" : s.q.trim().replace(/\s+/g, " ");
+  const options = res.map(pickOption);
+  if (free) options.push({ value: "free", label: "Ohne TMDB eintragen", sub: `„${free}“`, free: true });
+  if (!options.length) { toast("Kein TMDB-Treffer für diesen Link.", true); return; }
+  const v = await dialog({ title: "Richtige Version wählen", confirm: "Übernehmen", fields: [{ name: "pick", label: "Film", type: "pick", options }] });
+  if (!v) return;
+  if (v.pick === "free") {
+    const d = findDupe(free, null, null);
+    r.film = d ? { type: "db", id: d.id } : { type: "free", title: free };
+  } else {
+    const c = res[+v.pick], d = findDupe(c.title, c.tmdb_id, c.year, [c.original_title, c.title_en], c.tmdb_type);
+    r.film = d ? { type: "db", id: d.id } : { type: "tmdb", c };
   }
-  const c = res[+v.pick];
-  const film = { title: c.title, year: c.year || null, tmdb_id: c.tmdb_id, tmdb_type: c.tmdb_type || "movie", poster_path: c.poster || null,
-                 original_title: c.original_title || null, title_en: c.title_en || null };
-  const same = f => f.tmdb_id === film.tmdb_id && (f.tmdb_type || "movie") === film.tmdb_type;
-  const pick = { picked_by: v.who, wheel_since: `Folge ${r.first}`, ...(state.statsReady !== false ? wheelStats(r) : {}) };
-  let f = [...state.done, ...state.wheel].find(same);
-  // eigener Backlog-Eintrag dieser Schreibweise (noch ohne TMDB) – wird verknüpft statt einen neuen anzulegen
-  const pf = pickFilm(r);
-  const own = pf && !pf.tmdb_id ? pf : [...state.done, ...state.wheel].find(x => !x.tmdb_id && r.titles.some(t => feedMatch(x, t)));
+  if (r.film.type === "db") { const f = byId(r.film.id); r.wheelWho = r.wheelWho || pickOf(f)?.picked_by || null;
+    const dn = epNum(f?.episode); if (f && state.done.includes(f) && dn && dn < review.ep.n && !fups(f).includes(review.ep.n)) r.followup = true; }
+  r.sure = true;
+}
+
+/* ---- Speichern ---- */
+async function commitFilm(r, ep) {
+  const n = ep.n, info = { discussed_at: ep.date || today(), episode: ep.episode || `Folge ${n}`, episode_url: ep.url || null };
+  let f = r.film.type === "db" ? byId(r.film.id) : null;
+  if (!f && r.film.type === "tmdb") { const c = r.film.c, d = findDupe(c.title, c.tmdb_id, c.year, [c.original_title, c.title_en], c.tmdb_type); if (d) f = byId(d.id); }
+  if (!f) {
+    const film = r.film.type === "tmdb" ? filmFromC(r.film.c)
+      : { title: r.film.title || r.title, year: null, tmdb_id: null, tmdb_type: "movie", poster_path: null, original_title: null, title_en: null };
+    const id = await api.addBacklog({ ...film, ...info });
+    await reload();
+    return id || findDupe(film.title, film.tmdb_id, film.year, [], film.tmdb_type)?.id || null;
+  }
+  if (state.done.includes(f)) {
+    const dn = epNum(f.episode);
+    if (dn === n) { if (!f.episode_url && info.episode_url) await api.link(f.id, { episode_url: info.episode_url }); }
+    else if (fups(f).includes(n)) { /* schon als Follow-up vermerkt */ }
+    else if (!dn) await api.link(f.id, info);                                           // Backlog-Eintrag ohne Folge
+    else if (dn < n) await api.setFollowups(f.id, addFollowup(f.followups, info.episode)); // spätere Folge → Follow-up
+    else await api.link(f.id, { ...info, followups: addFollowup(f.followups, f.episode) }); // frühere Folge → wird Hauptfolge
+  } else await api.discuss(f.id, info);                                                  // vom Rad oder von der Shortlist
+  if (r.film.type === "tmdb" && !f.tmdb_id) await api.link(f.id, filmFromC(r.film.c));
+  return f.id;
+}
+async function saveReview() {
+  const { ep, rows } = review;
+  const btn = $("#archReview [data-r=save]"); if (btn) btn.disabled = true;
   busy++;
+  let ok = false;
   try {
-    if (!f && own) {
-      await api.link(own.id, film); await reload();
-      f = [...state.done, ...state.wheel].find(x => x.id === own.id) || null;
-    } else if (f && own && own.id !== f.id) {
-      // Den Film gibt es schon (z. B. unter anderer Schreibweise zugeordnet): doppelten Eintrag aufräumen
-      const sameEp = (own.episode || "") === (f.episode || "");
-      const v2 = await dialog({ title: "Doppelt im Backlog", confirm: "Übernehmen",
-        text: `„${own.title}“ (${own.episode || "ohne Folge"}) ist derselbe Film wie „${titleParts(f).main}“ (${f.discussed_at ? f.episode || "Backlog" : "auf dem Rad"}). Was soll mit dem Eintrag „${own.title}“ passieren?`,
-        fields: [{ name: "act", label: "Doppelter Eintrag", type: "select", options: [
-          ...(sameEp || !own.episode || !f.discussed_at ? [] : [{ value: "follow", label: `entfernen, ${own.episode} als Follow-up vermerken` }]),
-          { value: "remove", label: "entfernen (gleiche Besprechung)" },
-          { value: "keep", label: "behalten" }] }] });
-      if (v2?.act === "follow") { await api.setFollowups(f.id, addFollowup(f.followups, own.episode)); await api.remove(own.id); }
-      else if (v2?.act === "remove") await api.remove(own.id);
-      await reload();
-      f = [...state.done, ...state.wheel].find(x => x.id === f.id) || f;
+    for (const r of rows) r.id = r.kind === "film" && r.film ? await commitFilm(r, ep) : null;
+    await reload();
+    await api.saveItems(ep.n, rows.map(r => ({ episode_n: ep.n, pos: r.pos, ts: r.ts || null, raw: r.raw.slice(0, 200), kind: r.kind, film_id: r.id,
+      followup: r.kind === "film" && r.followup, bond: r.kind === "film" && r.bond, wheel: r.kind === "film" && r.wheel,
+      presented_by: r.kind === "film" ? r.presented : null })));
+    // Radfilm: Zuordnung, Schreibweise aus den Shownotes und Radzeit speichern
+    for (const r of rows.filter(r => r.kind === "film" && r.wheel && r.id)) {
+      const f = byId(r.id), run = wheelRun(r, ep.n);
+      const base = { ...(r.wheelWho ? { picked_by: r.wheelWho } : {}), ...(r.listTitle ? { feed_title: joinFeed(f, [r.listTitle]).slice(0, 200) } : {}),
+                     ...(run ? { wheel_since: run.wheel_since } : {}) };
+      const { wheel_since, ...stats } = run || {};
+      try { await api.setPick(r.id, run ? { ...base, ...stats, wheel_manual: false } : base); }
+      catch (e) { if (Object.keys(base).length) await api.setPick(r.id, base); }      // ohne Radzeit-Spalten (radzeiten.sql fehlt)
     }
-    if (!f) {
-      const d = findDupe(film.title, film.tmdb_id, film.year, [film.original_title, film.title_en], film.tmdb_type);
-      if (d && (d._done || d._wheel)) {                    // schon da, nur noch ohne TMDB-Nummer: verknüpfen
-        await api.link(d.id, film); await reload();
-        f = [...state.done, ...state.wheel].find(x => x.id === d.id) || null;
-      } else if (d) {                                      // steht noch auf der Shortlist
-        if (!d.tmdb_id) await api.link(d.id, film);
-        if (r.doneN) await api.discuss(d.id, { discussed_at: r.doneDate || today(), episode: r.doneEpisode, episode_url: r.doneUrl });
-        else await api.toWheel(d.id);
-      } else if (r.doneN) {
-        await api.addBacklog({ ...film, discussed_at: r.doneDate || today(), episode: r.doneEpisode, episode_url: r.doneUrl });
-      } else {
-        await api.addWheel(film, pick);
-      }
-      if (!f) { await reload(); f = [...state.done, ...state.wheel].find(same) || null; }
-    }
-    if (!f) { toast("Der Film ließ sich nicht eintragen.", true); return; }
-    await api.setPick(f.id, { ...pick, feed_title: joinFeed(f, r.titles) });
-    r.filmId = f.id; pickTouched.add(r.key);
-    toast(`„${r.title}“ ist jetzt „${film.title}“${f.discussed_at ? ` (${f.episode || "Backlog"})` : " (auf dem Rad)"}.`);
-  } catch (err) {
-    console.error(err);
-    toast(err.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (err.message || "Fehler"), true);
-  } finally {
-    busy--; await reload().catch(() => {});
-    // neu rechnen: Schreibweisen desselben Films werden zusammengefasst, Radzeit gilt für alle zusammen
-    if (pickFeed) { pickRows = buildPickRows(pickFeed); savePickStats(pickRows); renderPick(); }
-  }
+    ok = true;
+    toast(`${ep.episode} ist eingelesen.`);
+  } catch (e) {
+    console.error(e);
+    toast(e.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (e.message || "Fehler"), true);
+  } finally { busy--; await reload().catch(() => {}); }
+  if (!ok) { renderReview(); return; }
+  review = null; renderReview(); renderArch();
+  if (ep.n === archEps[0]?.n) await wheelSyncFor(ep);                                    // neueste Folge: Rad aktualisieren
 }
 
 // Kleiner Dialog statt alert/confirm/prompt
