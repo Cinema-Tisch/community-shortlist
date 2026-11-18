@@ -425,6 +425,7 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .ep-ctrl .who-mini{padding:3px 6px}
 .ep-ctrl .who-mini .who-face{width:20px;height:20px;border-width:1.5px;font-size:12px}
 #archMoreRow [hidden]{display:none}
+.ep-ctrl .ep-who{font-weight:700;color:var(--navy-ink)}
 .ep-save{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
 .pick-item-row{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
 .pick-item-row .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
@@ -1631,7 +1632,8 @@ async function syncGone(f, ep) {
 }
 
 /* ---------------- Folgen einlesen (Time-Stamps aus den Shownotes) ---------------- */
-/* Aufbau einer Folge: Intro, dann die Filme von Max und Vincent (Reihenfolge wechselt), dann der Glücksradfilm,
+/* Glücksradfilme haben immer beide gesehen → „vorgestellt von beiden“ wird automatisch gesetzt.
+   Aufbau einer Folge: Intro, dann die Filme von Max und Vincent (Reihenfolge wechselt), dann der Glücksradfilm,
    am Ende das Glücksrad. Der Glücksradfilm ist der Film aus den Time-Stamps, der in der VORHERIGEN Folge unter
    „Glücksradfilme“ stand (vor Weihnachten wird nicht gedreht → die Weihnachtsfolge hat keinen Radfilm).
    Gespeichert wird jede Zeile in der Tabelle episode_items (folgen.sql). */
@@ -1838,7 +1840,7 @@ function renderReview() {
             <button type="button" class="mini${r.followup ? " on" : ""}" data-r="fu">↩ Follow-up</button>
             <button type="button" class="mini${r.wheel ? " on" : ""}" data-r="wheel">🎡 Radfilm</button>
             <button type="button" class="mini${r.bond ? " on" : ""}" data-r="bond">🕵️ Bond</button><span class="sep"></span>
-            vorgestellt von ${Object.entries(PRES).map(([k, l]) => `<button type="button" class="mini${r.presented === k ? " on" : ""}" data-p="${k}">${l}</button>`).join("")}
+            ${r.wheel ? `<span class="ep-who">vorgestellt von beiden (Glücksradfilm)</span>` : `vorgestellt von ${Object.entries(PRES).map(([k, l]) => `<button type="button" class="mini${r.presented === k ? " on" : ""}" data-p="${k}">${l}</button>`).join("")}`}
             ${r.wheel ? `<span class="sep"></span>aufs Rad gesetzt von ${Object.keys(WHO).map(k => `<button type="button" class="mini who-mini${r.wheelWho === k ? " on" : ""}" data-w="${k}" title="${WHO[k].label}">${whoFace(k)}</button>`).join("")}` : ""}
           </div></li>`).join("")}</ul>
     <div class="ep-save"><button type="button" class="btn" data-r="save" ${open || busyRow ? "disabled" : ""}>${esc(ep.episode)} übernehmen</button>
@@ -1924,7 +1926,7 @@ async function saveReview() {
     await reload();
     await api.saveItems(ep.n, rows.map(r => ({ episode_n: ep.n, pos: r.pos, ts: r.ts || null, raw: r.raw.slice(0, 200), kind: r.kind, film_id: r.id,
       followup: r.kind === "film" && r.followup, bond: r.kind === "film" && r.bond, wheel: r.kind === "film" && r.wheel,
-      presented_by: r.kind === "film" ? r.presented : null })));
+      presented_by: r.kind !== "film" ? null : r.wheel ? "both" : r.presented })));
     // Radfilm: Zuordnung, Schreibweise aus den Shownotes und Radzeit speichern
     for (const r of rows.filter(r => r.kind === "film" && r.wheel && r.id)) {
       const f = byId(r.id), run = wheelRun(r, ep.n);
