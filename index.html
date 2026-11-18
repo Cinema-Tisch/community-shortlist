@@ -32,7 +32,7 @@
   --radius-wobbly: 26px 14px 30px 12px / 14px 28px 12px 24px;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;background-color:#725942}
+html{-webkit-text-size-adjust:100%;background-color:#725942;scrollbar-gutter:stable}
 body{
   margin:0;min-height:100vh;
   font-family:"Karla",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -185,9 +185,11 @@ input::placeholder{color:#9a95a6}
 .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 10px;font-size:14px;color:var(--muted);font-weight:600}
 .live{display:inline-flex;align-items:center;gap:7px;font-weight:800;color:var(--navy-ink);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
 .live i{width:10px;height:10px;border-radius:50%;background:#a29d94;border:2px solid var(--line);flex:none}
-.live.on i{background:#3fae5a;animation:pulse 2s infinite}
+.live i{position:relative}
+.live.on i{background:#3fae5a}
+.live.on i::after{content:"";position:absolute;inset:-2px;border-radius:50%;background:rgba(63,174,90,.6);z-index:-1;animation:pulse 2s infinite}
 .live.demo i{background:#e3a33a}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,174,90,.6)}70%{box-shadow:0 0 0 8px rgba(63,174,90,0)}100%{box-shadow:0 0 0 0 rgba(63,174,90,0)}}
+@keyframes pulse{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(2.6);opacity:0}}
 
 /* Liste */
 ol.films{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
@@ -516,12 +518,8 @@ body.team .pill-name{cursor:default}
 .case-front img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .case-front .hi{opacity:0;transition:opacity .25s ease}
 .case-front .hi.on{opacity:1}
-/* Safari: Bilder mit eigener Ebene scheinen sonst beim Umdrehen durch die Rückseite. Deshalb wird die Vorderseite
-   genau in dem Moment unsichtbar, in dem sie hochkant steht (90°): beim Öffnen nach 0,358 s (0,1 s Pause + 0,7 s
-   Drehung, Kurve .45,0,.2,1 erreicht die Hälfte bei 36,9 %), beim Schließen ab 0,221 s wieder sichtbar.
-   Kein backface-visibility an den Bildern selbst – das gibt ihnen in Safari eine eigene Ebene, die erst recht durchscheint. */
-.case-layer.open .case-front{visibility:hidden;transition:visibility 0s .358s, border-width .3s ease, box-shadow .3s ease}
-.case-layer.closing .case-front{visibility:visible;transition:visibility 0s .221s, border-width .3s ease, box-shadow .3s ease}
+/* Welche Seite gezeichnet wird, schaltet flipFaces() genau bei 90° um (Safari lässt Ebenen sonst durchscheinen) */
+.case-rear{visibility:hidden}
 .case-front .ph{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:800 120px/1 "Playfair Display",Georgia,serif;
   background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 8px, transparent 8px 16px),var(--navy)}
 .case-rear{transform:rotateY(180deg);background:var(--paper);display:flex;flex-direction:column;
@@ -2185,6 +2183,30 @@ function fillCase(rear, d) {
   requestAnimationFrame(() => { const upd = () => text.classList.toggle("has-more", text.scrollTop + text.clientHeight < text.scrollHeight - 4); upd(); text.onscroll = upd; });
   if (d.lang === "en") { const n = document.createElement("div"); n.className = "case-note"; n.textContent = "Nur auf Englisch bei TMDB"; text.after(n); }
 }
+/* Vorder- und Rückseite der Hülle: Es wird immer nur die Seite gezeichnet, die zum Betrachter zeigt.
+   Umgeschaltet wird genau in dem Moment, in dem die Hülle hochkant steht (90°). Der Zeitpunkt kommt nicht aus
+   festen Zahlen, sondern aus der laufenden Drehung selbst (Dauer, Pause, Kurve und aktueller Winkel) –
+   so stimmt er auch, wenn man mitten im Öffnen schon wieder schließt. */
+function flipFaces(layer, toRear) {
+  const inner = layer.querySelector(".case-inner"), front = layer.querySelector(".case-front"), rear = layer.querySelector(".case-rear");
+  (layer._flip || []).forEach(a => a.cancel());
+  layer._flip = [];
+  const tf = getComputedStyle(inner).transform;          // aktueller Winkel (startet zugleich die Drehung)
+  const deg = tf && tf !== "none" ? Math.acos(Math.max(-1, Math.min(1, new DOMMatrixReadOnly(tf).m11))) * 180 / Math.PI : 0;
+  front.style.visibility = toRear ? "hidden" : "visible";  // Endzustand; die Animation unten überdeckt ihn, solange sie läuft
+  rear.style.visibility = toRear ? "visible" : "hidden";
+  const turn = inner.getAnimations().find(a => a.transitionProperty === "transform");
+  const span = toRear ? 180 - deg : deg, k = span > 0 ? (toRear ? 90 - deg : deg - 90) / span : 0;   // Anteil der Drehung bis 90°
+  if (!turn || k <= 0) return;                            // keine Animation oder schon über 90° hinaus
+  const t = turn.effect.getComputedTiming(), at = Math.min(.998, k);
+  const frames = (from, to) => [{ visibility: from, offset: 0 }, { visibility: from, offset: at }, { visibility: to, offset: at + .001 }, { visibility: to, offset: 1 }];
+  const timing = { duration: t.duration, delay: t.delay, easing: t.easing, fill: "backwards" };
+  layer._flip = [front.animate(frames(toRear ? "visible" : "hidden", toRear ? "hidden" : "visible"), timing),
+                 rear.animate(frames(toRear ? "hidden" : "visible", toRear ? "visible" : "hidden"), timing)];
+  // exakt im Takt der Drehung laufen lassen
+  const sync = () => layer._flip.forEach(a => { try { a.startTime = turn.startTime; } catch (e) {} });
+  if (turn.startTime != null) sync(); else turn.ready.then(sync, () => {});
+}
 async function openCase(poster) {
   if (caseState.layer || caseState.opening) return;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2230,18 +2252,28 @@ async function openCase(poster) {
   caseState.layer = layer; caseState.poster = poster;
   poster.classList.add("lifted");
   document.documentElement.classList.add("case-busy");
-  const settle = new Promise(r => setTimeout(r, reduce ? 0 : 760));
+  const settle = new Promise(r => setTimeout(r, reduce ? 0 : 830));
   settle.then(() => { if (caseState.layer === layer) { layer.classList.add("settled"); document.documentElement.classList.remove("case-busy"); } });
   if (hiLater) settle.then(loadHi); else loadHi();
   // Startzustand erst wirklich zeichnen lassen, dann losfliegen – sonst verschluckt das Handy die ersten Bilder
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   if (caseState.layer !== layer) return;
   layer.classList.add("open"); cs.style.transform = "";
+  flipFaces(layer, true);
   layer.querySelector(".case-dim").onclick = closeCase;
   layer.querySelector(".case-x").onclick = closeCase;
   setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
+  // Die Inhaltsangabe wird erst nach der Landung eingesetzt (Text mitten im Flug lässt die Hülle ruckeln) und blendet weich ein
+  // Kommt sie, solange die Rückseite noch unsichtbar ist (erstes Drittel des Flugs), fällt das Einsetzen nicht auf.
+  const t0 = performance.now();
   const d = await loadDetails(poster.dataset.tmdb, poster.dataset.ttype);
-  if (caseState.layer === layer) { rear.querySelector(".case-note")?.remove(); fillCase(rear, d); }
+  const late = !reduce && performance.now() - t0 > 280;
+  if (late) await settle;
+  if (caseState.layer === layer && !caseState.closing) {
+    rear.querySelector(".case-note")?.remove(); fillCase(rear, d);
+    if (late)
+      for (const el of rear.querySelectorAll(".case-meta, .case-text, .case-note")) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
+  }
 }
 function closeCase() {
   const { layer, poster } = caseState;
@@ -2262,6 +2294,7 @@ function closeCase() {
   smallFace(cs, pose, box);
   cs.style.transform = caseFromPose(pose, box);
   layer.classList.remove("open", "settled"); layer.classList.add("closing");
+  flipFaces(layer, false);
   document.documentElement.classList.add("case-busy");
   // Auf dem letzten Stück gleitet die DVD schon heraus – sie ist draußen, wenn die Hülle aufsetzt
   const cover = poster.closest(".cover");
@@ -2274,7 +2307,10 @@ function closeCase() {
     poster.classList.remove("lifted");
     cs.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "ease-out", fill: "forwards" }).finished.then(done, done);
   };
-  cs.addEventListener("transitionend", e => { if (e.target === cs && e.propertyName === "transform") land(); });
+  // Auf das Ende genau DIESES Rückflugs warten (nicht auf irgendein transitionend – das kam manchmal sofort,
+  // dann verschwand die Hülle mitten im Flug)
+  const fly = cs.getAnimations().find(a => a.transitionProperty === "transform");
+  if (fly) fly.finished.then(land, land); else land();
   setTimeout(land, 900);
 }
 const caseTarget = e => e.target.closest?.(".poster[data-tmdb]");
@@ -2386,7 +2422,8 @@ function slideCollapse() {
   // negativer Rand), damit die Filme dort sichtbar bleiben. Am Layout ändert der Rahmen nichts.
   const N = Math.ceil(from + innerHeight);
   const clip = document.createElement("div");
-  clip.style.cssText = `overflow:hidden;margin:-${N}px -60px -10px;padding:${N + 10}px 60px 10px`;
+  // seitlich nur 24px Luft (Schatten, Glühen) – mehr würde am Handy über den Bildschirmrand ragen und die Seite kurz breiter machen
+  clip.style.cssText = `overflow:hidden;margin:-${N}px -24px -10px;padding:${N + 10}px 24px 10px`;
   list.before(clip); clip.appendChild(list);
   // Ausblenden an der Kante per Maske – gleiche Verlaufsstufen wie der normale Verlauf
   const F = parseFloat(wrap.style.getPropertyValue("--fade")) || 70;
