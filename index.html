@@ -1699,6 +1699,14 @@ function wheelRun(r, n) {
 }
 
 /* ---- Archiv-Liste ---- */
+// Nach Übernehmen/Schließen oben auf der Folgen-Liste landen, beim Öffnen oben auf der Prüfung
+function scrollToEl(el) {
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + scrollY - 12;
+  scrollTo({ top: Math.max(0, y), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+const toListTop = () => requestAnimationFrame(() => scrollToEl($("#archList").children.length ? $("#archList") : $("#archCard")));
+const toReview = () => requestAnimationFrame(() => scrollToEl($("#archReview .ep-review")));
 function renderArch() {
   const card = $("#archCard");
   card.hidden = !state.isAdmin;
@@ -1731,7 +1739,7 @@ $("#archLoad").addEventListener("click", async () => {
 $("#archMore").addEventListener("click", () => { archShown += 20; renderArch(); });
 $("#archAll").addEventListener("click", () => { archAll = !archAll; renderArch(); });
 $("#archList").addEventListener("click", e => {
-  const b = e.target.closest("[data-a=open]"); if (b) openReview(+b.closest(".arch-item").dataset.n);
+  const b = e.target.closest("[data-a=open]"); if (b) { openReview(+b.closest(".arch-item").dataset.n); toReview(); }
 });
 $("#archNew").addEventListener("click", () => openNewest());
 async function openNewest() {
@@ -1851,7 +1859,7 @@ function renderReview() {
 $("#archReview").addEventListener("click", async e => {
   const b = e.target.closest("button"); if (!b || !review) return;
   const li = b.closest(".ep-row"), r = li ? review.rows[+li.dataset.i] : null;
-  if (b.dataset.r === "close") { review = null; renderReview(); return; }
+  if (b.dataset.r === "close") { review = null; renderReview(); toListTop(); return; }
   if (b.dataset.r === "save") { await saveReview(); return; }
   if (!r) return;
   if (b.dataset.p) r.presented = r.presented === b.dataset.p ? null : b.dataset.p;
@@ -1943,7 +1951,7 @@ async function saveReview() {
     toast(e.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (e.message || "Fehler"), true);
   } finally { busy--; await reload().catch(() => {}); }
   if (!ok) { renderReview(); return; }
-  review = null; renderReview(); renderArch();
+  review = null; renderReview(); renderArch(); toListTop();
   if (ep.n === archEps[0]?.n) await wheelSyncFor(ep);                                    // neueste Folge: Rad aktualisieren
 }
 
