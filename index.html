@@ -1662,11 +1662,12 @@ const filmFromC = c => ({ title: c.title, year: c.year || null, tmdb_id: c.tmdb_
 const itemsOf = n => (state.items || []).filter(i => i.episode_n === n).sort((a, b) => a.pos - b.pos);
 const PRES = { max: "Max", vincent: "Vincent", both: "beide" };
 
-let archEps = null, archShown = 20, archAll = false, review = null;
+let archEps = null, archShown = 20, archAll = false, archOpen = false, review = null;
 
 function needItems() {
   if (state.itemsReady) return true;
-  toast("Dafür fehlt noch die Tabelle für die Folgen – bitte folgen.sql einmal in Supabase ausführen.", true);
+  const msg = "Dafür fehlt noch die Tabelle für die Folgen – bitte folgen.sql einmal in Supabase ausführen.";
+  toast(msg, true); $("#archStatus").textContent = "⚠️ " + msg;
   return false;
 }
 async function loadArchEps() {
@@ -1705,7 +1706,7 @@ function scrollToEl(el) {
   const y = el.getBoundingClientRect().top + scrollY - 12;
   scrollTo({ top: Math.max(0, y), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
-const toListTop = () => requestAnimationFrame(() => scrollToEl($("#archList").children.length ? $("#archList") : $("#archCard")));
+const toListTop = () => requestAnimationFrame(() => scrollToEl(archOpen && $("#archList").children.length ? $("#archList") : $("#archCard")));
 const toReview = () => requestAnimationFrame(() => scrollToEl($("#archReview .ep-review")));
 function renderArch() {
   const card = $("#archCard");
@@ -1717,7 +1718,8 @@ function renderArch() {
   bs.hidden = !state.itemsReady;
   bs.textContent = `🕵️ Bond-Briefing: ${b.done} von ${BOND.length} besprochen` + (b.next ? ` · als Nächstes: ${b.next[0]} (${b.next[2]})` : " · alle durch!");
   const list = $("#archList");
-  if (!archEps) { list.innerHTML = ""; $("#archMoreRow").hidden = true; return; }
+  $("#archLoad").textContent = archOpen ? "📚 Archiv schließen" : "📚 Archiv öffnen";
+  if (!archEps || !archOpen) { list.innerHTML = ""; $("#archMoreRow").hidden = true; return; }
   const open = archEps.filter(e => archAll || !done.has(e.n));
   list.innerHTML = open.slice(0, archShown).map(e => {
     const it = itemsOf(e.n), films = it.filter(i => i.kind === "film").length;
@@ -1732,9 +1734,11 @@ function renderArch() {
   $("#archAll").textContent = archAll ? "Nur offene zeigen" : "Auch eingelesene zeigen";
 }
 $("#archLoad").addEventListener("click", async () => {
+  if (archOpen) { archOpen = false; renderArch(); return; }
   if (!needItems()) return;
-  try { await loadArchEps(); } catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
-  renderArch();
+  try { await loadArchEps(); }
+  catch (e) { console.error(e); const m = "Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"); toast(m, true); $("#archStatus").textContent = "⚠️ " + m; return; }
+  archOpen = true; renderArch(); toListTop();
 });
 $("#archMore").addEventListener("click", () => { archShown += 20; renderArch(); });
 $("#archAll").addEventListener("click", () => { archAll = !archAll; renderArch(); });
