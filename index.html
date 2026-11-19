@@ -132,6 +132,7 @@ h1{
 .btn > .ic,.mini > .ic{width:.95em;height:.95em;margin:0;transform:translateY(-.145em)}
 .btn > .ic.mid,.mini > .ic.mid{transform:none}
 .btn > .dvd-ic,.mini > .dvd-ic{font-size:.8em;margin:0;transform:translateY(-.21em)}
+.btn > .dvd-ic.straight,.mini > .dvd-ic.straight{transform:translateY(-.143em)}   /* gerade Hülle: Unterkante auf der Grundlinie */
 .btn.small{gap:7px}
 /* Knöpfe nur mit Symbol (Lupe; auf dem Handy auch Bearbeiten/Löschen): gleich hoch wie Knöpfe mit Schrift, Symbol mittig */
 .mini.only{align-items:center;padding:6px 7px}
@@ -150,6 +151,10 @@ h1{
 .card h2 .num.ic > *{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0}
 .card h2 .num.ic > svg{width:21px;height:21px}
 .card h2 .num.ic > .dvd-ic{font-size:14.5px}
+/* Im Kreis: Hülle gerade, ohne Schatten – Box = sichtbarer Inhalt, damit sie exakt mittig sitzt */
+.dvd-ic.straight{width:1.298em;height:1.11em}
+.dvd-ic.straight::after{left:0;top:0;transform:none;box-shadow:none}
+.dvd-ic.straight::before{left:.573em;top:.1925em}
 .card h2 .num.ic > svg.stack{width:19px;height:19px;transform:translate(-50%,-64.6%)}   /* Stapel steht im Symbol unten (für Knöpfe) → im Kreis wieder mittig */
 .card h2 .num{
   display:inline-grid;place-items:center;width:30px;height:30px;flex:none;
@@ -790,9 +795,9 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   </section>
 
   <section class="card" id="archCard" hidden>
-    <h2><span class="num ic"><span class="dvd-ic" aria-hidden="true"></span></span>Filmdaten einpflegen <span class="badge" id="archCount">–</span></h2>
+    <h2><span class="num ic"><span class="dvd-ic straight" aria-hidden="true"></span></span>Filmdaten einpflegen <span class="badge" id="archCount">–</span></h2>
     <p class="hint" style="margin:-6px 0 12px">Liest die Time-Stamps aus den Shownotes: welche Filme in welcher Folge besprochen wurden, welcher davon vom Glücksrad kam und wer ihn vorgestellt hat. Nach jeder neuen Folge einmal „Neue Folge einpflegen“ – das bringt auch das Rad auf den neuen Stand. Nur ihr seht diesen Bereich.</p>
-    <div class="link-row"><button class="btn small" type="button" id="archNew"><span class="dvd-ic" aria-hidden="true"></span> Neue Folge einpflegen</button><button class="btn small ghost" type="button" id="archLoad"><svg class="ic" aria-hidden="true"><use href="#i-stack"/></svg> Archiv öffnen</button><span class="hint" id="archStatus"></span></div>
+    <div class="link-row"><button class="btn small" type="button" id="archNew"><span class="dvd-ic straight" aria-hidden="true"></span> Neue Folge einpflegen</button><button class="btn small ghost" type="button" id="archLoad"><svg class="ic" aria-hidden="true"><use href="#i-stack"/></svg> Archiv öffnen</button><span class="hint" id="archStatus"></span></div>
     <div class="bond-row" id="bondRow" hidden><span class="hint" id="bondStat"></span><button class="mini" type="button" id="bondToggle">Übersicht</button></div>
     <div class="bond-wrap" id="bondWrap" hidden><ol class="bond-grid" id="bondGrid"></ol></div>
     <div id="archReview"></div>
@@ -803,7 +808,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
     <h2 id="h-wheel"><span class="num ic"><svg aria-hidden="true"><use href="#wheelBadge"/></svg></span>Auf dem Rad <span class="wheel-slots" id="wheelSlots" title="Community-Plätze"><i></i><i></i></span></h2>
     <p class="hint" style="margin:-6px 0 12px">Alle Filme, die gerade auf dem Rad sind – nur ihr seht diese Liste. Besucher sehen bei der Suche lediglich „Gerade auf dem Rad“. Höchstens zwei Community-Filme gleichzeitig (die Punkte oben).</p>
-    <div class="link-row" style="margin-bottom:12px"><button class="btn small" type="button" id="wheelSync"><span class="dvd-ic" aria-hidden="true"></span> Neue Folge einpflegen</button><span class="hint" id="wheelSyncStatus"></span></div>
+    <div class="link-row" style="margin-bottom:12px"><button class="btn small" type="button" id="wheelSync"><span class="dvd-ic straight" aria-hidden="true"></span> Neue Folge einpflegen</button><span class="hint" id="wheelSyncStatus"></span></div>
     <ul class="wheel-list" id="wheelList"></ul>
   </section>
 
@@ -868,7 +873,7 @@ const fmtDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString("de-DE", {
 
 const MID_ICONS = new Set(["i-eye", "i-eye-off", "i-link", "i-search", "i-bond", "i-warn"]);
 const ic = (n, cls = "") => `<svg class="ic${MID_ICONS.has(n) ? " mid" : ""}${cls ? " " + cls : ""}" aria-hidden="true"><use href="#${n}"/></svg>`;
-const DVD = `<span class="dvd-ic" aria-hidden="true"></span>`;
+const DVD = `<span class="dvd-ic straight" aria-hidden="true"></span>`;
 /* Neu gezeichnete Listen: schon geladene Cover-Bilder wiederverwenden, statt sie neu zu laden (sonst flackern sie) */
 function grabImgs(el) { const m = new Map(); el.querySelectorAll(".poster img").forEach(i => { if (i.complete && i.naturalWidth && !m.has(i.src)) m.set(i.src, i); }); return m; }
 function reuseImgs(el, old) {
