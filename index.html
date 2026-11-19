@@ -467,7 +467,11 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .ep-ctrl .who-mini .who-face{width:20px;height:20px;border-width:1.5px;font-size:12px}
 #archMoreRow[hidden],#archMoreRow [hidden]{display:none}
 /* Bond-Briefing-Übersicht */
-.bond-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 0}
+.bond-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0}
+.arch-more-line{margin:12px 0 0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.textlink{appearance:none;background:none;border:0;padding:0;font:inherit;font-weight:700;font-size:14px;color:var(--navy-ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;cursor:pointer}
+.textlink:hover{color:var(--red-deep)}
+@media (max-width:560px){#archCard .link-row .btn{flex:1 1 100%;padding-left:14px;padding-right:14px}}
 .bond-row[hidden],.bond-wrap[hidden]{display:none}
 .bond-wrap{margin-top:12px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px}
 .bond-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:14px 12px}
@@ -782,12 +786,6 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     </div>
   </section>
 
-  <section class="card" id="backlogCard" hidden>
-    <h2><span class="num ic"><svg class="stack" aria-hidden="true"><use href="#i-stack"/></svg></span>Backlog <span class="badge" id="doneCount">0</span></h2>
-    <p class="hint" style="margin:-6px 0 12px">Ihr habt einen Film besprochen, der nicht über die Liste oder das Rad kam? Hier direkt eintragen. War er schon mal dran, wird die neue Folge als Follow-up vermerkt.</p>
-    <div class="link-row"><button class="btn" type="button" id="backlogAdd">＋ Film ins Backlog</button>
-      <button class="btn small ghost" type="button" id="linkFill"><svg class="ic mid" aria-hidden="true"><use href="#i-link"/></svg> Fehlende Links nachtragen</button><span class="hint" id="linkFillStatus"></span></div>
-  </section>
 
   <section class="card" id="linkCard" hidden>
     <h2><span class="num ic"><svg aria-hidden="true"><use href="#i-link"/></svg></span>Backlog mit TMDB verknüpfen <span class="badge" id="linkCount">0</span></h2>
@@ -799,19 +797,25 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
 
   <section class="card" id="archCard" hidden>
     <h2><span class="num ic"><span class="dvd-ic straight" aria-hidden="true"></span></span>Filmdaten einpflegen <span class="badge" id="archCount">–</span></h2>
-    <p class="hint" style="margin:-6px 0 12px">Liest die Time-Stamps aus den Shownotes: welche Filme in welcher Folge besprochen wurden, welcher davon vom Glücksrad kam und wer ihn vorgestellt hat. Nach jeder neuen Folge einmal „Neue Folge einpflegen“ – das bringt auch das Rad auf den neuen Stand. Nur ihr seht diesen Bereich.</p>
-    <div class="link-row"><button class="btn small" type="button" id="archNew"><span class="dvd-ic straight" aria-hidden="true"></span> Neue Folge einpflegen</button><button class="btn small ghost" type="button" id="archLoad"><svg class="ic" aria-hidden="true"><use href="#i-stack"/></svg> Archiv öffnen</button><span class="hint" id="archStatus"></span></div>
-    <div class="bond-row" id="bondRow" hidden><span class="hint" id="bondStat"></span><button class="mini" type="button" id="bondToggle">Übersicht</button></div>
-    <div class="bond-wrap" id="bondWrap" hidden><ol class="bond-grid" id="bondGrid"></ol></div>
+    <p class="hint" style="margin:-6px 0 12px">Alles, was ihr besprochen habt – <b id="doneCount">0</b> Filme im Backlog. Nur ihr seht diesen Bereich.<br>
+      <b>Folge automatisch einpflegen:</b> nach jeder neuen Folge. Liest die Time-Stamps aus den Shownotes – welche Filme besprochen wurden, welcher vom Glücksrad kam, wer ihn vorgestellt hat – und bringt das Rad auf den neuen Stand.<br>
+      <b>Film manuell ins Backlog:</b> für einen Film, der in keinen Time-Stamps steht. War er schon mal dran, wird die neue Folge als Follow-up vermerkt.</p>
+    <div class="link-row"><button class="btn" type="button" id="archNew">＋ Folge automatisch einpflegen</button><button class="btn" type="button" id="backlogAdd">＋ Film manuell ins Backlog</button></div>
+    <p class="arch-more-line"><button class="textlink" type="button" id="archLoad">Ältere Folgen ansehen</button><span class="hint" id="archStatus"></span></p>
     <div id="archReview"></div>
     <ul class="link-list" id="archList"></ul>
     <div class="link-row" id="archMoreRow" hidden><button class="btn small" type="button" id="archMore">Weitere Folgen</button><button class="mini" type="button" id="archAll"></button></div>
   </section>
 
+  <section class="card" id="bondCard" hidden>
+    <h2><span class="num ic"><svg aria-hidden="true"><use href="#i-bond"/></svg></span>Bond-Briefing <span class="badge" id="bondCount">–</span></h2>
+    <div class="bond-row"><span class="hint" id="bondStat"></span><button class="mini" type="button" id="bondToggle">Übersicht</button></div>
+    <div class="bond-wrap" id="bondWrap" hidden><ol class="bond-grid" id="bondGrid"></ol></div>
+  </section>
+
   <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
     <h2 id="h-wheel"><span class="num ic"><svg aria-hidden="true"><use href="#wheelBadge"/></svg></span>Auf dem Rad <span class="wheel-slots" id="wheelSlots" title="Community-Plätze"><i></i><i></i></span></h2>
     <p class="hint" style="margin:-6px 0 12px">Alle Filme, die gerade auf dem Rad sind – nur ihr seht diese Liste. Besucher sehen bei der Suche lediglich „Gerade auf dem Rad“. Höchstens zwei Community-Filme gleichzeitig (die Punkte oben).</p>
-    <div class="link-row" style="margin-bottom:12px"><button class="btn small" type="button" id="wheelSync"><span class="dvd-ic straight" aria-hidden="true"></span> Neue Folge einpflegen</button><span class="hint" id="wheelSyncStatus"></span></div>
     <ul class="wheel-list" id="wheelList"></ul>
   </section>
 
@@ -1310,32 +1314,6 @@ function feedAll() {
 async function feedEp(n) {
   try { return (await feedAll()).find(e => e.n === n) || null; } catch (e) { console.warn(e); return null; }
 }
-$("#linkFill").addEventListener("click", async () => {
-  const todo = state.done.filter(f => epNum(f.episode) && !/^https:\/\//.test(f.episode_url || ""));
-  if (!todo.length) { toast("Alle Backlog-Einträge mit Folge haben schon einen Link."); return; }
-  const btn = $("#linkFill"), st = $("#linkFillStatus");
-  btn.disabled = true; st.textContent = "Lese die Shownotes …";
-  let eps;
-  try { eps = await feedAll(); }
-  catch (e) { console.error(e); toast("Die Shownotes ließen sich nicht lesen: " + (e.message || "Fehler"), true); return; }
-  finally { btn.disabled = false; st.textContent = ""; }
-  const hits = todo.map(f => ({ f, ep: eps.find(e => e.n === epNum(f.episode) && e.url) })).filter(x => x.ep);
-  if (!hits.length) { toast(`${todo.length} Einträge ohne Link, aber im Feed passt keine Folge mit Link.`, true); return; }
-  const rest = todo.length - hits.length;
-  const ok = await dialog({ title: "Fehlende Links nachtragen", confirm: `${hits.length} Links eintragen`,
-    text: `${hits.length} von ${todo.length} Backlog-Einträgen ohne Link bekommen den Link ihrer Folge aus dem Feed.` +
-          (rest ? ` ${rest} bleiben ohne, weil ihre Folge im Feed nicht vorkommt oder dort keinen Link hat.` : "") });
-  if (!ok) return;
-  busy++; btn.disabled = true;
-  let n = 0;
-  try {
-    for (const { f, ep } of hits) { await api.link(f.id, { episode_url: ep.url }); n++; st.textContent = `${n}/${hits.length}`; }
-    toast(`${n} Links nachgetragen.`);
-  } catch (e) {
-    console.error(e); toast(`Nach ${n} Links abgebrochen: ` + (e.message || "Fehler"), true);
-  } finally { busy--; btn.disabled = false; st.textContent = ""; refresh(); }
-});
-
 function epText(d) {
   if (!d.episode) return "";
   return d.episode + (d.followups ? ` (Follow-up ${d.followups})` : "");
@@ -1352,10 +1330,8 @@ function renderTeam() {
   const unlinked = state.done.filter(f => !f.tmdb_id).length;
   $("#linkCard").hidden = !state.isAdmin || (!unlinked && !linkRows.length);
   $("#linkCount").textContent = unlinked;
-  $("#backlogCard").hidden = !state.isAdmin;
-  // „Fehlende Links nachtragen“ nur zeigen, solange es Backlog-Einträge mit Folge, aber ohne Link gibt
-  $("#linkFill").hidden = !state.done.some(f => epNum(f.episode) && !/^https:\/\//.test(f.episode_url || ""));
   $("#doneCount").textContent = state.done.length;
+  renderBondCard();
   $("#votesToggle").innerHTML = state.showVotes ? `${ic("i-eye")} Stimmen: sichtbar` : `${ic("i-eye-off")} Stimmen: ausgeblendet`;
   if (!state.isAdmin) return;
   $("#pendCount").textContent = state.pending.length;
@@ -1544,7 +1520,7 @@ function renderWheel() {
   const comm = state.wheel.filter(isCommunity).length;
   [...$("#wheelSlots").children].forEach((d, i) => d.classList.toggle("on", i < comm));
   const list = $("#wheelList");
-  if (!state.wheel.length) { list._html = null; list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Neue Folge einpflegen“ holt ihr die Filme aus den Shownotes.</li>`; return; }
+  if (!state.wheel.length) { list._html = null; list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Folge automatisch einpflegen“ (oben bei Filmdaten) holt ihr die Filme aus den Shownotes.</li>`; return; }
   setList(list, state.wheel.map(f => {
     const p = pickOf(f), who = p?.picked_by, c = isCommunity(f);
     return `
@@ -1620,7 +1596,6 @@ function feedMatch(f, t, fuzzy = false) {
 const reload = async () => { Object.assign(state, await api.load()); render(); };
 const today = () => new Date().toISOString().slice(0, 10);
 
-$("#wheelSync").addEventListener("click", () => openNewest());
 // Rad auf den Stand der Glücksradfilme einer Folge bringen (läuft nach dem Einlesen der neuesten Folge)
 async function wheelSyncFor(ep) {
   if (!needPicks()) return;
@@ -1748,7 +1723,7 @@ const filmFromC = c => ({ title: c.title, year: c.year || null, tmdb_id: c.tmdb_
 const itemsOf = n => (state.items || []).filter(i => i.episode_n === n).sort((a, b) => a.pos - b.pos);
 const PRES = { max: "Max", vincent: "Vincent", both: "beide" };
 
-let archEps = null, archShown = 20, archAll = false, archOpen = false, review = null;
+let archEps = null, archShown = 20, archAll = false, archOpen = false, archPrefetched = false, review = null;
 
 function needItems() {
   if (state.itemsReady) return true;
@@ -1786,7 +1761,10 @@ function wheelRun(r, n) {
 }
 
 /* ---- Bond-Briefing-Übersicht: alle Bond-Filme der Reihe, mit Cover und den Folgen, in denen sie dran waren ---- */
-const bondPosters = new Map();   // Jahr → poster_path aus der TMDB-Suche (für noch nicht besprochene)
+// Jahr → poster_path aus der TMDB-Suche (für noch nicht besprochene). Wird im Browser gemerkt, damit die Übersicht sofort vollständig ist.
+const bondPosters = new Map((() => { try { return JSON.parse(localStorage.getItem("ct-bond-posters") || "[]"); } catch { return []; } })());
+const saveBondPosters = () => { try { localStorage.setItem("ct-bond-posters", JSON.stringify([...bondPosters])); } catch {} };
+const preloadPoster = path => { if (path) { const i = new Image(); i.src = `${IMG}w185${path}`; } };
 function bondRows() {
   const items = (state.items || []).filter(i => i.bond && i.film_id);
   let nextSet = false;
@@ -1811,22 +1789,43 @@ function renderBond() {
       <span class="t">${esc(r.de)}</span><span class="y">${r.year}</span><span class="ep">${ep}</span></li>`;
   }).join(""));
 }
-async function loadBondPosters() {
-  if (!tmdbOn || tmdbBroken) return;
-  const todo = bondRows().filter(r => !r.f?.poster_path && !bondPosters.has(r.year));
-  for (let i = 0; i < todo.length; i += 5) {
-    await Promise.all(todo.slice(i, i + 5).map(async r => {
-      try { const res = await api.search(`${r.en} ${r.year}`); const c = res.find(c => c.year === r.year) || res[0]; bondPosters.set(r.year, c?.poster || null); }
-      catch (e) { console.warn(e); }
-    }));
-    renderBond();
-  }
+// Cover der noch offenen Bonds holen – der nächste zuerst – und die Bilder gleich vorladen.
+// Läuft schon im Hintergrund, sobald der Teambereich da ist, nicht erst beim Aufklappen.
+let bondLoading = null;
+function loadBondPosters() {
+  if (bondLoading) return bondLoading;
+  bondLoading = (async () => {
+    if (!tmdbOn || tmdbBroken) return;
+    const rows = bondRows();
+    rows.forEach(r => preloadPoster(r.f?.poster_path || bondPosters.get(r.year)));
+    const todo = rows.filter(r => !r.f?.poster_path && !bondPosters.has(r.year)).sort((a, b) => b.next - a.next);
+    for (let i = 0; i < todo.length; i += 5) {
+      await Promise.all(todo.slice(i, i + 5).map(async r => {
+        try { const res = await api.search(`${r.en} ${r.year}`); const c = res.find(c => c.year === r.year) || res[0]; bondPosters.set(r.year, c?.poster || null); preloadPoster(c?.poster); }
+        catch (e) { console.warn(e); }
+      }));
+      saveBondPosters();
+      if (!$("#bondWrap").hidden) renderBond();
+    }
+  })().finally(() => { bondLoading = null; });
+  return bondLoading;
 }
 $("#bondToggle").addEventListener("click", () => {
   const w = $("#bondWrap"), open = w.hidden;
   w.hidden = !open; $("#bondToggle").textContent = open ? "Übersicht schließen" : "Übersicht";
   if (open) { renderBond(); loadBondPosters(); }
 });
+let bondPrefetched = false;
+function renderBondCard() {
+  const card = $("#bondCard");
+  card.hidden = !state.isAdmin || !state.itemsReady;
+  if (card.hidden) return;
+  if (!bondPrefetched) { bondPrefetched = true; setTimeout(loadBondPosters, 1500); }
+  const br = bondRows(), bdone = br.filter(r => r.eps.length).length, bnext = br.find(r => !r.eps.length);
+  $("#bondCount").textContent = `${bdone}/${BOND.length}`;
+  $("#bondStat").textContent = `${bdone} von ${BOND.length} besprochen` + (bnext ? ` · als Nächstes: ${bnext.de} (${bnext.year})` : " · alle durch!");
+  if (!$("#bondWrap").hidden) renderBond();
+}
 
 /* ---- Archiv-Liste ---- */
 // Nach Übernehmen/Schließen oben auf der Folgen-Liste landen, beim Öffnen oben auf der Prüfung
@@ -1843,13 +1842,12 @@ function renderArch() {
   if (!state.isAdmin) return;
   const done = new Set((state.items || []).map(i => i.episode_n));
   $("#archCount").textContent = archEps ? `${archEps.filter(e => done.has(e.n)).length}/${archEps.length}` : done.size || "–";
-  const bs = $("#bondStat");
-  $("#bondRow").hidden = !state.itemsReady;
-  if (!$("#bondWrap").hidden) renderBond();
-  const br = bondRows(), bdone = br.filter(r => r.eps.length).length, bnext = br.find(r => !r.eps.length);
-  bs.innerHTML = `${ic("i-bond")} Bond-Briefing: ${bdone} von ${BOND.length} besprochen` + (bnext ? ` · als Nächstes: ${bnext.de} (${bnext.year})` : " · alle durch!");
   const list = $("#archList");
-  $("#archLoad").innerHTML = ic("i-stack") + (archOpen ? " Archiv schließen" : " Archiv öffnen");
+  // Archiv als schlichte Textzeile: zeigt, wie viele ältere Folgen noch offen sind
+  const openOld = archEps ? archEps.slice(1).filter(e => !done.has(e.n) && e.segments?.length).length : 0;
+  $("#archLoad").textContent = archOpen ? "Ältere Folgen ausblenden"
+    : openOld ? `${openOld} ältere ${openOld === 1 ? "Folge" : "Folgen"} noch offen – ansehen` : "Ältere Folgen ansehen";
+  if (!archPrefetched && state.itemsReady) { archPrefetched = true; loadArchEps().then(renderArch, e => console.warn(e)); }
   if (!archEps || !archOpen) { list.innerHTML = ""; $("#archMoreRow").hidden = true; return; }
   const open = archEps.filter(e => archAll || !done.has(e.n));
   list.innerHTML = open.slice(0, archShown).map(e => {
