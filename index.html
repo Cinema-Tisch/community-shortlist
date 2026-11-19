@@ -576,7 +576,8 @@ body.team .pill-name{cursor:default}
 }
 
 .poster.lifted{visibility:hidden}
-@media (hover:hover){html.case-open{overflow:hidden}}
+/* Kein overflow:hidden zum Sperren des Scrollens: Safari blendet dabei die Scrollleiste aus, die Seite wird breiter,
+   Texte umbrechen anders und das Cover verrutscht – die Hülle landete dann zu hoch und ruckte nach. Gesperrt wird per Ereignis (siehe openCase). */
 .case-layer{touch-action:none}
 .case-text{touch-action:pan-y}
 .case-layer{position:fixed;inset:0;z-index:70}
@@ -2506,6 +2507,8 @@ async function openCase(poster) {
   layer.classList.add("open"); cs.style.transform = "";
   flipFaces(layer, true);
   layer.querySelector(".case-dim").onclick = closeCase;
+  // Seite dahinter nicht scrollen lassen – nur der lange Text in der Hülle scrollt (overscroll-behavior hält ihn dort)
+  layer.addEventListener("wheel", e => { const t = e.target.closest(".case-text"); if (!t || t.scrollHeight <= t.clientHeight) e.preventDefault(); }, { passive: false });
   layer.querySelector(".case-x").onclick = closeCase;
   setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
   watchCovers();
@@ -2605,6 +2608,8 @@ addEventListener("keydown", e => {
   if (caseState.layer) {
     if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeCase(); }
     else if (e.key === "Tab") { e.preventDefault(); caseState.layer.querySelector(".case-x")?.focus(); }
+    // Seite nicht per Tastatur scrollen, solange der Klappentext offen ist (der Text darin darf)
+    else if ([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"].includes(e.key) && !e.target.closest?.(".case-text")) e.preventDefault();
     return;
   }
   const p = caseTarget(e);
