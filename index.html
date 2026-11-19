@@ -151,6 +151,9 @@ h1{
 .card h2 .num.ic > *{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0}
 .card h2 .num.ic > svg{width:21px;height:21px}
 .card h2 .num.ic > .dvd-ic{font-size:14.5px}
+/* gerade DVD im Kreis: so gesetzt, dass die beiden linken Hüllenecken und der äußerste Punkt der Disc
+   gleich weit vom Kreisrand entfernt sind (Abstand zur Kreismitte je .753em; die rechten Ecken liegen weiter innen) */
+.card h2 .num.ic > .dvd-ic.straight{font-size:12.4px;transform:translate(calc(-50% + .092em),calc(-50% + .007em))}
 /* Im Kreis: Hülle gerade, ohne Schatten – Box = sichtbarer Inhalt, damit sie exakt mittig sitzt */
 .dvd-ic.straight{width:1.298em;height:1.11em}
 .dvd-ic.straight::after{left:0;top:0;transform:none;box-shadow:none}
