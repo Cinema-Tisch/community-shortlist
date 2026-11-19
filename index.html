@@ -2524,11 +2524,19 @@ async function openCase(poster) {
       for (const el of rear.querySelectorAll(".case-meta, .case-text, .case-note")) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: "ease-out" });
   }
 }
-function closeCase() {
+async function closeCase() {
   const { layer, poster } = caseState;
   if (!layer || caseState.closing) return;
   caseState.closing = true;
   const cs = layer.querySelector(".case");
+  // Safari (Mac): Die Hülle bekommt ihre eigene Grafik-Ebene erst wieder, wenn „settled“ wegfällt. Passiert das im selben
+  // Moment, in dem der Rückflug startet, setzt Safari die Ebene versetzt ab – die Hülle landete zu hoch und ruckte nach.
+  // Darum: Ebene zuerst anlegen lassen, zwei Bilder warten, dann losfliegen (wie beim Öffnen).
+  if (layer.classList.contains("settled") && !layer.classList.contains("reduce")) {
+    layer.classList.remove("settled");
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    if (caseState.layer !== layer) return;
+  }
   const done = () => {
     layer.remove(); poster.classList.remove("lifted");
     document.documentElement.classList.remove("case-busy");
