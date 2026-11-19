@@ -819,6 +819,16 @@ function ago(ts) {
 }
 const fmtDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
 
+/* Neu gezeichnete Listen: schon geladene Cover-Bilder wiederverwenden, statt sie neu zu laden (sonst flackern sie) */
+function grabImgs(el) { const m = new Map(); el.querySelectorAll(".poster img").forEach(i => { if (i.complete && i.naturalWidth && !m.has(i.src)) m.set(i.src, i); }); return m; }
+function reuseImgs(el, old) {
+  if (!old.size) return;
+  el.querySelectorAll(".poster img").forEach(i => { const o = old.get(i.src); if (o) { i.replaceWith(o); old.delete(i.src); } });
+}
+function setList(el, html) {
+  if (el._html === html) return;          // nichts geändert → nichts neu zeichnen
+  const old = grabImgs(el); el.innerHTML = html; el._html = html; reuseImgs(el, old);
+}
 function posterHTML(path, title, size = "w185", peek = null) {
   const initial = esc((norm(title)[0] || "?").toUpperCase());
   const pk = peek ? ` data-tmdb="${esc(peek.id)}" data-ttype="${esc(peek.type || "movie")}" data-ctitle="${esc(peek.title || title)}" data-csub="${esc(peek.sub || "")}"` : "";
@@ -1292,8 +1302,8 @@ function renderTeam() {
   if (!state.isAdmin) return;
   $("#pendCount").textContent = state.pending.length;
   const list = $("#pendList");
-  if (!state.pending.length) { list.innerHTML = `<li class="pend-empty">Alles erledigt – der Warteraum ist leer.</li>`; return; }
-  list.innerHTML = state.pending.map(p => `
+  if (!state.pending.length) { setList(list, `<li class="pend-empty">Alles erledigt – der Warteraum ist leer.</li>`); return; }
+  setList(list, state.pending.map(p => `
     <li class="pend" data-id="${esc(p.id)}">
       ${posterHTML(p.poster_path, p.title, "w92")}
       <div><div><span class="title">${esc(p.title)}</span>${p.year ? `<span class="year">(${p.year})</span>` : ""}</div>
@@ -1304,7 +1314,7 @@ function renderTeam() {
           <button type="button" class="mini" data-pact="assign">🔍 TMDB zuweisen</button>
           <button type="button" class="mini danger" data-pact="reject">✕ Ablehnen</button>
         </div></div>
-    </li>`).join("");
+    </li>`).join(""));
 }
 
 /* ---------------- Backlog mit TMDB verknüpfen ---------------- */
@@ -1476,8 +1486,8 @@ function renderWheel() {
   const comm = state.wheel.filter(isCommunity).length;
   [...$("#wheelSlots").children].forEach((d, i) => d.classList.toggle("on", i < comm));
   const list = $("#wheelList");
-  if (!state.wheel.length) { list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Neue Folge einlesen“ holt ihr die Filme aus den Shownotes.</li>`; return; }
-  list.innerHTML = state.wheel.map(f => {
+  if (!state.wheel.length) { list._html = null; list.innerHTML = `<li class="pend-empty">Gerade ist kein Film auf dem Rad. Mit „Neue Folge einlesen“ holt ihr die Filme aus den Shownotes.</li>`; return; }
+  setList(list, state.wheel.map(f => {
     const p = pickOf(f), who = p?.picked_by, c = isCommunity(f);
     return `
     <li class="wheel-item" data-id="${esc(f.id)}">
@@ -1491,7 +1501,7 @@ function renderWheel() {
           ${c ? `<button type="button" class="mini" data-wact="back">↩ Zurück auf die Liste</button>`
               : `<button type="button" class="mini danger" data-wact="drop">🗑 Vom Rad nehmen</button>`}
         </div></div>
-    </li>`; }).join("");
+    </li>`; }).join(""));
 }
 const episodeFields = [
   { name: "episode", label: "Folge", placeholder: "z. B. Folge 25", optional: true, max: 60 },
@@ -1734,14 +1744,14 @@ function bondRows() {
 }
 function renderBond() {
   const urlOf = n => (archEps || []).find(e => e.n === n)?.url || state.done.find(d => epNum(d.episode) === n && /^https:/.test(d.episode_url || ""))?.episode_url || null;
-  $("#bondGrid").innerHTML = bondRows().map(r => {
+  setList($("#bondGrid"), bondRows().map(r => {
     const path = r.f?.poster_path || bondPosters.get(r.year) || null;
     const ep = r.eps.length ? r.eps.map(n => { const u = urlOf(n); return u ? `<a href="${esc(u)}" target="_blank" rel="noopener">Folge ${n}</a>` : `Folge ${n}`; }).join(", ")
              : r.next ? "als Nächstes" : "noch offen";
     return `<li class="bond-item${r.eps.length ? "" : " open"}${r.next ? " next" : ""}">
       <div style="position:relative">${posterHTML(path, r.de, "w185")}<span class="nr">${r.k}</span></div>
       <span class="t">${esc(r.de)}</span><span class="y">${r.year}</span><span class="ep">${ep}</span></li>`;
-  }).join("");
+  }).join(""));
 }
 async function loadBondPosters() {
   if (!tmdbOn || tmdbBroken) return;
@@ -1894,11 +1904,11 @@ function rowFilmHTML(r) {
 }
 function renderReview() {
   const box = $("#archReview");
-  if (!review) { box.innerHTML = ""; return; }
+  if (!review) { setList(box, ""); return; }
   const { ep, rows } = review;
   const open = rows.filter(r => r.kind === "film" && (!r.sure || !r.film)).length, busyRow = rows.some(r => r.searching);
   const wheelRow = rows.find(r => r.kind === "film" && r.wheel);
-  box.innerHTML = `<div class="ep-review">
+  setList(box, `<div class="ep-review">
     <h3>${esc(ep.episode)}</h3>
     <div class="sub">${ep.date ? fmtDate(ep.date) + " · " : ""}${rows.filter(r => r.kind === "film").length} Filme erkannt${wheelRow ? "" : " · kein Glücksradfilm"}${itemsOf(ep.n).length ? " · schon eingelesen" : ""}</div>
     <ul class="ep-rows">${rows.map((r, i) => r.kind === "segment"
@@ -1921,7 +1931,7 @@ function renderReview() {
     <div class="ep-save"><button type="button" class="btn" data-r="save" ${open || busyRow ? "disabled" : ""}>${esc(ep.episode)} übernehmen</button>
       <button type="button" class="btn ghost small" data-r="close">Schließen</button>
       <span class="hint">${busyRow ? "Suche läuft …" : open ? `${open} ${open === 1 ? "Zeile" : "Zeilen"} noch prüfen (rot markiert)` : "Alles geprüft."}</span></div>
-  </div>`;
+  </div>`);
 }
 $("#archReview").addEventListener("click", async e => {
   const b = e.target.closest("button"); if (!b || !review) return;
