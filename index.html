@@ -126,29 +126,31 @@ h1{
 /* in Knöpfen: Symbol zählt nicht zur Zeilenhöhe → gleiche Höhe und gleiche Abstände wie Knöpfe ohne Symbol */
 /* Knöpfe mit Symbol: Symbol steht auf der Grundlinie der Schrift (Ständer des Rads, Fuß des Pfeils),
    ragt nach oben heraus, ohne den Knopf höher zu machen. Unterlängen (g, p …) zählen nicht. */
-.btn:has(> .ic, > .dvd-ic),.mini:has(> .ic, > .dvd-ic){align-items:baseline}
-.btn > .ic,.mini > .ic{width:.95em;height:.95em;margin-top:-.3em}
-/* runde/frei schwebende Symbole (Auge, Kette, Lupe, Bond) nicht auf die Grundlinie stellen, sondern auf die Mitte der Großbuchstaben */
-.btn > .ic.mid,.mini > .ic.mid{transform:translateY(.145em)}
-.btn > .dvd-ic,.mini > .dvd-ic{font-size:.8em;margin:-.4em -.06em 0 -.03em}
+/* Die Schrift ist nach den Großbuchstaben mittig (Karla: Versalhöhe .66em, Mitte = Zeilenmitte).
+   Symbole mit Boden: Unterkante auf die Grundlinie = .33em unter der Mitte → um (Höhe/2 − .33em) nach oben schieben.
+   Feste Verschiebung statt Grundlinien-Ausrichtung, weil Safari die Grundlinie von SVGs anders bestimmt. */
+.btn > .ic,.mini > .ic{width:.95em;height:.95em;margin:0;transform:translateY(-.145em)}
+.btn > .ic.mid,.mini > .ic.mid{transform:none}
+.btn > .dvd-ic,.mini > .dvd-ic{font-size:.8em;margin:0;transform:translateY(-.21em)}
 .btn.small{gap:7px}
 /* Knöpfe nur mit Symbol (Lupe; auf dem Handy auch Bearbeiten/Löschen): gleich hoch wie Knöpfe mit Schrift, Symbol mittig */
 .mini.only{align-items:center;padding:6px 7px}
-.mini.only > .ic{width:1.1em;height:1.1em;margin:0}
+.mini.only > .ic{width:1.1em;height:1.1em;margin:0;transform:none}
 /* Kleine DVD: dieselbe Hülle wie in der Liste (blanko), gekippt wie dort, die Disc schaut genauso weit heraus.
    Maße relativ zur Hüllenbreite w = .74em: Disc 98 % von w, Mitte 0,78 Disc-Breiten rechts der Hüllenmitte, linker Teil abgeschnitten */
-.dvd-ic{position:relative;display:inline-block;width:1.42em;height:1.2em;vertical-align:-.26em;flex:none}
-.dvd-ic::after{content:"";position:absolute;left:.04em;top:.045em;width:.74em;height:1.11em;box-sizing:border-box;
+.dvd-ic{position:relative;display:inline-block;width:1.41em;height:1.24em;vertical-align:-.26em;flex:none}
+/* Box genau so groß wie das Sichtbare (gekippte Hülle mit Schatten + Disc) → überall exakt mittig */
+.dvd-ic::after{content:"";position:absolute;left:.11em;top:.045em;width:.74em;height:1.11em;box-sizing:border-box;
   border:max(1.5px,.05em) solid var(--line);border-radius:.1em;transform:rotate(6deg);box-shadow:-.06em .04em 0 var(--line);
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 .06em,transparent .06em .12em),linear-gradient(160deg,#4a50a8,#2b2f74)}
-.dvd-ic::before{content:"";position:absolute;width:.725em;height:.725em;left:.613em;top:.2375em;
+.dvd-ic::before{content:"";position:absolute;width:.725em;height:.725em;left:.683em;top:.2375em;
   clip-path:inset(-10% -10% -10% 20%);background:var(--disc-img) center/contain no-repeat}
 /* Symbol im runden Titel-Abzeichen: exakt mittig */
 .card h2 .num.ic{background:var(--cream);position:relative}
 .card h2 .num.ic > *{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0}
 .card h2 .num.ic > svg{width:21px;height:21px}
-.card h2 .num.ic > .dvd-ic{font-size:14.5px;margin-left:.06em}
-.card h2 .num.ic > svg.stack{width:19px;height:19px}
+.card h2 .num.ic > .dvd-ic{font-size:14.5px}
+.card h2 .num.ic > svg.stack{width:19px;height:19px;transform:translate(-50%,-64.6%)}   /* Stapel steht im Symbol unten (für Knöpfe) → im Kreis wieder mittig */
 .card h2 .num{
   display:inline-grid;place-items:center;width:30px;height:30px;flex:none;
   border-radius:50%;background:var(--red);color:#fff;border:2.5px solid var(--line);
@@ -683,7 +685,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   .note{font-size:13.5px}
   .admin-actions .lbl{display:none}
   .admin-actions .mini:not(.go){align-items:center;padding:6px 7px}
-  .admin-actions .mini:not(.go) > .ic{width:1.1em;height:1.1em;margin:0}
+  .admin-actions .mini:not(.go) > .ic{width:1.1em;height:1.1em;margin:0;transform:none}
   #fNote,#fTitle{font-size:16px;padding-left:12px;padding-right:12px}
   .admin-actions{gap:5px}
   .admin-actions .mini{padding:6px 8px}
@@ -699,7 +701,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
 <path d="M14 22 H50 L46.5 58 H17.5 Z" fill="#e9dcc0" stroke="#1d1712" stroke-width="4.2" stroke-linejoin="round"/>
 <path d="M25 29 L26 51 M32 29 V51 M39 29 L38 51" stroke="#1d1712" stroke-width="3" stroke-linecap="round" stroke-opacity=".55"/>
 <rect x="9" y="12" width="46" height="9" rx="3" fill="#c4553f" stroke="#1d1712" stroke-width="4.2"/></symbol><symbol id="i-eye" viewBox="2.7 2.7 58.6 58.6"><path d="M5 32 Q32 6 59 32 Q32 58 5 32 Z" fill="#f7efe3" stroke="#1d1712" stroke-width="4.5" stroke-linejoin="round"/>
-<circle cx="32" cy="32" r="12" fill="#5571a6" stroke="#1d1712" stroke-width="3.5"/><circle cx="32" cy="32" r="5" fill="#1d1712"/><circle cx="36" cy="27.5" r="2.4" fill="#fffdf8"/></symbol><symbol id="i-eye-off" viewBox="2.7 9.7 58.6 58.6"><path d="M5 28 Q32 54 59 28" fill="none" stroke="#1d1712" stroke-width="4.5" stroke-linecap="round"/><path d="M14 36 L9 44" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/><path d="M24 41 L22 50" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/><path d="M40 41 L42 50" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/><path d="M50 36 L55 44" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/></symbol><symbol id="i-bond" viewBox="3.2 3.2 57.6 57.6"><circle cx="32" cy="32" r="27" fill="#2b2622" stroke="#1d1712" stroke-width="3.5"/><path d="M43.00 32.00 L44.44 33.20 L45.74 34.67 L46.86 36.40 L47.76 38.37 L48.41 40.54 L48.77 42.89 L48.83 45.38 L48.54 47.98 L47.91 50.63 L46.91 53.30" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M37.50 41.53 L37.18 43.37 L36.56 45.24 L35.62 47.07 L34.37 48.83 L32.81 50.48 L30.95 51.97 L28.82 53.26 L26.44 54.32 L23.82 55.09 L21.01 55.56" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M26.50 41.53 L24.74 42.18 L22.82 42.57 L20.76 42.67 L18.60 42.47 L16.40 41.94 L14.18 41.08 L12.00 39.88 L9.89 38.34 L7.91 36.46 L6.10 34.27" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M21.00 32.00 L19.56 30.80 L18.26 29.33 L17.14 27.60 L16.24 25.63 L15.59 23.46 L15.23 21.11 L15.17 18.62 L15.46 16.02 L16.09 13.37 L17.09 10.70" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M26.50 22.47 L26.82 20.63 L27.44 18.76 L28.38 16.93 L29.63 15.17 L31.19 13.52 L33.05 12.03 L35.18 10.74 L37.56 9.68 L40.18 8.91 L42.99 8.44" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M37.50 22.47 L39.26 21.82 L41.18 21.43 L43.24 21.33 L45.40 21.53 L47.60 22.06 L49.82 22.92 L52.00 24.12 L54.11 25.66 L56.09 27.54 L57.90 29.73" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="11" fill="#f7efe3" stroke="#1d1712" stroke-width="3"/></symbol><symbol id="i-warn" viewBox="2.7 1.2 58.6 58.6"><path d="M32 7 L59 54 H5 Z" fill="#d6493c" stroke="#1d1712" stroke-width="4.6" stroke-linejoin="round"/><rect x="29" y="21" width="6" height="18" rx="3" fill="#f7efe3"/><circle cx="32" cy="46" r="3.4" fill="#f7efe3"/></symbol><symbol id="i-stack" viewBox="5.2 6.4 54.6 54.6"><rect x="9" y="45" width="46" height="11" rx="2.5" fill="#363b8c" stroke="#1d1712" stroke-width="3.6"/><rect x="15" y="48.6" width="15" height="3.8" rx="1.2" fill="#e9dcc0"/><rect x="12" y="33" width="46" height="11" rx="2.5" fill="#d98b5e" stroke="#1d1712" stroke-width="3.6"/><rect x="18" y="36.6" width="15" height="3.8" rx="1.2" fill="#e9dcc0"/><rect x="7" y="21" width="46" height="11" rx="2.5" fill="#7f9f7a" stroke="#1d1712" stroke-width="3.6"/><rect x="13" y="24.6" width="15" height="3.8" rx="1.2" fill="#e9dcc0"/><path d="M40 21 A11 11 0 0 1 58 14" fill="none" stroke="#1d1712" stroke-width="0"/></symbol><symbol id="i-community" viewBox="3.5 4.5 57.0 57.0"><rect x="6" y="8" width="52" height="24" rx="3" fill="#d8a444" stroke="#1d1712" stroke-width="3.5"/>
+<circle cx="32" cy="32" r="12" fill="#5571a6" stroke="#1d1712" stroke-width="3.5"/><circle cx="32" cy="32" r="5" fill="#1d1712"/><circle cx="36" cy="27.5" r="2.4" fill="#fffdf8"/></symbol><symbol id="i-eye-off" viewBox="2.7 9.7 58.6 58.6"><path d="M5 28 Q32 54 59 28" fill="none" stroke="#1d1712" stroke-width="4.5" stroke-linecap="round"/><path d="M14 36 L9 44" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/><path d="M24 41 L22 50" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/><path d="M40 41 L42 50" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/><path d="M50 36 L55 44" stroke="#1d1712" stroke-width="4" stroke-linecap="round"/></symbol><symbol id="i-bond" viewBox="3.2 3.2 57.6 57.6"><circle cx="32" cy="32" r="27" fill="#2b2622" stroke="#1d1712" stroke-width="3.5"/><path d="M43.00 32.00 L44.44 33.20 L45.74 34.67 L46.86 36.40 L47.76 38.37 L48.41 40.54 L48.77 42.89 L48.83 45.38 L48.54 47.98 L47.91 50.63 L46.91 53.30" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M37.50 41.53 L37.18 43.37 L36.56 45.24 L35.62 47.07 L34.37 48.83 L32.81 50.48 L30.95 51.97 L28.82 53.26 L26.44 54.32 L23.82 55.09 L21.01 55.56" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M26.50 41.53 L24.74 42.18 L22.82 42.57 L20.76 42.67 L18.60 42.47 L16.40 41.94 L14.18 41.08 L12.00 39.88 L9.89 38.34 L7.91 36.46 L6.10 34.27" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M21.00 32.00 L19.56 30.80 L18.26 29.33 L17.14 27.60 L16.24 25.63 L15.59 23.46 L15.23 21.11 L15.17 18.62 L15.46 16.02 L16.09 13.37 L17.09 10.70" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M26.50 22.47 L26.82 20.63 L27.44 18.76 L28.38 16.93 L29.63 15.17 L31.19 13.52 L33.05 12.03 L35.18 10.74 L37.56 9.68 L40.18 8.91 L42.99 8.44" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><path d="M37.50 22.47 L39.26 21.82 L41.18 21.43 L43.24 21.33 L45.40 21.53 L47.60 22.06 L49.82 22.92 L52.00 24.12 L54.11 25.66 L56.09 27.54 L57.90 29.73" fill="none" stroke="#9a9086" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="11" fill="#f7efe3" stroke="#1d1712" stroke-width="3"/></symbol><symbol id="i-warn" viewBox="2.7 1.2 58.6 58.6"><path d="M32 7 L59 54 H5 Z" fill="#d6493c" stroke="#1d1712" stroke-width="4.6" stroke-linejoin="round"/><rect x="29" y="21" width="6" height="18" rx="3" fill="#f7efe3"/><circle cx="32" cy="46" r="3.4" fill="#f7efe3"/></symbol><symbol id="i-stack" viewBox="5.2 3.2 54.6 54.6"><rect x="9" y="45" width="46" height="11" rx="2.5" fill="#363b8c" stroke="#1d1712" stroke-width="3.6"/><rect x="15" y="48.6" width="15" height="3.8" rx="1.2" fill="#e9dcc0"/><rect x="12" y="33" width="46" height="11" rx="2.5" fill="#d98b5e" stroke="#1d1712" stroke-width="3.6"/><rect x="18" y="36.6" width="15" height="3.8" rx="1.2" fill="#e9dcc0"/><rect x="7" y="21" width="46" height="11" rx="2.5" fill="#7f9f7a" stroke="#1d1712" stroke-width="3.6"/><rect x="13" y="24.6" width="15" height="3.8" rx="1.2" fill="#e9dcc0"/></symbol><symbol id="i-community" viewBox="3.5 4.5 57.0 57.0"><rect x="6" y="8" width="52" height="24" rx="3" fill="#d8a444" stroke="#1d1712" stroke-width="3.5"/>
 <circle cx="16" cy="40" r="7" fill="#8b6b9c" stroke="#1d1712" stroke-width="3"/><path d="M5 58 Q5 47 16 47 Q27 47 27 58 Z" fill="#8b6b9c" stroke="#1d1712" stroke-width="3"/>
 <circle cx="48" cy="40" r="7" fill="#5f9b98" stroke="#1d1712" stroke-width="3"/><path d="M37 58 Q37 47 48 47 Q59 47 59 58 Z" fill="#5f9b98" stroke="#1d1712" stroke-width="3"/>
 <circle cx="32" cy="38" r="8" fill="#c4553f" stroke="#1d1712" stroke-width="3"/><path d="M19 58 Q19 46 32 46 Q45 46 45 58 Z" fill="#c4553f" stroke="#1d1712" stroke-width="3"/></symbol></svg>
