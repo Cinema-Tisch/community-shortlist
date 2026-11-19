@@ -419,6 +419,18 @@ body.team .card-suggest{display:none}
 html.case-busy .film.top1::before{animation-play-state:paused}
 
 /* Rad-Pool */
+/* Scoreboard of Destiny: wessen Radfilme wurden wie oft besprochen */
+.score{margin:0 0 14px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:3px 3px 0 var(--line)}
+.score[hidden]{display:none}
+.score-h{margin:0 0 10px;font-family:"Playfair Display",Georgia,serif;font-weight:900;font-size:19px;color:var(--navy-ink);letter-spacing:.01em}
+.score-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.score-item{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;font-weight:800;color:var(--navy-ink)}
+.score-item .who-face{width:52px;height:52px}
+.score-item .n{font-size:26px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+.score-item .l{font-size:13px}
+.score-item.lead .n{color:var(--red-deep)}
+.score-item.lead .who-face{box-shadow:0 0 0 3px var(--cream),0 0 0 5px var(--red-deep)}
+.score-note{margin:10px 0 0;text-align:center}
 .wheel-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .wheel-item{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:#fff;border:2.5px solid var(--line);border-radius:14px;padding:11px;box-shadow:3px 3px 0 rgba(29,23,18,.22)}
 .wheel-item .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -797,9 +809,9 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
 
   <section class="card" id="archCard" hidden>
     <h2><span class="num ic"><span class="dvd-ic straight" aria-hidden="true"></span></span>Filmdaten einpflegen <span class="badge" id="archCount">–</span></h2>
-    <p class="hint" style="margin:-6px 0 12px">Alles, was ihr besprochen habt – <b id="doneCount">0</b> Filme im Backlog. Nur ihr seht diesen Bereich.<br>
-      <b>Folge automatisch einpflegen:</b> nach jeder neuen Folge. Liest die Time-Stamps aus den Shownotes – welche Filme besprochen wurden, welcher vom Glücksrad kam, wer ihn vorgestellt hat – und bringt das Rad auf den neuen Stand.<br>
-      <b>Film manuell ins Backlog:</b> für einen Film, der in keinen Time-Stamps steht. War er schon mal dran, wird die neue Folge als Follow-up vermerkt.</p>
+    <p class="hint" style="margin:-6px 0 12px">Im Backlog werden alle relevanten Informationen zu den besprochenen Filmen gespeichert. Aktuell sind <b id="doneCount">0</b> Filme im Backlog. Gespeichert werden jeweils: Titel (deutsch, original, englisch), Jahr, Cover und TMDB-Verknüpfung, Folge mit Datum und Acast-Link, Follow-ups, wer den Film vorgestellt hat, Stimmen und Kommentar aus der Community-Liste sowie bei Glücksradfilmen, wer ihn aufs Rad gesetzt hat und wie lange er dort stand.<br>
+      <b>Folge automatisch einpflegen:</b> im Optimalfall nach jeder neuen Folge. Liest die Time-Stamps aus den Shownotes – welche Filme besprochen wurden, welcher vom Glücksrad kam, wer ihn vorgestellt hat – und bringt das Rad auf den neuen Stand.<br>
+      <b>Film manuell ins Backlog:</b> wenn ein Film vergessen wurde oder nicht in den Time-Stamps steht. War er schon mal dran, wird die neue Folge als Follow-up vermerkt.</p>
     <div class="link-row"><button class="btn" type="button" id="archNew">＋ Folge automatisch einpflegen</button><button class="btn" type="button" id="backlogAdd">＋ Film manuell ins Backlog</button></div>
     <p class="arch-more-line"><button class="textlink" type="button" id="archLoad">Ältere Folgen ansehen</button><span class="hint" id="archStatus"></span></p>
     <div id="archReview"></div>
@@ -816,6 +828,11 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   <section class="card" id="wheelCard" aria-labelledby="h-wheel" hidden>
     <h2 id="h-wheel"><span class="num ic"><svg aria-hidden="true"><use href="#wheelBadge"/></svg></span>Auf dem Rad <span class="wheel-slots" id="wheelSlots" title="Community-Plätze"><i></i><i></i></span></h2>
     <p class="hint" style="margin:-6px 0 12px">Alle Filme, die gerade auf dem Rad sind – nur ihr seht diese Liste. Besucher sehen bei der Suche lediglich „Gerade auf dem Rad“. Höchstens zwei Community-Filme gleichzeitig (die Punkte oben).</p>
+    <div class="score" id="score" hidden>
+      <h3 class="score-h">Scoreboard of Destiny</h3>
+      <ol class="score-list" id="scoreList"></ol>
+      <p class="hint score-note" id="scoreNote" hidden></p>
+    </div>
     <ul class="wheel-list" id="wheelList"></ul>
   </section>
 
@@ -1321,12 +1338,26 @@ function epText(d) {
 
 /* ---------------- Team-Modus ---------------- */
 
+// Scoreboard of Destiny: besprochene Glücksradfilme, nach „aufs Rad gesetzt von“
+function renderScore() {
+  const box = $("#score");
+  box.hidden = !state.isAdmin || !state.picksReady;
+  if (box.hidden) return;
+  const cnt = { max: 0, vincent: 0, community: 0 }; let open = 0;
+  // Radfilm = hat eine Zuordnung oder ist beim Einpflegen als Glücksradfilm markiert
+  const wheelIds = new Set((state.items || []).filter(i => i.wheel && i.film_id).map(i => i.film_id));
+  for (const f of state.done) { const by = pickOf(f)?.picked_by; if (cnt[by] != null) cnt[by]++; else if (wheelIds.has(f.id)) open++; }
+  const top = Math.max(...Object.values(cnt));
+  setList($("#scoreList"), Object.keys(cnt).map(k => `<li class="score-item${top && cnt[k] === top ? " lead" : ""}">${whoFace(k)}<span class="n">${cnt[k]}</span><span class="l">${WHO[k].label}</span></li>`).join(""));
+  const note = $("#scoreNote"); note.hidden = !open;
+  note.textContent = `${open} besprochene${open === 1 ? "r" : ""} Glücksradfilm${open === 1 ? "" : "e"} noch ohne Zuordnung – beim Einpflegen unter „aufs Rad gesetzt von“ nachtragen.`;
+}
 function renderTeam() {
   document.body.classList.toggle("team", state.isAdmin);
   $("#teambar").classList.toggle("show", state.isAdmin);
   const card = $("#pendingCard");
   card.hidden = !state.isAdmin;
-  renderWheel(); renderArch();
+  renderWheel(); renderScore(); renderArch();
   const unlinked = state.done.filter(f => !f.tmdb_id).length;
   $("#linkCard").hidden = !state.isAdmin || (!unlinked && !linkRows.length);
   $("#linkCount").textContent = unlinked;
