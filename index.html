@@ -125,7 +125,8 @@ h1{
   transition:opacity .2s ease-out,transform .5s cubic-bezier(.3,1.9,.5,1),color .3s}
 .destiny.shown .dn{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.destiny .dn{transition:opacity .2s}}
-.destiny .d-note{font-size:12px;font-weight:700;color:var(--muted);line-height:1.2}
+.destiny .d-note{font-size:12px;font-weight:700;color:var(--muted);line-height:1.2;opacity:0;transition:opacity .25s}
+.destiny.shown .d-note{opacity:1;transition:opacity 1s ease .6s}   /* weich einblenden, nachdem die Zahlen da sind */
 @media (prefers-reduced-motion:reduce){.lede{transition:none}}
 .lede{
   display:inline-block;margin:0 auto;max-width:44ch;
@@ -1434,9 +1435,9 @@ function renderDestiny(d) {
     row.innerHTML = Object.keys(WHO).map((k, i) => `<span title="${WHO[k].label}">${whoFace(k)}<b class="dn" data-k="${k}" style="transition-delay:${i * 90}ms">0</b></span>`).join("");
   if (!destinyData) return;
   const n = destinyData.others || 0;
-  $("#destinyNote").textContent = destinyData.team ? `${n} Hörer kennen dieses Geheimnis.`
+  $("#destinyNote").textContent = destinyData.team ? (n === 1 ? "1 Hörer:in kennt dieses Geheimnis." : `${n} Hörer:innen kennen dieses Geheimnis.`)
     : n === 0 ? "Nur du weißt hiervon."
-    : n < 10 ? `Nur du und ${n === 1 ? "ein anderer Hörer" : `${n} andere Hörer`} wissen hiervon.`
+    : n < 10 ? `Nur du und ${n === 1 ? "ein:e andere:r Hörer:in" : `${n} andere Hörer:innen`} wissen hiervon.`
     : `Du teilst dieses Geheimnis mit ${n} weiteren.`;
   if ($("#destiny").classList.contains("shown")) revealScores();
 }
