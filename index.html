@@ -71,7 +71,9 @@ body{
   transform:rotate(-.6deg);
   transform-origin:0 0;   /* links oben drehen: Muster bleibt stehen, wenn sich Höhe oder Breite ändern */
 }
-.cloth > *{transform:rotate(.6deg)}
+.cloth > *{transform:rotate(.6deg);transform-origin:50% 0}
+/* Drehpunkt oben: Die Tischdecke ist schräg, ihr Inhalt wird gerade zurückgedreht. Läge der Drehpunkt in der Mitte,
+   würde eine Karte beim Wachsen (Liste aufklappen) ein paar Pixel zur Seite wandern. */
 
 .logo{
   position:absolute;left:50%;top:-92px;
