@@ -121,6 +121,10 @@ h1{
 .destiny .d-row > span{display:inline-flex;align-items:center;gap:5px}   /* nur die Einträge, nicht das Community-Gesicht (auch ein span) */
 .destiny .d-row .who-face{width:26px;height:26px;border-width:1.5px}
 .destiny .d-row .lead{color:var(--red-deep)}
+.destiny .dn{display:inline-block;min-width:2ch;text-align:left;opacity:0;transform:translateY(5px) scale(.5);
+  transition:opacity .2s ease-out,transform .5s cubic-bezier(.3,1.9,.5,1),color .3s}
+.destiny.shown .dn{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.destiny .dn{transition:opacity .2s}}
 .destiny .d-note{font-size:12px;font-weight:700;color:var(--muted);line-height:1.2}
 @media (prefers-reduced-motion:reduce){.lede{transition:none}}
 .lede{
@@ -1403,13 +1407,14 @@ function epText(d) {
     if (!start || (e && e.pointerId !== start.id)) return;
     const was = dragging; start = null; dragging = false; lede.classList.remove("dragging");
     if (!was) {                                                   // Klick/Tippen auf die weggezogene Karte: zurückfliegen
-      if (aside && e?.type === "pointerup") { aside = 0; set(0, 0); wrap.classList.remove("open"); setTimeout(() => { if (!aside) wrap.classList.remove("peek"); }, 450); }
+      if (aside && e?.type === "pointerup") { aside = 0; set(0, 0); wrap.classList.remove("open"); hideScores(); setTimeout(() => { if (!aside) wrap.classList.remove("peek"); }, 450); }
       return;
     }
     const x = parseFloat(lede.style.getPropertyValue("--dx")) || 0;
     aside = Math.abs(x) > width() * .3 ? Math.sign(x) : 0;
     set(placed(aside), aside * 2.5);
     wrap.classList.toggle("open", !!aside);
+    if (aside) revealScores(); else hideScores();
     if (!aside) setTimeout(() => { if (!aside) wrap.classList.remove("peek"); }, 450);
     if (aside && !revealed) { revealed = true; api.destiny(true).then(renderDestiny, e => console.warn(e)); }
   };
@@ -1420,15 +1425,41 @@ function epText(d) {
 })();
 // Gleich beim Laden holen, damit das Scoreboard schon fertig darunterliegt (zählt dabei niemanden)
 api.destiny(false).then(renderDestiny, e => { console.warn(e); $("#destinyNote").textContent = "Das Schicksal schweigt noch."; });
+// Gesichter stehen von Anfang an da; die Zahlen tauchen erst auf, wenn die Karte weggezogen liegen bleibt
+let destinyData = null;
 function renderDestiny(d) {
-  const sc = d.scores || {}, top = Math.max(0, ...Object.keys(WHO).map(k => sc[k] || 0));
-  $("#destinyRow").innerHTML = Object.keys(WHO).map(k => `<span class="${top && (sc[k] || 0) === top ? "lead" : ""}" title="${WHO[k].label}">${whoFace(k)}${sc[k] || 0}</span>`).join("");
-  const n = d.others || 0;
-  $("#destinyNote").textContent = d.team ? `${n} Hörer kennen dieses Geheimnis.`
+  if (d) destinyData = d;
+  const row = $("#destinyRow");
+  if (!row.children.length)
+    row.innerHTML = Object.keys(WHO).map((k, i) => `<span title="${WHO[k].label}">${whoFace(k)}<b class="dn" data-k="${k}" style="transition-delay:${i * 90}ms">0</b></span>`).join("");
+  if (!destinyData) return;
+  const n = destinyData.others || 0;
+  $("#destinyNote").textContent = destinyData.team ? `${n} Hörer kennen dieses Geheimnis.`
     : n === 0 ? "Nur du weißt hiervon."
     : n < 10 ? `Nur du und ${n === 1 ? "ein anderer Hörer" : `${n} andere Hörer`} wissen hiervon.`
     : `Du teilst dieses Geheimnis mit ${n} weiteren.`;
+  if ($("#destiny").classList.contains("shown")) revealScores();
 }
+setTimeout(() => renderDestiny(), 0);
+// Zahlen einblenden: kurz hochzählen, leicht aufploppen, die führende Zahl wird am Ende rot
+function revealScores() {
+  const box = $("#destiny"); box.classList.add("shown");
+  if (!destinyData) return;                               // Zahlen kommen nach, sobald sie geladen sind
+  const sc = destinyData.scores || {}, top = Math.max(0, ...Object.keys(WHO).map(k => sc[k] || 0));
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  box.querySelectorAll(".dn").forEach((el, i) => {
+    const target = sc[el.dataset.k] || 0, t0 = performance.now() + i * 90, dur = 650;
+    el.parentElement.classList.remove("lead");
+    const step = now => {
+      const p = reduce ? 1 : Math.max(0, Math.min(1, (now - t0) / dur));
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(step);
+      else if (top && target === top) el.parentElement.classList.add("lead");
+    };
+    requestAnimationFrame(step);
+  });
+}
+function hideScores() { $("#destiny").classList.remove("shown"); $("#destinyRow").querySelectorAll(".dn").forEach(el => { el.textContent = "0"; el.parentElement.classList.remove("lead"); }); }
 
 /* ---------------- Team-Modus ---------------- */
 
