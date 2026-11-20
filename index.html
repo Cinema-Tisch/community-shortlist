@@ -86,7 +86,11 @@ body{
 .logo img{width:100%;height:100%;display:block;border-radius:50%}
 .logo:hover{transform:rotate(4deg) scale(1.03)}
 
-header.intro{text-align:center;margin-bottom:22px;overflow-x:clip}
+header.intro{text-align:center;margin-bottom:22px}
+/* Safari: Bewegt sich Logo oder Einleitungskarte, legt Safari benachbarte Texte kurzzeitig auf eine eigene Grafik-Ebene
+   und wieder zurück – die Schrift springt dabei um Bruchteile eines Pixels („wackelt“). Mit fester eigener Ebene passiert das nicht. */
+header.intro .kicker,header.intro h1,.lede{will-change:transform}
+html,body{overflow-x:clip}   /* die weggezogene Karte darf über den Bildschirmrand hinaus, ohne seitliches Scrollen */
 .kicker{
   display:inline-block;
   font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
@@ -104,9 +108,9 @@ h1{
 /* Easteregg: Der Text lässt sich zur Seite ziehen (Cursor bleibt der Pfeil), darunter liegt das Scoreboard of Destiny */
 .secret{position:relative;display:inline-block;max-width:100%;vertical-align:top}
 .lede{position:relative;z-index:1;cursor:default;-webkit-user-select:none;user-select:none;touch-action:pan-y;-webkit-touch-callout:none;
-  transform:translateX(var(--dx,0px)) rotate(calc(var(--rot,0deg) + var(--hov,0deg)));
+  transform:translate(var(--dx,0px),var(--hy,0px)) rotate(var(--rot,0deg));
   transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
-@media (hover:hover){.lede:hover{--hov:-.4deg}}
+@media (hover:hover){.lede:hover{--hy:-2px}}
 .lede.dragging{transition:none}
 .destiny{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   background:repeating-linear-gradient(-45deg,rgba(29,23,18,.06) 0 6px,transparent 6px 12px),var(--cream);
@@ -1060,7 +1064,7 @@ function demoBackend() {
     async setFollowups(id, text) { films.find(x => x.id === id).followups = text; emit(); },
     async discuss(id, extra) {
       Object.assign(films.find(x => x.id === id), { discussed_at: new Date().toISOString().slice(0, 10) }, extra); emit(); },
-    async destiny() { return { scores: { max: 12, vincent: 9, community: 5 }, others: 3, counted: true }; },
+    async destiny() { return { scores: { max: 12, vincent: 9, community: 5 }, others: 3, known: false, team: false }; },
     async vote(id, on) {
       const f = films.find(x => x.id === id); if (!f) return;
       if (on && !mine.has(id)) { mine.add(id); f.votes++; f.last_vote_at = new Date().toISOString(); }
@@ -1187,9 +1191,9 @@ function supabaseBackend() {
     async discuss(id, extra) {
       must(await sb.from("films").update({ discussed_at: new Date().toISOString().slice(0, 10), ...extra }).eq("id", id));
     },
-    async destiny() {
-      await ensureUser();
-      const { data, error } = await sb.rpc("destiny");
+    async destiny(record) {
+      if (record) await ensureUser();                       // nur wer den Text wegzieht, bekommt (falls nötig) eine anonyme Anmeldung
+      const { data, error } = await sb.rpc("destiny", { record: !!record });
       if (error) throw error;
       return data;
     },
@@ -1373,10 +1377,14 @@ function epText(d) {
   const lede = $("#lede"), wrap = lede.parentElement;
   let start = null, dragging = false, aside = 0, revealed = false;
   const width = () => lede.offsetWidth;
+  // Wie weit die Karte zur Seite rutscht: am Computer ganz neben das Scoreboard (ragt sie dabei über den Bildschirmrand,
+  // schneidet nur der Bildschirm sie ab), auf dem Handy so weit, dass noch ein Stück zum Antippen zu sehen ist.
+  const reach = () => innerWidth <= 700 ? width() * .9 : width() + 18;
+  const placed = dir => dir * reach(dir);
   const set = (dx, rot) => { lede.style.setProperty("--dx", dx + "px"); lede.style.setProperty("--rot", rot + "deg"); };
   lede.addEventListener("pointerdown", e => {
     if (e.button !== 0) return;
-    start = { x: e.clientX, y: e.clientY, base: aside * width() * .92, id: e.pointerId };
+    start = { x: e.clientX, y: e.clientY, base: placed(aside), id: e.pointerId };
     if (e.pointerType === "mouse") e.preventDefault();          // keine Textauswahl beim Ziehen
   });
   lede.addEventListener("pointermove", e => {
@@ -1388,31 +1396,35 @@ function epText(d) {
       dragging = true; lede.classList.add("dragging"); wrap.classList.add("peek");
       try { lede.setPointerCapture(e.pointerId); } catch {}
     }
-    const x = start.base + dx, max = width() * 1.05;
-    set(Math.max(-max, Math.min(max, x)), Math.max(-6, Math.min(6, x / width() * 5)));
+    const x = start.base + dx, maxR = reach() + 24, maxL = maxR;
+    set(Math.max(-maxL, Math.min(maxR, x)), Math.max(-4, Math.min(4, x / width() * 3)));
   });
   const end = e => {
     if (!start || (e && e.pointerId !== start.id)) return;
     const was = dragging; start = null; dragging = false; lede.classList.remove("dragging");
-    if (!was) return;
+    if (!was) {                                                   // Klick/Tippen auf die weggezogene Karte: zurückfliegen
+      if (aside && e?.type === "pointerup") { aside = 0; set(0, 0); wrap.classList.remove("open"); setTimeout(() => { if (!aside) wrap.classList.remove("peek"); }, 450); }
+      return;
+    }
     const x = parseFloat(lede.style.getPropertyValue("--dx")) || 0;
     aside = Math.abs(x) > width() * .3 ? Math.sign(x) : 0;
-    set(aside * width() * .92, aside * 4);
+    set(placed(aside), aside * 2.5);
     wrap.classList.toggle("open", !!aside);
     if (!aside) setTimeout(() => { if (!aside) wrap.classList.remove("peek"); }, 450);
-    if (aside && !revealed) { revealed = true; showDestiny(); }
+    if (aside && !revealed) { revealed = true; api.destiny(true).then(renderDestiny, e => console.warn(e)); }
   };
+  addEventListener("resize", () => { if (aside) set(placed(aside), aside * 2.5); });
   lede.addEventListener("pointerup", end);
   lede.addEventListener("pointercancel", end);
   lede.addEventListener("lostpointercapture", end);
 })();
-async function showDestiny() {
-  let d;
-  try { d = await api.destiny(); } catch (e) { console.warn(e); $("#destinyNote").textContent = "Das Schicksal schweigt noch."; return; }
+// Gleich beim Laden holen, damit das Scoreboard schon fertig darunterliegt (zählt dabei niemanden)
+api.destiny(false).then(renderDestiny, e => { console.warn(e); $("#destinyNote").textContent = "Das Schicksal schweigt noch."; });
+function renderDestiny(d) {
   const sc = d.scores || {}, top = Math.max(0, ...Object.keys(WHO).map(k => sc[k] || 0));
   $("#destinyRow").innerHTML = Object.keys(WHO).map(k => `<span class="${top && (sc[k] || 0) === top ? "lead" : ""}" title="${WHO[k].label}">${whoFace(k)}${sc[k] || 0}</span>`).join("");
   const n = d.others || 0;
-  $("#destinyNote").textContent = !d.counted ? `${n} Hörer kennen dieses Geheimnis.`
+  $("#destinyNote").textContent = d.team ? `${n} Hörer kennen dieses Geheimnis.`
     : n === 0 ? "Nur du weißt hiervon."
     : n < 10 ? `Nur du und ${n === 1 ? "ein anderer Hörer" : `${n} andere Hörer`} wissen hiervon.`
     : `Du teilst dieses Geheimnis mit ${n} weiteren.`;
