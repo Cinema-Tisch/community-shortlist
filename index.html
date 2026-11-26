@@ -1090,10 +1090,11 @@ function demoBackend() {
   const plusD = (iso, n) => { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const calDemoFilms = () => [
     [9001, "Das Leuchten im Nebel", 1, null, [18], null], [9002, "Rote Linien", 1, null, [53, 80], null], [9003, "Der kleine Drache Fips", 1, null, [16, 10751], null],
-    [9004, "Stille Wasser", null, plusD(thu(1), 1), [18], "Netflix"], [9005, "Kosmos 9", 2, null, [878], null], [9006, "Die Wiese", 2, null, [99], null],
+    [9004, "Stille Wasser", null, plusD(thu(1), 1), [18], "Netflix"], [9005, "Kosmos 9", 2, plusD(thu(4), 1), [878], "Disney+"], [9006, "Die Wiese", 2, null, [99], null],
     [9007, "Nachtschicht", 2, null, [27], null], [9008, "Blaue Stunde", 3, plusD(thu(9), 0), [10749, 18], null], [9009, "Metropolis", 3, null, [878], null, "1927-01-10"],
     [9010, "Hafenlichter", 4, null, [18], null], [9011, "Der Auftrag", null, plusD(thu(4), 1), [28], "Prime Video"], [9012, "Spurlos", 5, null, [53], null],
     [9013, "Ein Sommer in Lissabon", 6, null, [35], null], [9014, "Unter Null", 7, null, [18], null], [9015, "Die Rückkehr der Riesen", 7, null, [16, 10751, 12], null], [9016, "Lakeside", null, plusD(thu(3), 1), [18], "Apple TV+"],
+    [9017, "Nightbirds – Live in Berlin", 2, null, [10402], null],
   ].map(([tmdb_id, title, wk, stream, genres, provider, first], i) => ({ tmdb_id, title, original_title: title, poster: null, genres, provider,
     kino: wk == null ? null : thu(wk), stream, first: first || (wk == null ? stream : thu(wk)),
     lang: { 9004: "de", 9011: "fr", 9016: "en" }[tmdb_id] || "en", popularity: [31, 88, 12, 40, 64, 5, 22, 47, 9, 18, 55, 70, 14, 26, 33, 52][i] }));
@@ -2195,12 +2196,15 @@ const calWindowStart = () => addDays(calDefaultRecord(cal.last.date, cal.weekday
 const calStreamLang = f => !f.lang || f.lang === "de" || f.lang === "en";
 const calKids = f => (f.genres || []).some(g => g === 16 || g === 10751);
 const calDoku = f => (f.genres || []).includes(99);
+// Konzertfilme fliegen immer raus: Schlagwort bei TMDB (concert) oder Genre nur Musik/Doku, oder Musik + „Live/Tour/Konzert“ im Titel
+const calConcert = f => { const g = f.genres || [];
+  return !!f.concert || (g.length > 0 && g.every(x => x === 10402 || x === 99)) || (g.includes(10402) && /\b(live|tour|concert|konzert|in concert)\b/i.test(f.title || "")); };
 const calRerun = (f, d) => !!(f.first && d && f.first < addDays(d, -365));
 // Welcher Termin zählt bei diesem Film (je nach Filter Kino oder Streaming)?
 function calDate(f, from, to) {
   const ok = d => d && d >= from && d <= to;
   if (cal.filters.kino && ok(f.kino)) return { date: f.kino, kind: "kino" };
-  if (cal.filters.stream && ok(f.stream) && calStreamLang(f)) return { date: f.stream, kind: "stream" };
+  if (cal.filters.stream && ok(f.stream) && calStreamLang(f) && !(f.kino && f.kino <= f.stream)) return { date: f.stream, kind: "stream" };
   return null;
 }
 async function calInit() {
@@ -2234,7 +2238,7 @@ function calRows() {
   for (const f of cal.films.values()) {
     if (planOf.has(f.tmdb_id)) continue;
     const c = calDate(f, from, to); if (!c) continue;
-    if (cal.filters.planned || (!cal.filters.kids && calKids(f)) || (!cal.filters.doku && calDoku(f))) continue;
+    if (cal.filters.planned || calConcert(f) || (!cal.filters.kids && calKids(f)) || (!cal.filters.doku && calDoku(f))) continue;
     const ep = eps.find(e => e.record >= c.date); if (!ep) continue;
     groups.get(ep.n).push({ f, ...c, ep, sameDay: c.date === ep.record });
   }
