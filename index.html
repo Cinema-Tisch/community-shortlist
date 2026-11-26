@@ -568,10 +568,28 @@ body.team .admin-actions{display:flex}
 body.team .pill-name{cursor:default}
 
 /* Dialog */
-.modal-back{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:16px;background:rgba(20,14,8,.6)}
-.modal-back.show{display:grid}
+/* Handy: Die Spalte darf nie breiter als der Bildschirm werden (sonst zieht ein breites Feld – iOS-Datumsfeld, lange Auswahl –
+   das Fenster über den rechten Rand), und Wischen im Dialog schiebt die Seite dahinter nicht mit. */
+.modal-back{position:fixed;inset:0;z-index:30;display:none;place-items:center;grid-template-columns:minmax(0,1fr);justify-items:center;
+  padding:16px;background:rgba(20,14,8,.6);overscroll-behavior:contain}
+.modal-back.show{display:grid;animation:mbIn .18s ease-out}
+.modal-back.show .modal{animation:mIn .24s cubic-bezier(.2,.8,.2,1)}
+.modal-back.out{animation:mbOut .16s ease-in forwards}
+/* Mehrere Dialoge hintereinander: der Hintergrund bleibt, die Kachel wechselt fließend Höhe und Inhalt */
+.modal.waiting{pointer-events:none}
+.modal.waiting>*{opacity:.45;transition:opacity .15s}
+.modal.morphing{overflow:hidden}
+@keyframes mbIn{from{opacity:0}}
+@keyframes mbOut{to{opacity:0}}
+@keyframes mIn{from{opacity:0;transform:translateY(10px) scale(.98)}}
 .modal{width:min(440px,100%);background:var(--paper);border:3.5px solid var(--line);border-radius:18px 10px 22px 12px / 12px 20px 10px 18px;
-  box-shadow:7px 8px 0 rgba(0,0,0,.45);padding:20px;max-height:calc(100vh - 32px);overflow:auto}
+  box-shadow:7px 8px 0 rgba(0,0,0,.45);padding:20px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:hidden auto;
+  min-width:0;overscroll-behavior:contain}
+.modal input,.modal select{max-width:100%;min-width:0}
+.modal select{text-overflow:ellipsis}
+/* iOS gibt Datumsfeldern eine eigene Mindestbreite und ignoriert width:100% – ohne Systemoptik passt es in die Spalte */
+.modal input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-height:50px}
+.modal input[type=date]::-webkit-date-and-time-value{text-align:left}
 .modal h3{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:23px;color:var(--navy-ink);margin:0 0 8px}
 .modal p{margin:0 0 14px;font-size:15.5px;line-height:1.45}
 .modal .field{margin-bottom:12px}
@@ -580,7 +598,7 @@ body.team .pill-name{cursor:default}
 .modal .err{color:var(--red-deep);font-weight:700;font-size:14px;margin:-4px 0 10px;display:none}
 .modal .err.show{display:block}
 /* Trefferliste in Team-Dialogen */
-.pick{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow:auto;padding:3px;margin:-3px}
+.pick{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow:auto;padding:3px;margin:-3px;overscroll-behavior:contain}
 .pick-item{display:flex;align-items:center;gap:10px;text-align:left;width:100%;background:#fff;border:2px solid var(--line);border-radius:10px;
   padding:6px 10px 6px 6px;font:inherit;color:inherit;cursor:pointer}
 .pick-item[aria-checked="true"]{background:var(--navy-soft);border-color:var(--navy);box-shadow:inset 0 0 0 1.5px var(--navy)}
@@ -970,6 +988,11 @@ function demoBackend() {
     646: ["Dr. No", "Dr. No"], 657: ["From Russia with Love", "From Russia with Love"] };
   catalog.forEach(c => { if (alt[c.tmdb_id]) [c.original_title, c.title_en] = alt[c.tmdb_id]; });
   catalog.forEach(c => { c.tmdb_type = "movie"; });
+  // Demo: ausgedachte Filme, um die Sperre für zu aktuelle Filme zu testen (live kommt das Datum von TMDB)
+  const iso = dd => new Date(now + dd * day).toISOString().slice(0, 10);
+  catalog.push({ tmdb_id: 901, tmdb_type: "movie", title: "Demo: Ganz frisch im Kino", year: +iso(-40).slice(0, 4), date: iso(-40), poster: null, original_title: null, title_en: null },
+               { tmdb_id: 902, tmdb_type: "movie", title: "Demo: Angekündigt ohne Termin", year: null, date: null, poster: null, original_title: null, title_en: null },
+               { tmdb_id: 903, tmdb_type: "movie", title: "Demo: Vor zwei Jahren erschienen", year: +iso(-730).slice(0, 4), date: iso(-730), poster: null, original_title: null, title_en: null });
   const tvCatalog = [{ tmdb_id: 317152, tmdb_type: "tv", title: "Mesut Özil – Zu Gast bei Freunden", original_title: "Mesut Özil – Zu Gast bei Freunden",
     title_en: "Mesut Özil – Zu Gast bei Freunden", year: null, poster: null }];
   // Demo-Inhaltsangaben (eigene Kurztexte, live kommen sie von TMDB)
@@ -1006,17 +1029,17 @@ function demoBackend() {
     { id: "p2", title: "asdfgh lol", year: null, note: null, tmdb_id: null, poster_path: null, created_at: new Date(now - 0.3 * h).toISOString() },
   ];
   let admin = false, showVotes = true;
-  const picks = new Map([["d9", { picked_by: "community", feed_title: "Pulp Fiction", wheel_since: "Folge 60" }]]);
+  const picks = new Map([["d9", { picked_by: "community", feed_title: "Pulp Fiction", wheel_since: "Folge 59" }]]);
   // Demo-Shownotes (live kommen sie aus dem Acast-Feed)
   const demoFeed = [
-    { n: 62, episode: "Folge 62", url: "https://example.com/folge-62", date: new Date(now - 2 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Oppenheimer", "Anatomie eines Falls", "Lola rennt"],
+    { n: 62, episode: "Folge 62", url: "https://example.com/folge-62", date: new Date(now - 2 * day).toISOString().slice(0, 10), titles: ["Lola rennt"],
       segments: [{ ts: "00:00:00", title: "Schnelle Intro" }, { ts: "00:03:55", title: "Trailer-Service" }, { ts: "00:08:25", title: "Toni Erdmann" },
                  { ts: "00:19:35", title: "Bond-Briefing: Liebesgrüße aus Moskau" }, { ts: "00:39:30", title: "Victoria" }, { ts: "01:01:40", title: "Haben wir Avatar geschaut?" }, { ts: "01:03:10", title: "Glücksrad" }] },
-    { n: 61, episode: "Folge 61", url: "https://example.com/folge-61", date: new Date(now - 9 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Oppenheimer", "Victoria", "Godzila"],
+    { n: 61, episode: "Folge 61", url: "https://example.com/folge-61", date: new Date(now - 9 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction"],
       segments: [{ ts: "00:00:00", title: "Wir lieben Weihnachten" }, { ts: "00:05:00", title: "Paris, Texas (Follow-up)" }, { ts: "00:20:00", title: "Bond-Briefing" }, { ts: "00:40:00", title: "Godzilla" }] },
-    { n: 60, episode: "Folge 60", url: null, date: new Date(now - 16 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Victoria", "Godzilla", "Das Leben der Anderen"],
+    { n: 60, episode: "Folge 60", url: null, date: new Date(now - 16 * day).toISOString().slice(0, 10), titles: ["Pulp Fiction", "Victoria"],
       segments: [{ ts: "00:07:55", title: "Aftersun" }, { ts: "00:30:00", title: "Das Leben der Anderen" }] },
-    { n: 59, episode: "Folge 59", url: null, date: new Date(now - 23 * day).toISOString().slice(0, 10), titles: ["Victoria", "Godzilla", "Das Leben der Anderen", "Der schwarze Diamant"], segments: [] },
+    { n: 59, episode: "Folge 59", url: null, date: new Date(now - 23 * day).toISOString().slice(0, 10), titles: ["Victoria", "Godzila", "Pulp Fiction"], segments: [] },
   ];
   let items = [];
 
@@ -1671,6 +1694,11 @@ const whoButtons = sel => Object.keys(WHO).map(k =>
 const pickOf = f => state.picks.get(f.id) || null;
 const isCommunity = f => (pickOf(f)?.picked_by || "community") === "community";   // ohne Zuordnung: kam von der Shortlist
 const epNum = e => +((e || "").match(/(\d+)/) || [])[1] || 0;
+// Gezogener Glücksradfilm, dessen Folge noch nicht erschienen ist: steht schon im Backlog als „Folge N (geplant)“, ohne Link.
+// Beim Einpflegen dieser Folge wird daraus „Folge N“ mit Datum und Link.
+const PLANNED = " (geplant)";
+const isPlanned = f => !!f && /\s\(geplant\)$/.test(f.episode || "");
+const comesIn = f => `Kommt in Folge ${epNum(f.episode)}`;
 
 function renderWheel() {
   const card = $("#wheelCard");
@@ -1756,7 +1784,8 @@ const reload = async () => { Object.assign(state, await api.load()); render(); }
 const today = () => new Date().toISOString().slice(0, 10);
 
 // Rad auf den Stand der Glücksradfilme einer Folge bringen (läuft nach dem Einlesen der neuesten Folge)
-async function wheelSyncFor(ep) {
+async function wheelSyncFor(ep) { return dialogSeries(() => wheelSync(ep)); }
+async function wheelSync(ep) {
   if (!needPicks()) return;
   if (!ep?.titles.length) { toast("In den Shownotes steht kein Abschnitt „Glücksradfilme:“.", true); return; }
   const matched = new Map(), news = [], justDone = [];
@@ -1770,6 +1799,31 @@ async function wheelSyncFor(ep) {
   const gone = state.wheel.filter(w => !matched.has(w.id));
   if (!news.length && !gone.length) { toast(`Das Rad ist auf dem Stand von ${ep.episode}.`); return; }
   if (justDone.length) console.info("Schon besprochen, übersprungen:", justDone);
+
+  // Normalfall: Am Ende der Folge wird ein Film gezogen (fehlt jetzt in der Liste) und genau einer kommt neu dazu –
+  // von derselben Partei, die den gezogenen Film aufs Rad gesetzt hatte.
+  if (ep.n && gone.length === 1 && news.length <= 1) {
+    const drawn = gone[0], nx = `Folge ${ep.n + 1}`, who = pickOf(drawn)?.picked_by || null;
+    const v = await dialog({ title: `${ep.episode} ist eingepflegt`, confirm: "Weiter", text: `Der Glücksradfilm für ${nx} ist:`,
+      fields: [{ name: "pick", label: "Glücksradfilm", type: "pick", options: [
+        { value: drawn.id, label: titleParts(drawn).main, sub: `gezogen in ${ep.episode}`, poster: drawn.poster_path, tmdb_id: drawn.tmdb_id, tmdb_type: drawn.tmdb_type },
+        { value: "none", label: "Stimmt nicht", sub: "selbst einsortieren", free: true }] }] });
+    if (!v) return;
+    if (v.pick === drawn.id) {
+      busy++;
+      try {
+        await markDrawn(drawn, ep); await reload();
+        if (news.length && await syncAdd(news[0], ep, who, drawn) === "stop") return;
+        toast(`„${drawn.title}“ ist als Glücksradfilm für ${nx} vorgemerkt${news.length ? ", das Rad ist aktuell" : ""}.`);
+      } catch (e) {
+        console.error(e);
+        toast(e.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (e.message || "Fehler"), true);
+      } finally { busy--; await reload().catch(() => {}); }
+      return;
+    }
+  }
+
+  // Sonderfall oder „Stimmt nicht“: jeden Film einzeln einsortieren
   const ok = await dialog({ title: `Rad nach ${ep.episode}`, confirm: "Durchgehen",
     text: [news.length ? `Neu auf dem Rad: ${news.join(", ")}.` : "",
            gone.length ? `Nicht mehr in den Shownotes: ${gone.map(f => f.title).join(", ")}.` : "",
@@ -1787,7 +1841,8 @@ async function wheelSyncFor(ep) {
   } finally { busy--; await reload().catch(() => {}); }
 }
 
-async function syncAdd(t, ep) {
+// who: Partei steht schon fest (vom gezogenen Film „instead“ übernommen) → nur noch die richtige Fassung wählen
+async function syncAdd(t, ep, who = null, instead = null) {
   const onList = state.films.find(f => feedMatch(f, t)) || state.films.find(f => feedMatch(f, t, true));
   let res = [];
   if (tmdbOn && !tmdbBroken) { try { res = await api.search(t, { tv: true }); } catch (err) { console.warn(err); } }
@@ -1802,11 +1857,16 @@ async function syncAdd(t, ep) {
   if (!(was && !onList)) options.push({ value: "skip", label: "Überspringen", sub: "diesen Film jetzt nicht aufs Rad setzen", free: true });
   let v;
   for (;;) {
-    v = await dialog({ title: `Neu auf dem Rad: „${t}“`, confirm: "Übernehmen",
-      text: `Aus den Shownotes von ${ep.episode}. Richtige Version wählen und zuordnen – die Zuordnung seht nur ihr. „Abbrechen“ beendet den Abgleich.`,
-      fields: [{ name: "pick", label: "Film", type: "pick", options },
-               { name: "who", label: "Aufs Rad gesetzt von", type: "who", value: onList ? "community" : "" }] });
+    v = await dialog(who
+      ? { title: `Neu auf dem Rad: „${t}“`, confirm: "Aufs Rad",
+          text: `Kommt für ${WHO[who]?.label || who} aufs Rad${instead ? ` – statt „${instead.title}“` : ""}. Welche Fassung ist es?`,
+          fields: [{ name: "pick", label: "Film", type: "pick", options }] }
+      : { title: `Neu auf dem Rad: „${t}“`, confirm: "Übernehmen",
+          text: `Aus den Shownotes von ${ep.episode}. Richtige Version wählen und zuordnen – die Zuordnung seht nur ihr. „Abbrechen“ beendet den Abgleich.`,
+          fields: [{ name: "pick", label: "Film", type: "pick", options },
+                   { name: "who", label: "Aufs Rad gesetzt von", type: "who", value: onList ? "community" : "" }] });
     if (!v) return "stop";
+    if (who) { v.who = who; break; }
     if (v.pick === "skip" || v.who) break;
     toast("Bitte noch zuordnen: Max, Vincent oder Community.", true);
   }
@@ -1828,14 +1888,23 @@ async function syncAdd(t, ep) {
   await reload();
 }
 
+// Gezogenen Film vom Rad nehmen und als Glücksradfilm der nächsten Folge ins Backlog legen.
+// Datum: zwei Wochen nach dieser Folge (Rhythmus), wird beim Einpflegen durch das echte ersetzt.
+async function markDrawn(f, ep) {
+  const d = ep.date ? new Date(ep.date + "T12:00:00Z") : new Date();
+  d.setUTCDate(d.getUTCDate() + 14);
+  await api.discuss(f.id, { discussed_at: d.toISOString().slice(0, 10), episode: `Folge ${ep.n + 1}${PLANNED}`, episode_url: null });
+}
 async function syncGone(f, ep) {
   const c = isCommunity(f);
+  const next = ep.n ? `Folge ${ep.n + 1}` : "der nächsten Folge";
   const v = await dialog({ title: `Nicht mehr dabei: „${f.title}“`, confirm: "Übernehmen",
     text: `„${f.title}“ steht nicht mehr in den Shownotes von ${ep.episode}. Was ist passiert? „Abbrechen“ beendet den Abgleich.`,
     fields: [
       { name: "act", label: "Der Film …", type: "select", options: [
-        { value: "discuss", label: "wurde gezogen und besprochen → ins Backlog" },
         { value: "drop", label: c ? "wurde nur ausgetauscht → zurück auf die Shortlist" : "wurde nur ausgetauscht → vom Rad löschen" },
+        { value: "next", label: `wurde in ${ep.episode} gezogen → Glücksradfilm für ${next}` },
+        { value: "discuss", label: "wurde schon besprochen → ins Backlog (Angaben unten)" },
         { value: "keep", label: "ist noch auf dem Rad → nichts ändern" }] },
       { name: "episode", label: "Besprochen in", value: ep.episode, optional: true, max: 60 },
       { name: "date", label: "Erschienen am", type: "date", value: ep.date || today(), optional: true },
@@ -1843,6 +1912,7 @@ async function syncGone(f, ep) {
     ] });
   if (!v) return "stop";
   if (v.act === "keep") return;
+  if (v.act === "next" && ep.n) { await markDrawn(f, ep); toast(`„${f.title}“ ist als Glücksradfilm für ${next} vorgemerkt.`); await reload(); return; }
   if (v.act === "drop") await (c ? api.offWheel(f.id) : api.remove(f.id));
   else {
     if (!checkUrl(v)) return;
@@ -1854,8 +1924,9 @@ async function syncGone(f, ep) {
 /* ---------------- Filmdaten einpflegen (Time-Stamps aus den Shownotes) ---------------- */
 /* Glücksradfilme haben immer beide gesehen → „vorgestellt von beiden“ wird automatisch gesetzt.
    Aufbau einer Folge: Intro, dann die Filme von Max und Vincent (Reihenfolge wechselt), dann der Glücksradfilm,
-   am Ende das Glücksrad. Der Glücksradfilm ist der Film aus den Time-Stamps, der in der VORHERIGEN Folge unter
-   „Glücksradfilme“ stand (vor Weihnachten wird nicht gedreht → die Weihnachtsfolge hat keinen Radfilm).
+   am Ende das Glücksrad. Der Glücksradfilm wird am Ende der VORHERIGEN Folge gezogen und steht
+   in deren Shownotes schon nicht mehr unter „Glücksradfilme“ – er stand in der Liste davor und fehlt in der
+   vorherigen (siehe wheelCands; vor Weihnachten wird nicht gedreht → die Weihnachtsfolge hat keinen Radfilm).
    Gespeichert wird jede Zeile in der Tabelle episode_items (folgen.sql). */
 
 // James-Bond-Reihe fürs „Bond-Briefing“: deutscher Titel, englischer Titel (für die TMDB-Suche), Jahr (innerhalb der Reihe eindeutig)
@@ -1899,6 +1970,15 @@ async function loadArchEps() {
   return archEps;
 }
 const prevList = n => archEps.filter(e => e.n < n && e.titles.length).sort((a, b) => b.n - a.n)[0] || null;
+// Glücksradfilm von Folge n: Am Ende von Folge n-1 wird gedreht, und in deren Shownotes steht der gezogene Film schon
+// nicht mehr unter „Glücksradfilme“. Kandidaten sind also die Titel, die in der Liste davor (n-2) standen und in der
+// Liste von n-1 fehlen. Vor Weihnachten wird nicht gedreht → nichts fehlt → die Weihnachtsfolge hat keinen Radfilm.
+function wheelCands(n) {
+  const l1 = prevList(n), l2 = l1 && prevList(l1.n);
+  if (!l2) return [];
+  return l2.titles.filter(t => !l1.titles.some(x => near(norm(x), norm(t))));
+}
+const wheelTitleFor = (n, title) => wheelCands(n).find(x => near(norm(x), norm(title))) || null;
 
 // Bond-Briefing: welche Bond-Filme schon dran waren (über das Jahr) und welcher als Nächstes kommt – optional nur vor Folge „before“
 function bondState(before = Infinity) {
@@ -1912,7 +1992,9 @@ function wheelRun(r, n) {
   const names = [r.title, r.listTitle].filter(Boolean).map(norm);
   const hit = t => names.some(x => near(x, norm(t))) || (f && feedMatch(f, t, true));
   const run = [];
-  for (const e of archEps.filter(e => e.n < n && e.titles.length).sort((a, b) => b.n - a.n)) { if (e.titles.some(hit)) run.unshift(e); else break; }
+  const eps = archEps.filter(e => e.n < n && e.titles.length).sort((a, b) => b.n - a.n);
+  // eps[0] ist die Folge, in der gedreht wurde – dort ist der gezogene Film schon gestrichen
+  for (const [i, e] of eps.entries()) { if (e.titles.some(hit)) run.unshift(e); else if (run.length || i > 0) break; }
   if (!run.length) return null;
   const ep = archEps.find(e => e.n === n);
   const days = run[0].date && ep?.date ? Math.round((new Date(ep.date) - new Date(run[0].date)) / 864e5) : null;
@@ -1995,6 +2077,15 @@ function scrollToEl(el) {
 }
 const toListTop = () => requestAnimationFrame(() => scrollToEl(archOpen && $("#archList").children.length ? $("#archList") : $("#archCard")));
 const toReview = () => requestAnimationFrame(() => scrollToEl($("#archReview .ep-review")));
+// Nach „Folge N übernehmen“: keine Fahrt nach oben. Die Seite springt (verdeckt) an die Karte,
+// und die Karte gleitet sanft von oben in ihre Position. „translate“ statt „transform“, damit die Drehung der Tischdecke bleibt.
+function settleArch() {
+  const card = $("#archCard"), target = archOpen && $("#archList").children.length ? $("#archList") : card;
+  scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + scrollY - 12), behavior: "instant" });
+  if (!reduceMotion() && card.animate) card.animate([{ translate: "0 -22px", opacity: 0 }, { translate: "0 0", opacity: 1 }],
+    { duration: 360, easing: "cubic-bezier(.2,.8,.2,1)" });
+}
+const backGone = () => new Promise(r => setTimeout(r, $("#modalBack").classList.contains("show") ? 190 : 0));
 function renderArch() {
   const card = $("#archCard");
   card.hidden = !state.isAdmin;
@@ -2049,7 +2140,7 @@ async function openNewest() {
 /* ---- Überprüfung einer Folge ---- */
 async function openReview(n) {
   const ep = archEps.find(e => e.n === n); if (!ep) return;
-  const saved = itemsOf(n), prev = prevList(n);
+  const saved = itemsOf(n), cands = wheelCands(n);
   const remembered = new Set((state.items || []).filter(i => i.kind === "segment").map(i => norm(i.raw)));
   const rows = (ep.segments || []).map((sg, pos) => {
     const r = { pos, ts: sg.ts, raw: sg.title, title: cleanTitle(sg.title), kind: "film", film: null, cands: null, sure: false, searching: false,
@@ -2060,24 +2151,25 @@ async function openReview(n) {
       const f = sv.film_id && byId(sv.film_id);
       if (f) { r.film = { type: "db", id: f.id }; r.wheelWho = pickOf(f)?.picked_by || null; }
       else if (sv.kind === "film") r.sure = false;     // Film wurde inzwischen gelöscht
-      if (r.wheel && prev) r.listTitle = prev.titles.find(x => near(norm(x), norm(r.title))) || null;
+      if (r.wheel) r.listTitle = wheelTitleFor(n, r.title);
       return r;
     }
     // Bond-Briefing ohne Titel: nächsten Bond vorschlagen
     if (r.bond && !r.title) { const nb = bondState(n).next; if (nb) { r.title = nb[0]; r.bondQuery = `${nb[1]} ${nb[2]}`; } }
     if (tsSec(sg.ts) === 0 || !r.title || (!r.bond && SEG_RE.test(sg.title)) || remembered.has(norm(sg.title))) { r.kind = "segment"; r.sure = true; return r; }
-    if (prev) { const t = prev.titles.find(x => near(norm(x), norm(r.title))); if (t) { r.wheel = true; r.listTitle = t; } }
+    { const t = wheelTitleFor(n, r.title); if (t) { r.wheel = true; r.listTitle = t; } }
     const pool = allFilms();
     const exact = pool.find(f => feedMatch(f, r.title)) || (r.listTitle && pool.find(f => feedMatch(f, r.listTitle)));
     const m = exact || pool.find(f => feedMatch(f, r.title, true));
     if (m) {
       r.film = { type: "db", id: m.id };
-      if (state.wheel.includes(m)) r.wheel = true;
+      if (state.wheel.includes(m) || isPlanned(m)) r.wheel = true;
+      if (!r.listTitle) { const t = cands.find(x => feedMatch(m, x, true)); if (t) { r.wheel = true; r.listTitle = t; } }   // anderer Titel in der Liste (z. B. Originaltitel)
       r.wheelWho = pickOf(m)?.picked_by || null;
       const isDone = state.done.includes(m), dn = epNum(m.episode);
-      if (isDone && dn && dn < n && !fups(m).includes(n)) r.followup = true;   // war früher schon dran → Follow-up
+      if (isDone && dn && dn < n && !fups(m).includes(n) && !isPlanned(m)) r.followup = true;   // war früher schon dran → Follow-up
       // sicher: exakter Treffer, der schon zu dieser Folge gehört, auf dem Rad oder auf der Shortlist steht – oder als Follow-up angekündigt ist
-      r.sure = !!exact && (!isDone || !dn || dn === n || fups(m).includes(n) || (dn < n && /follow[\s-]*up/i.test(sg.title)));
+      r.sure = !!exact && (!isDone || isPlanned(m) || !dn || dn === n || fups(m).includes(n) || (dn < n && /follow[\s-]*up/i.test(sg.title)));
     }
     return r;
   });
@@ -2160,7 +2252,7 @@ $("#archReview").addEventListener("click", async e => {
     case "ok": r.sure = true; break;
     case "fu": r.followup = !r.followup; break;
     case "bond": r.bond = !r.bond; break;
-    case "wheel": r.wheel = !r.wheel; if (r.wheel && !r.listTitle) r.listTitle = prevList(review.ep.n)?.titles.find(x => near(norm(x), norm(r.title))) || null; break;
+    case "wheel": r.wheel = !r.wheel; if (r.wheel && !r.listTitle) r.listTitle = wheelTitleFor(review.ep.n, r.title); break;
     case "seg":
       if (r.kind === "segment") { r.kind = "film"; r.title = r.title || r.raw; r.sure = false; renderReview(); if (!r.film) await suggestTmdb(r); return; }
       r.kind = "segment"; r.sure = true; break;
@@ -2205,7 +2297,8 @@ async function commitFilm(r, ep) {
     await reload();
     return id || findDupe(film.title, film.tmdb_id, film.year, [], film.tmdb_type)?.id || null;
   }
-  if (state.done.includes(f)) {
+  if (state.done.includes(f) && isPlanned(f)) await api.link(f.id, info);               // vorgemerkter Glücksradfilm → echte Folge, Datum, Link
+  else if (state.done.includes(f)) {
     const dn = epNum(f.episode);
     if (dn === n) { if (!f.episode_url && info.episode_url) await api.link(f.id, { episode_url: info.episode_url }); }
     else if (fups(f).includes(n)) { /* schon als Follow-up vermerkt */ }
@@ -2237,19 +2330,48 @@ async function saveReview() {
       catch (e) { if (Object.keys(base).length) await api.setPick(r.id, base); }      // ohne Radzeit-Spalten (radzeiten.sql fehlt)
     }
     ok = true;
-    toast(`${ep.episode} ist eingepflegt.`);
+    if (!(ep.n === archEps[0]?.n && ep.titles?.length)) toast(`${ep.episode} ist eingepflegt.`);   // sonst sagt es der Rad-Dialog
   } catch (e) {
     console.error(e);
     toast(e.code === "23505" ? "Diesen Film gibt es schon." : "Das hat nicht geklappt: " + (e.message || "Fehler"), true);
   } finally { busy--; await reload().catch(() => {}); }
   if (!ok) { renderReview(); return; }
-  review = null; renderReview(); renderArch(); toListTop();
-  if (ep.n === archEps[0]?.n) await wheelSyncFor(ep);                                    // neueste Folge: Rad aktualisieren
+  // Neueste Folge: erst das Rad abgleichen – die Seite bleibt dabei stehen –, danach Prüfung schließen und zur Liste
+  if (ep.n === archEps[0]?.n) { await wheelSyncFor(ep); await backGone(); }
+  review = null; renderReview(); renderArch(); settleArch();
+}
+
+// Mehrere Dialoge als Serie: Dazwischen bleibt der Hintergrund stehen, die Kachel wartet gedimmt
+// und geht dann fließend in den nächsten Dialog über (Höhe gleitet, neuer Inhalt blendet ein).
+let dialogChain = 0, backHideTimer = null;
+const reduceMotion = () => matchMedia("(prefers-reduced-motion:reduce)").matches;
+function hideBack() {
+  const back = $("#modalBack"); if (!back.classList.contains("show")) return;
+  const done = () => { back.classList.remove("show", "out"); $("#modal").classList.remove("waiting"); };
+  if (reduceMotion()) { done(); return; }
+  back.classList.add("out"); clearTimeout(backHideTimer); backHideTimer = setTimeout(done, 160);
+}
+async function dialogSeries(fn) {
+  dialogChain++;
+  try { return await fn(); } finally { if (!--dialogChain) hideBack(); }
+}
+function morphModal(m, h0) {
+  if (reduceMotion() || !m.animate) return;
+  const h1 = m.getBoundingClientRect().height;
+  m.getAnimations().forEach(a => a.cancel());
+  if (Math.abs(h1 - h0) > 1) {
+    m.classList.add("morphing");          // keine Scrollleiste während des Übergangs
+    const a = m.animate([{ height: h0 + "px" }, { height: h1 + "px" }], { duration: 280, easing: "cubic-bezier(.2,.8,.2,1)" });
+    a.onfinish = a.oncancel = () => m.classList.remove("morphing");
+  }
+  for (const c of m.children) c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 90, easing: "ease-out", fill: "backwards" });
 }
 
 // Kleiner Dialog statt alert/confirm/prompt
 function dialog({ title, text = "", fields = [], confirm = "OK", danger = false }) {
   const back = $("#modalBack"), m = $("#modal");
+  clearTimeout(backHideTimer); back.classList.remove("out");
+  const morph = back.classList.contains("show"), h0 = morph ? m.getBoundingClientRect().height : 0;
   m.innerHTML = `<h3 id="mTitle"></h3>${text ? "<p></p>" : ""}
     ${fields.map((f, i) => `<div class="field"><label for="mf${i}">${esc(f.label)}${f.optional ? ' <span class="opt">(optional)</span>' : ""}</label>
       ${f.type === "who"
@@ -2292,10 +2414,18 @@ function dialog({ title, text = "", fields = [], confirm = "OK", danger = false 
     epEl.addEventListener("input", fill); epEl.addEventListener("change", fill);
     if (epEl.value) fill();
   }
+  m.classList.remove("waiting");
   back.classList.add("show");
-  setTimeout(() => (m.querySelector("input") || m.querySelector("[type=submit]")).focus(), 30);
+  if (morph) morphModal(m, h0);
+  // Am Computer ins erste Feld; am Handy nichts vorfokussieren – sonst geht sofort die Tastatur auf und Safari schiebt die Seite.
+  const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
+  setTimeout(() => (fine && m.querySelector("input") || m.querySelector("[type=submit]")).focus({ preventScroll: true }), 30);
   return new Promise(resolve => {
-    const close = v => { back.classList.remove("show"); document.removeEventListener("keydown", onKey); resolve(v); };
+    const close = v => {
+      document.removeEventListener("keydown", onKey);
+      if (dialogChain) m.classList.add("waiting"); else hideBack();     // in einer Serie: stehen lassen für den nächsten Dialog
+      resolve(v);
+    };
     const onKey = e => { if (e.key === "Escape") close(null); };
     document.addEventListener("keydown", onKey);
     m.querySelector("[data-x]").onclick = () => close(null);
@@ -2335,6 +2465,12 @@ async function onAdminAction(e) {
   const act = e.currentTarget.dataset.act, id = e.currentTarget.closest(".film").dataset.id;
   const f = state.films.find(x => x.id === id); if (!f) return;
   if (act === "wheel") {
+    // Sperre für zu aktuelle Filme: im Team nur ein Hinweis (in der Datenbank steht nur das Jahr)
+    if (tooNew({ year: f.year })) {
+      const ok = await dialog({ title: "Noch zu frisch?", confirm: "Trotzdem aufs Rad",
+        text: `„${f.title}“ ist von ${f.year} und damit vermutlich jünger als anderthalb Jahre. Vielleicht läuft er noch im Kino oder ist noch nicht zu streamen oder zu kaufen.` });
+      if (!ok) return;
+    }
     const comm = state.wheel.filter(isCommunity);
     if (comm.length < 2) {
       teamDo(() => api.toWheel(id), `„${f.title}“ ist jetzt auf dem Rad.`);
@@ -2486,15 +2622,44 @@ function findDupe(title, tmdb_id, year, alts = [], type = "movie") {
   if (!names.length) return null;
   return pool.find(f => sameTitle(f) && (!year || !f.year || f.year === year)) || null;
 }
+/* ---- Sperre fürs Glücksrad: nur Filme, die mindestens anderthalb Jahre alt sind ----
+   Jüngere laufen womöglich noch im Kino oder sind noch nirgends zu streamen oder zu kaufen.
+   Maßgeblich ist das Erstveröffentlichungsdatum bei TMDB (date). Ohne Datum zählt der 1.1. des Jahres;
+   ein TMDB-Treffer ganz ohne Datum und Jahr gilt als noch nicht erschienen. */
+const MIN_AGE_MONTHS = 18;
+function freeFrom(m) {
+  if (!m) return null;
+  if (m.date) { const d = new Date(m.date + "T00:00:00Z"); if (!isNaN(d)) { d.setUTCMonth(d.getUTCMonth() + MIN_AGE_MONTHS); return d; } }
+  if (m.year) { const d = new Date(Date.UTC(+m.year, 0, 1)); d.setUTCMonth(d.getUTCMonth() + MIN_AGE_MONTHS); return d; }
+  return m.tmdb_id && (m.tmdb_type || "movie") === "movie" ? Infinity : null;   // kein Starttermin
+}
+const tooNew = m => { const d = freeFrom(m); return d === Infinity || (!!d && d > new Date()); };
+const monthYear = d => d.toLocaleDateString("de-DE", { month: "long", year: "numeric", timeZone: "UTC" });
+function tooNewText(m) {
+  const d = freeFrom(m);
+  return d === Infinity
+    ? "hat noch keinen Starttermin – fürs Glücksrad nehmen wir nur Filme, die schon mindestens anderthalb Jahre draußen sind. Sonst landet vielleicht ein Film auf dem Rad, den wir noch gar nicht sehen können."
+    : `ist noch zu frisch fürs Glücksrad. Wir nehmen nur Filme, die mindestens anderthalb Jahre alt sind – sonst läuft er womöglich noch im Kino oder ist nirgends zu streamen oder zu kaufen. Ab ${monthYear(d)} kannst du ihn gern vorschlagen.`;
+}
 function checkDupe() {
   const box = $("#dupe");
   const p = state.picked;
   const d = p ? findDupe(p.title, p.tmdb_id, p.year, [p.original_title, p.title_en], p.tmdb_type) : findDupe($("#fTitle").value, null, null);
   box.innerHTML = "";
+  if (!d && p && tooNew(p)) {
+    const span = document.createElement("span");
+    span.innerHTML = `<b></b> ${esc(tooNewText(p))}`;
+    span.querySelector("b").textContent = p.title;
+    box.appendChild(span); box.classList.add("show"); return;
+  }
   if (!d) { box.classList.remove("show"); return; }
   const span = document.createElement("span");
   if (d._wheel) {
     span.innerHTML = `<b></b> ist gerade auf dem Glücksrad – Daumen drücken!`;
+    span.querySelector("b").textContent = d.title;
+    box.appendChild(span);
+  } else if (d._done && isPlanned(d)) {
+    span.innerHTML = `<b></b> wurde schon vom Glücksrad gezogen – ${esc(comesIn(d).replace("Kommt", "kommt"))}.`;
     span.querySelector("b").textContent = d.title;
     box.appendChild(span);
   } else if (d._done) {
@@ -2792,6 +2957,10 @@ let caseW = innerWidth;
 addEventListener("resize", () => { if (innerWidth !== caseW) { caseW = innerWidth; if (caseState.layer) closeCase(); } });
 // Touch: Seite dahinter nicht mitscrollen lassen (nur der Klappentext selbst scrollt)
 document.addEventListener("touchmove", e => { if (caseState.layer && !e.target.closest?.(".case-text")) e.preventDefault(); }, { passive: false });
+// Offener Dialog: Wischen außerhalb des Dialogs bewegt die Seite dahinter nicht
+document.addEventListener("touchmove", e => {
+  if ($("#modalBack").classList.contains("show") && !e.target.closest?.(".modal")) e.preventDefault();
+}, { passive: false });
 
 /* ---------------- Top 10 + Aufklappen ---------------- */
 const TOP_N = 10;
@@ -2954,6 +3123,7 @@ function acRender(msg) {
       const d = findDupe(m.title, m.tmdb_id, m.year, [m.original_title, m.title_en], m.tmdb_type);
       let tag = "";
       if (d && d._wheel) tag = `<span class="tag done">Gerade auf dem Rad</span>`;
+      else if (d && d._done && isPlanned(d)) tag = `<span class="tag done">${esc(comesIn(d))}</span>`;
       else if (d && d._done) {
         const label = d.episode ? `Besprochen in ${esc(epText(d))}` : "Besprochen";
         tag = /^https:\/\//.test(d.episode_url || "")
@@ -2962,7 +3132,7 @@ function acRender(msg) {
       } else if (d) {
         const voted = state.mine.has(d.id);
         tag = `<button type="button" class="tag jump" data-id="${esc(d.id)}" data-vote="${voted ? 0 : 1}">${voted ? "Schon dabei – ansehen" : "Schon dabei – hochvoten?"}${voted ? "" : upMini}</button>`;
-      }
+      } else if (tooNew(m)) tag = `<span class="tag done">${freeFrom(m) === Infinity ? "Noch kein Start" : "Noch zu frisch"}</span>`;
       const sub = [m.year, ...[...new Set([m.title_en, m.original_title])].filter(x => x && x !== m.title)].filter(Boolean).join(" · ");
       return `<li role="option" id="ac${i}" data-i="${i}" aria-selected="${i === acIndex}">
         ${posterHTML(m.poster, m.title, "w92")}
@@ -3044,6 +3214,8 @@ $("#suggestForm").addEventListener("submit", async e => {
 
   const d = findDupe(title, p?.tmdb_id, year, [p?.original_title, p?.title_en], p?.tmdb_type);
   if (d && d._wheel) { toast(`„${d.title}“ ist gerade auf dem Glücksrad.`); return; }
+  if (!d && p && tooNew(p)) { toast(freeFrom(p) === Infinity ? "Der hat noch keinen Starttermin." : "Noch zu frisch fürs Glücksrad."); checkDupe(); return; }
+  if (d && d._done && isPlanned(d)) { toast(`„${d.title}“ wurde schon gezogen – ${comesIn(d).replace("Kommt", "kommt")}.`); return; }
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + epText(d) : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
 
