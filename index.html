@@ -533,9 +533,24 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .cal-body{display:flex;align-items:flex-start;gap:28px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
   overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;transition:height .38s cubic-bezier(.2,.8,.2,1)}
 .cal-body::-webkit-scrollbar{display:none}
-.cal-body > .cal-ep{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;padding-bottom:4px}
+.cal-body > .cal-ep{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;margin-top:0;padding:16px 0 4px}   /* Abstand als Innenabstand: zählt zur gemessenen Höhe */
 .cal-body > .cal-msg{flex:0 0 100%}
 @media (prefers-reduced-motion:reduce){.cal-body{transition:none}}
+.cal-body.folding{transition:none}
+/* Zusammenfalter je Folge wie bei der Hauptliste: erste 5 Filme, darunter Verlauf und Pfeil */
+.cal-fold{position:relative}
+.cal-fold.foldable{padding-bottom:52px}
+.cal-fold.collapsed .cal-list,.cal-fold.anim .cal-list{overflow:hidden}
+.cal-fold.anim .cal-list{max-height:none !important}
+.cal-fold.foldable::after{content:"";position:absolute;left:-2px;right:-2px;top:var(--fade-top,0);height:var(--fade,70px);pointer-events:none;
+  background:linear-gradient(to bottom, rgba(255,253,248,0), rgba(255,253,248,.35) 35%, rgba(255,253,248,.8) 55%, var(--paper) 78%);
+  opacity:0;transition:opacity .45s ease}
+.cal-fold.collapsed::after{opacity:1;transition-delay:.1s}
+.cal-fold.anim::after{opacity:0;transition:none}
+.cal-fold .more{bottom:0}
+.cal-fold:not(.collapsed) .more .chev{transform:scaleY(-1)}
+.cal-fold.collapsed .more .chev{animation:chev-float 2.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.cal-fold.collapsed .more .chev{animation:none}}
 .cal-nav{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
 .cal-nav[hidden]{display:none}
 .cal-tools{align-items:center}
@@ -1094,7 +1109,7 @@ function demoBackend() {
     [9007, "Nachtschicht", 2, null, [27], null], [9008, "Blaue Stunde", 3, plusD(thu(9), 0), [10749, 18], null], [9009, "Metropolis", 3, null, [878], null, "1927-01-10"],
     [9010, "Hafenlichter", 4, null, [18], null], [9011, "Der Auftrag", null, plusD(thu(4), 1), [28], "Prime Video"], [9012, "Spurlos", 5, null, [53], null],
     [9013, "Ein Sommer in Lissabon", 6, null, [35], null], [9014, "Unter Null", 7, null, [18], null], [9015, "Die Rückkehr der Riesen", 7, null, [16, 10751, 12], null], [9016, "Lakeside", null, plusD(thu(3), 1), [18], "Apple TV+"],
-    [9017, "Nightbirds – Live in Berlin", 2, null, [10402], null],
+    [9017, "Nightbirds – Live in Berlin", 2, null, [10402], null], [9019, "Grauzone", 1, null, [80, 18], null], [9020, "Morgenlicht", 2, null, [18], null],
   ].map(([tmdb_id, title, wk, stream, genres, provider, first], i) => ({ tmdb_id, title, original_title: title, poster: null, genres, provider,
     kino: wk == null ? null : thu(wk), stream, first: first || (wk == null ? stream : thu(wk)),
     lang: { 9004: "de", 9011: "fr", 9016: "en" }[tmdb_id] || "en", popularity: [31, 88, 12, 40, 64, 5, 22, 47, 9, 18, 55, 70, 14, 26, 33, 52][i] }));
@@ -2170,10 +2185,10 @@ function renderBondCard() {
    (Standard Donnerstag), einzelne Aufnahmen lassen sich verschieben (recording_dates).
    Ein Film gehört zur ersten Folge, deren Aufnahme am oder nach seinem Start liegt – startet er am Aufnahmetag, gibt es einen Hinweis.
    Vormerkungen (release_plans) bleiben bei ihrer Folge, auch wenn sich der Termin verschiebt; das zeigt die Karte an. */
-const CAL_STEP = 3, WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WD_LONG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const CAL_TOP = 5, CAL_STEP = 3, WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WD_LONG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const PRESENT = { max: "Max stellt vor", vincent: "Vincent stellt vor", both: "Beide stellen vor" };
 const cal = { state: "idle", err: null, last: null, weekday: 4, overrides: new Map(), plans: [], films: new Map(), info: new Map(),
-  count: CAL_STEP, page: 0, busyUntil: 0, redrawT: null, fetched: null, filters: (() => { const d = { kino: true, stream: true, kids: false, doku: false, planned: false, sort: "pop" };
+  count: CAL_STEP, page: 0, open: new Set(), busyUntil: 0, redrawT: null, fetched: null, filters: (() => { const d = { kino: true, stream: true, kids: false, doku: false, planned: false, sort: "pop" };
     try { return { ...d, ...JSON.parse(localStorage.getItem("ct-cal-filters") || "{}") }; } catch { return d; } })() };
 const isoDay = d => d.toISOString().slice(0, 10);
 const dayOf = iso => new Date(iso + "T12:00:00Z");
@@ -2289,7 +2304,11 @@ function renderCalCard() {
   cal.page = Math.min(cal.page, eps.length - 1);
   body.innerHTML = eps.map(e => { const g = groups.get(e.n);
     return `<section class="cal-ep" data-n="${e.n}"><h3>Folge ${e.n} <span class="hint">${e.moved ? `<span class="moved">Aufnahme ${fmtDay(e.record)} (verschoben)</span>` : `Aufnahme ${fmtDay(e.record)}`} · erscheint ${fmtDay(e.release)}</span></h3>
-      ${g.length ? `<ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>` : `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>`}</section>`; }).join("");
+      ${!g.length ? `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>`
+        : g.length <= CAL_TOP ? `<ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>`
+        : `<div class="cal-fold foldable${cal.open.has(e.n) ? "" : " collapsed"}"><ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>
+           <button class="more" type="button" data-cal="fold" aria-expanded="${cal.open.has(e.n)}"><svg class="chev" viewBox="0 0 56 16" fill="none" aria-hidden="true"><path d="M4 4 L28 12 L52 4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="more-lbl"></span></button></div>`}</section>`; }).join("");
+  body.querySelectorAll(".cal-fold").forEach(calFoldUpdate);
   body.scrollLeft = calPageLeft(cal.page);                     // an der aktuellen Folge bleiben, ohne Gleiten
   calSetHeight(true);
   // Wird eine Folge nachträglich höher (Schrift fertig geladen, Cover, Textumbruch), wächst die Leiste mit – nichts wird abgeschnitten
@@ -2297,7 +2316,49 @@ function renderCalCard() {
   $("#calNav").hidden = false;
   calLabel();
 }
-const calRO = typeof ResizeObserver === "function" ? new ResizeObserver(() => calSetHeight()) : null;
+const calRO = typeof ResizeObserver === "function" ? new ResizeObserver(() => {
+  if (!cal.folding) $("#calBody").querySelectorAll(".cal-fold").forEach(calFoldUpdate);
+  calSetHeight();
+}) : null;
+// Schnittkante: oberes Drittel des 6. Films; darüber der Verlauf (wie bei der Hauptliste)
+function calFoldUpdate(fold) {
+  const ul = fold.querySelector(".cal-list"), lis = [...ul.children], n = +fold.closest(".cal-ep").dataset.n;
+  const open = cal.open.has(n), extra = lis.length - CAL_TOP;
+  fold.classList.toggle("collapsed", !open);
+  const btn = fold.querySelector(".more");
+  btn.setAttribute("aria-expanded", open);
+  btn.querySelector(".more-lbl").textContent = open ? "Einklappen" : `${extra} weitere${extra === 1 ? "r" : ""} Start${extra === 1 ? "" : "s"}`;
+  lis.forEach((li, i) => li.toggleAttribute("inert", !open && i >= CAL_TOP));
+  const li = lis[CAL_TOP], third = li.offsetHeight / 3, h = li.offsetTop - ul.offsetTop + third, fade = third + 16;
+  fold.style.setProperty("--fade", Math.round(fade) + "px");
+  fold.style.setProperty("--fade-top", Math.round(ul.offsetTop + h - fade + 2) + "px");
+  ul.style.maxHeight = open ? "" : h + "px";
+}
+// Auf- und Zuklappen: Höhe gleitet sanft; beim Zuklappen bleibt der Pfeil unter dem Finger (Seite scrollt mit)
+function calFoldToggle(fold) {
+  const ul = fold.querySelector(".cal-list"), n = +fold.closest(".cal-ep").dataset.n, body = $("#calBody");
+  const from = ul.offsetHeight, opening = !cal.open.has(n);
+  if (opening) cal.open.add(n); else cal.open.delete(n);
+  calFoldUpdate(fold);
+  if (reduceMotion()) { calSetHeight(true); return; }
+  const to = opening ? ul.scrollHeight : parseFloat(ul.style.maxHeight);
+  const btnTop = fold.querySelector(".more").getBoundingClientRect().top, follow = !opening && btnTop > 0 && btnTop < innerHeight;
+  const y0 = scrollY, dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  cal.folding = true; fold.classList.add("anim"); body.classList.add("folding");
+  ul.style.height = from + "px";
+  const t0 = performance.now();
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur), h = from + (to - from) * ease(p);
+    ul.style.height = h + "px";
+    body.style.height = calPanelH(cal.page) + "px";
+    if (follow) window.scrollTo({ top: Math.max(0, y0 - (from - h)), behavior: "instant" });
+    if (p < 1) { requestAnimationFrame(step); return; }
+    ul.style.height = ""; fold.classList.remove("anim"); body.classList.remove("folding"); cal.folding = false;
+    calFoldUpdate(fold); calSetHeight(true);
+  };
+  requestAnimationFrame(step);
+}
 // Fensterbreite ändert sich (Drehen am Handy): an der aktuellen Folge bleiben
 addEventListener("resize", () => { const b = $("#calBody"); if (b?.children[0]?.dataset.n) b.scrollLeft = calPageLeft(cal.page); });
 // Linke Kante von Folge i in der Leiste
@@ -2377,6 +2438,7 @@ $("#calBody").addEventListener("click", e => {
   const b = e.target.closest("[data-cal]"); if (!b) return;
   if (b.dataset.cal === "retry") { cal.state = "idle"; feedCache = null; renderCalCard(); }
   else if (b.dataset.cal === "plan") calPlanDialog(b.closest(".cal-film"));
+  else if (b.dataset.cal === "fold" && !cal.folding) calFoldToggle(b.closest(".cal-fold"));
 });
 $("#calSet").addEventListener("click", calSettings);
 $("#calSort").addEventListener("click", () => {
