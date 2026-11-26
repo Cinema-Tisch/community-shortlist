@@ -990,7 +990,7 @@ function demoBackend() {
   catalog.forEach(c => { c.tmdb_type = "movie"; });
   // Demo: ausgedachte Filme, um die Sperre für zu aktuelle Filme zu testen (live kommt das Datum von TMDB)
   const iso = dd => new Date(now + dd * day).toISOString().slice(0, 10);
-  catalog.push({ tmdb_id: 901, tmdb_type: "movie", title: "Demo: Ganz frisch im Kino", year: +iso(-40).slice(0, 4), date: iso(-40), poster: null, original_title: null, title_en: null },
+  catalog.push({ tmdb_id: 901, tmdb_type: "movie", title: "Demo: Gerade im Kino", year: +iso(-40).slice(0, 4), date: iso(-40), poster: null, original_title: null, title_en: null },
                { tmdb_id: 902, tmdb_type: "movie", title: "Demo: Angekündigt ohne Termin", year: null, date: null, poster: null, original_title: null, title_en: null },
                { tmdb_id: 903, tmdb_type: "movie", title: "Demo: Vor zwei Jahren erschienen", year: +iso(-730).slice(0, 4), date: iso(-730), poster: null, original_title: null, title_en: null });
   const tvCatalog = [{ tmdb_id: 317152, tmdb_type: "tv", title: "Mesut Özil – Zu Gast bei Freunden", original_title: "Mesut Özil – Zu Gast bei Freunden",
@@ -2465,10 +2465,10 @@ async function onAdminAction(e) {
   const act = e.currentTarget.dataset.act, id = e.currentTarget.closest(".film").dataset.id;
   const f = state.films.find(x => x.id === id); if (!f) return;
   if (act === "wheel") {
-    // Sperre für zu aktuelle Filme: im Team nur ein Hinweis (in der Datenbank steht nur das Jahr)
+    // Sperre für zu aktuelle Filme (jünger als ein Jahr): im Team nur ein Hinweis (in der Datenbank steht nur das Jahr)
     if (tooNew({ year: f.year })) {
-      const ok = await dialog({ title: "Noch zu frisch?", confirm: "Trotzdem aufs Rad",
-        text: `„${f.title}“ ist von ${f.year} und damit vermutlich jünger als anderthalb Jahre. Vielleicht läuft er noch im Kino oder ist noch nicht zu streamen oder zu kaufen.` });
+      const ok = await dialog({ title: "Noch zu aktuell?", confirm: "Trotzdem aufs Rad",
+        text: `„${f.title}“ ist von ${f.year} und damit vermutlich jünger als ein Jahr. Vielleicht läuft er noch im Kino oder ist noch nicht zu streamen oder zu kaufen.` });
       if (!ok) return;
     }
     const comm = state.wheel.filter(isCommunity);
@@ -2622,11 +2622,11 @@ function findDupe(title, tmdb_id, year, alts = [], type = "movie") {
   if (!names.length) return null;
   return pool.find(f => sameTitle(f) && (!year || !f.year || f.year === year)) || null;
 }
-/* ---- Sperre fürs Glücksrad: nur Filme, die mindestens anderthalb Jahre alt sind ----
+/* ---- Sperre fürs Glücksrad: nur Filme, die mindestens ein Jahr alt sind ----
    Jüngere laufen womöglich noch im Kino oder sind noch nirgends zu streamen oder zu kaufen.
    Maßgeblich ist das Erstveröffentlichungsdatum bei TMDB (date). Ohne Datum zählt der 1.1. des Jahres;
    ein TMDB-Treffer ganz ohne Datum und Jahr gilt als noch nicht erschienen. */
-const MIN_AGE_MONTHS = 18;
+const MIN_AGE_MONTHS = 12;
 function freeFrom(m) {
   if (!m) return null;
   if (m.date) { const d = new Date(m.date + "T00:00:00Z"); if (!isNaN(d)) { d.setUTCMonth(d.getUTCMonth() + MIN_AGE_MONTHS); return d; } }
@@ -2638,8 +2638,8 @@ const monthYear = d => d.toLocaleDateString("de-DE", { month: "long", year: "num
 function tooNewText(m) {
   const d = freeFrom(m);
   return d === Infinity
-    ? "hat noch keinen Starttermin – fürs Glücksrad nehmen wir nur Filme, die schon mindestens anderthalb Jahre draußen sind. Sonst landet vielleicht ein Film auf dem Rad, den wir noch gar nicht sehen können."
-    : `ist noch zu frisch fürs Glücksrad. Wir nehmen nur Filme, die mindestens anderthalb Jahre alt sind – sonst läuft er womöglich noch im Kino oder ist nirgends zu streamen oder zu kaufen. Ab ${monthYear(d)} kannst du ihn gern vorschlagen.`;
+    ? "hat noch keinen Starttermin – fürs Glücksrad nehmen wir nur Filme, die schon mindestens ein Jahr draußen sind. Sonst landet vielleicht ein Film auf dem Rad, den wir noch gar nicht sehen können."
+    : `ist noch zu aktuell fürs Glücksrad. Wir nehmen nur Filme, die mindestens ein Jahr alt sind – sonst läuft er womöglich noch im Kino oder ist nirgends zu streamen oder zu kaufen. Ab ${monthYear(d)} kannst du ihn gern vorschlagen.`;
 }
 function checkDupe() {
   const box = $("#dupe");
@@ -3132,7 +3132,7 @@ function acRender(msg) {
       } else if (d) {
         const voted = state.mine.has(d.id);
         tag = `<button type="button" class="tag jump" data-id="${esc(d.id)}" data-vote="${voted ? 0 : 1}">${voted ? "Schon dabei – ansehen" : "Schon dabei – hochvoten?"}${voted ? "" : upMini}</button>`;
-      } else if (tooNew(m)) tag = `<span class="tag done">${freeFrom(m) === Infinity ? "Noch kein Start" : "Noch zu frisch"}</span>`;
+      } else if (tooNew(m)) tag = `<span class="tag done">${freeFrom(m) === Infinity ? "Noch kein Start" : "Noch zu aktuell"}</span>`;
       const sub = [m.year, ...[...new Set([m.title_en, m.original_title])].filter(x => x && x !== m.title)].filter(Boolean).join(" · ");
       return `<li role="option" id="ac${i}" data-i="${i}" aria-selected="${i === acIndex}">
         ${posterHTML(m.poster, m.title, "w92")}
@@ -3214,7 +3214,7 @@ $("#suggestForm").addEventListener("submit", async e => {
 
   const d = findDupe(title, p?.tmdb_id, year, [p?.original_title, p?.title_en], p?.tmdb_type);
   if (d && d._wheel) { toast(`„${d.title}“ ist gerade auf dem Glücksrad.`); return; }
-  if (!d && p && tooNew(p)) { toast(freeFrom(p) === Infinity ? "Der hat noch keinen Starttermin." : "Noch zu frisch fürs Glücksrad."); checkDupe(); return; }
+  if (!d && p && tooNew(p)) { toast(freeFrom(p) === Infinity ? "Der hat noch keinen Starttermin." : "Noch zu aktuell fürs Glücksrad."); checkDupe(); return; }
   if (d && d._done && isPlanned(d)) { toast(`„${d.title}“ wurde schon gezogen – ${comesIn(d).replace("Kommt", "kommt")}.`); return; }
   if (d && d._done) { toast(`„${d.title}“ haben wir schon besprochen${d.episode ? " – " + epText(d) : ""}.`); return; }
   if (d) { jumpTo(d.id, !state.mine.has(d.id)); toast(`„${d.title}“ ist schon dabei – deine Stimme zählt dort.`); resetForm(); return; }
