@@ -513,6 +513,7 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 /* Kinokalender */
 .cal-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-4px 0 6px}
 .cal-filters{display:flex;gap:6px;flex-wrap:wrap}
+.cal-tools{display:flex;gap:6px;flex-wrap:wrap;flex:1 1 100%}   /* eigene Zeile: Sortierung, Aufnahme links – Folgen-Pfeile rechts */
 .cal-filters .mini[aria-pressed="false"]{background:transparent;color:var(--muted);box-shadow:none;border-style:dashed}
 .cal-ep{margin-top:16px}
 .cal-ep h3{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;margin:0 0 8px;font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:19px;color:var(--navy-ink)}
@@ -528,10 +529,17 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .cal-film .warn{color:var(--red-deep)}
 .cal-film .mini.on{background:var(--navy);color:#fff}
 .cal-empty{margin:0;font-size:14px;color:var(--muted);font-weight:600}
-.cal-body{overflow:hidden}
-.cal-body.paging{overflow:hidden}
-.cal-nav{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:12px}
-.cal-nav #calNavLabel{font-weight:800;font-size:14.5px;color:var(--navy-ink);min-width:6.2em;text-align:center}
+/* Folgen nebeneinander, rasten ein: Wischen (Handy), seitliches Scrollen (Trackpad) und Pfeile gleiten nativ */
+.cal-body{display:flex;align-items:flex-start;gap:28px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+  overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;transition:height .38s cubic-bezier(.2,.8,.2,1)}
+.cal-body::-webkit-scrollbar{display:none}
+.cal-body > .cal-ep{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;padding-bottom:4px}
+.cal-body > .cal-msg{flex:0 0 100%}
+@media (prefers-reduced-motion:reduce){.cal-body{transition:none}}
+.cal-nav{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.cal-nav[hidden]{display:none}
+.cal-tools{align-items:center}
+.cal-nav #calNavLabel{font-weight:800;font-size:14px;color:var(--navy-ink);min-width:5.6em;text-align:center}
 .cal-nav .mini[hidden]{display:inline-flex;visibility:hidden}
 @media (max-width:480px){.cal-film{grid-template-columns:auto minmax(0,1fr)}.cal-film .mini{grid-column:2;justify-self:start}}
 .arch-more-line{margin:12px 0 0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
@@ -823,6 +831,16 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
   <div class="teambar" id="teambar"><span>Team-Modus · ihr könnt die Liste bearbeiten</span>
     <span class="tb-actions"><button class="mini" type="button" id="votesToggle">Stimmen: sichtbar</button><button class="mini" type="button" id="logoutBtn">Abmelden</button></span></div>
 
+  <section class="card" id="calCard" hidden>
+    <h2><span class="num ic"><svg class="cal" aria-hidden="true"><use href="#i-cal"/></svg></span>Kinokalender</h2>
+    <div class="cal-bar"><div class="cal-filters" id="calFilters" role="group" aria-label="Filter"></div><span class="cal-tools"><button class="mini" type="button" id="calSort"></button><button class="mini" type="button" id="calSet">Aufnahme anpassen</button><span class="cal-nav" id="calNav" hidden>
+      <button class="mini only" type="button" data-nav="-1" aria-label="Vorherige Folge"><svg viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M9 2 L3 8 L9 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <span id="calNavLabel" aria-live="polite"></span>
+      <button class="mini only" type="button" data-nav="1" aria-label="Nächste Folge"><svg viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M3 2 L9 8 L3 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </span></span></div>
+    <div class="cal-body" id="calBody"></div>
+  </section>
+
   <section class="card" id="pendingCard" aria-labelledby="h-pend" hidden>
     <h2 id="h-pend"><span class="num">!</span>Warteraum <span class="badge" id="pendCount">0</span></h2>
     <p class="hint" style="margin:-6px 0 14px">Vorschläge ohne TMDB-Treffer. Nur ihr seht diesen Bereich.</p>
@@ -896,17 +914,6 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
     <div id="archReview"></div>
     <ul class="link-list" id="archList"></ul>
     <div class="link-row" id="archMoreRow" hidden><button class="btn small" type="button" id="archMore">Weitere Folgen</button><button class="mini" type="button" id="archAll"></button></div>
-  </section>
-
-  <section class="card" id="calCard" hidden>
-    <h2><span class="num ic"><svg class="cal" aria-hidden="true"><use href="#i-cal"/></svg></span>Kinokalender</h2>
-    <div class="cal-bar"><div class="cal-filters" id="calFilters" role="group" aria-label="Filter"></div><button class="mini" type="button" id="calSet">Aufnahme anpassen</button></div>
-    <div class="cal-body" id="calBody"></div>
-    <div class="cal-nav" id="calNav" hidden>
-      <button class="mini only" type="button" data-nav="-1" aria-label="Vorherige Folge"><svg viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M9 2 L3 8 L9 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <span id="calNavLabel" aria-live="polite"></span>
-      <button class="mini only" type="button" data-nav="1" aria-label="Nächste Folge"><svg viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M3 2 L9 8 L3 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    </div>
   </section>
 
   <section class="card" id="bondCard" hidden>
@@ -1086,9 +1093,10 @@ function demoBackend() {
     [9004, "Stille Wasser", null, plusD(thu(1), 1), [18], "Netflix"], [9005, "Kosmos 9", 2, null, [878], null], [9006, "Die Wiese", 2, null, [99], null],
     [9007, "Nachtschicht", 2, null, [27], null], [9008, "Blaue Stunde", 3, plusD(thu(9), 0), [10749, 18], null], [9009, "Metropolis", 3, null, [878], null, "1927-01-10"],
     [9010, "Hafenlichter", 4, null, [18], null], [9011, "Der Auftrag", null, plusD(thu(4), 1), [28], "Prime Video"], [9012, "Spurlos", 5, null, [53], null],
-    [9013, "Ein Sommer in Lissabon", 6, null, [35], null], [9014, "Unter Null", 7, null, [18], null], [9015, "Die Rückkehr der Riesen", 7, null, [16, 10751, 12], null],
-  ].map(([tmdb_id, title, wk, stream, genres, provider, first]) => ({ tmdb_id, title, original_title: title, poster: null, genres, provider,
-    kino: wk == null ? null : thu(wk), stream, first: first || (wk == null ? stream : thu(wk)) }));
+    [9013, "Ein Sommer in Lissabon", 6, null, [35], null], [9014, "Unter Null", 7, null, [18], null], [9015, "Die Rückkehr der Riesen", 7, null, [16, 10751, 12], null], [9016, "Lakeside", null, plusD(thu(3), 1), [18], "Apple TV+"],
+  ].map(([tmdb_id, title, wk, stream, genres, provider, first], i) => ({ tmdb_id, title, original_title: title, poster: null, genres, provider,
+    kino: wk == null ? null : thu(wk), stream, first: first || (wk == null ? stream : thu(wk)),
+    lang: { 9004: "de", 9011: "fr", 9016: "en" }[tmdb_id] || "en", popularity: [31, 88, 12, 40, 64, 5, 22, 47, 9, 18, 55, 70, 14, 26, 33, 52][i] }));
   const calDemo = { weekday: 4, overrides: [], plans: [{ tmdb_id: 9002, title: "Rote Linien", poster_path: null, release_date: plusD(thu(1), -7), kind: "kino", episode_n: 63, presented_by: "vincent" }] };
 
   const mine = new Set();
@@ -2164,7 +2172,7 @@ function renderBondCard() {
 const CAL_STEP = 3, WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WD_LONG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const PRESENT = { max: "Max stellt vor", vincent: "Vincent stellt vor", both: "Beide stellen vor" };
 const cal = { state: "idle", err: null, last: null, weekday: 4, overrides: new Map(), plans: [], films: new Map(), info: new Map(),
-  count: CAL_STEP, page: 0, minH: 0, fetched: null, filters: (() => { const d = { kino: true, stream: true, kids: false, doku: false, planned: false };
+  count: CAL_STEP, page: 0, busyUntil: 0, redrawT: null, fetched: null, filters: (() => { const d = { kino: true, stream: true, kids: false, doku: false, planned: false, sort: "pop" };
     try { return { ...d, ...JSON.parse(localStorage.getItem("ct-cal-filters") || "{}") }; } catch { return d; } })() };
 const isoDay = d => d.toISOString().slice(0, 10);
 const dayOf = iso => new Date(iso + "T12:00:00Z");
@@ -2183,6 +2191,8 @@ function calEpisodes(count = cal.count, weekday = cal.weekday) {
   return eps;
 }
 const calWindowStart = () => addDays(calDefaultRecord(cal.last.date, cal.weekday), 1);   // Tag nach der letzten Aufnahme
+// Streaming nur bei deutsch- oder englischsprachigen Filmen (Kinostarts: alle)
+const calStreamLang = f => !f.lang || f.lang === "de" || f.lang === "en";
 const calKids = f => (f.genres || []).some(g => g === 16 || g === 10751);
 const calDoku = f => (f.genres || []).includes(99);
 const calRerun = (f, d) => !!(f.first && d && f.first < addDays(d, -365));
@@ -2190,7 +2200,7 @@ const calRerun = (f, d) => !!(f.first && d && f.first < addDays(d, -365));
 function calDate(f, from, to) {
   const ok = d => d && d >= from && d <= to;
   if (cal.filters.kino && ok(f.kino)) return { date: f.kino, kind: "kino" };
-  if (cal.filters.stream && ok(f.stream)) return { date: f.stream, kind: "stream" };
+  if (cal.filters.stream && ok(f.stream) && calStreamLang(f)) return { date: f.stream, kind: "stream" };
   return null;
 }
 async function calInit() {
@@ -2237,7 +2247,9 @@ function calRows() {
     groups.get(ep.n).push({ f, date, kind: p.kind, ep, plan: p, sameDay: date === ep.record,
       shifted: now && p.release_date && now !== p.release_date ? p.release_date : null, late: !!(date && date > ep.record) });
   }
-  for (const g of groups.values()) g.sort((a, b) => (!!b.plan - !!a.plan) || (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  const byPop = (a, b) => (b.f.popularity || 0) - (a.f.popularity || 0) || byDate(a, b);
+  for (const g of groups.values()) g.sort((a, b) => (!!b.plan - !!a.plan) || (cal.filters.sort === "date" ? byDate(a, b) : byPop(a, b)));
   return { eps, groups };
 }
 function calFilmHTML(r) {
@@ -2261,20 +2273,43 @@ function renderCalCard() {
   if (cal.state === "idle") { calInit(); return; }
   const F = [["kino", "Kino"], ["stream", "Streaming"], ["kids", "Kinder/Familie"], ["doku", "Doku"], ["planned", "Nur vorgemerkte"]];
   $("#calFilters").innerHTML = F.map(([k, l]) => `<button type="button" class="mini" data-filter="${k}" aria-pressed="${!!cal.filters[k]}">${l}</button>`).join("");
-  $("#calSet").hidden = cal.state !== "ready";
+  $("#calSet").hidden = $("#calSort").hidden = cal.state !== "ready";
+  $("#calSort").textContent = cal.filters.sort === "date" ? "Sortiert nach Datum" : "Sortiert nach Beliebtheit";
   const body = $("#calBody");
-  if (cal.state === "loading") { body.innerHTML = `<p class="cal-empty">Lade Kino- und Streaming-Starts …</p>`; $("#calNav").hidden = true; return; }
-  if (cal.state === "error") { body.innerHTML = `<p class="cal-empty"></p><button type="button" class="btn small" data-cal="retry">Nochmal versuchen</button>`; body.querySelector("p").textContent = cal.err; $("#calNav").hidden = true; return; }
-  // Immer nur eine Folge: unten rechts „‹ Folge N ›“ zum Durchblättern
-  const { eps, groups } = calRows(), e = eps[Math.min(cal.page, eps.length - 1)], g = groups.get(e.n);
-  body.innerHTML = `<section class="cal-ep"><h3>Folge ${e.n} <span class="hint">${e.moved ? `<span class="moved">Aufnahme ${fmtDay(e.record)} (verschoben)</span>` : `Aufnahme ${fmtDay(e.record)}`} · erscheint ${fmtDay(e.release)}</span></h3>
-      ${g.length ? `<ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>` : `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>`}</section>`;
-  // Die Leiste soll beim Blättern nicht unter dem Finger wegspringen: Höhe wächst nur mit, schrumpft nicht
-  body.style.minHeight = "";
-  cal.minH = Math.max(cal.minH, body.offsetHeight); body.style.minHeight = cal.minH + "px";
+  if (cal.state === "loading") { body.style.height = ""; body.innerHTML = `<p class="cal-empty cal-msg">Lade Kino- und Streaming-Starts …</p>`; $("#calNav").hidden = true; return; }
+  if (cal.state === "error") { body.style.height = ""; body.innerHTML = `<div class="cal-msg"><p class="cal-empty"></p><button type="button" class="btn small" data-cal="retry">Nochmal versuchen</button></div>`; body.querySelector("p").textContent = cal.err; $("#calNav").hidden = true; return; }
+  // Alle geladenen Folgen nebeneinander; sichtbar ist immer eine. Unten rechts „‹ Folge N ›“.
+  // Während gewischt/gescrollt wird, nicht neu zeichnen (sonst springt die Leiste) – kurz danach nachholen
+  if (Date.now() < cal.busyUntil) { clearTimeout(cal.redrawT); cal.redrawT = setTimeout(renderCalCard, cal.busyUntil - Date.now() + 30); return; }
+  const { eps, groups } = calRows();
+  cal.page = Math.min(cal.page, eps.length - 1);
+  body.innerHTML = eps.map(e => { const g = groups.get(e.n);
+    return `<section class="cal-ep" data-n="${e.n}"><h3>Folge ${e.n} <span class="hint">${e.moved ? `<span class="moved">Aufnahme ${fmtDay(e.record)} (verschoben)</span>` : `Aufnahme ${fmtDay(e.record)}`} · erscheint ${fmtDay(e.release)}</span></h3>
+      ${g.length ? `<ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>` : `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>`}</section>`; }).join("");
+  body.scrollLeft = calPageLeft(cal.page);                     // an der aktuellen Folge bleiben, ohne Gleiten
+  calSetHeight(true);
+  // Wird eine Folge nachträglich höher (Schrift fertig geladen, Cover, Textumbruch), wächst die Leiste mit – nichts wird abgeschnitten
+  if (calRO) { calRO.disconnect(); for (const c of body.children) calRO.observe(c); }
   $("#calNav").hidden = false;
-  $("#calNavLabel").textContent = `Folge ${e.n}`;
+  calLabel();
+}
+const calRO = typeof ResizeObserver === "function" ? new ResizeObserver(() => calSetHeight()) : null;
+// Fensterbreite ändert sich (Drehen am Handy): an der aktuellen Folge bleiben
+addEventListener("resize", () => { const b = $("#calBody"); if (b?.children[0]?.dataset.n) b.scrollLeft = calPageLeft(cal.page); });
+// Linke Kante von Folge i in der Leiste
+const calPageLeft = i => { const ps = $("#calBody").children; return ps[i] ? ps[i].offsetLeft - ps[0].offsetLeft : 0; };
+const calPanelH = i => $("#calBody").children[i]?.offsetHeight || 0;
+function calLabel() {
+  const ep = $("#calBody").children[cal.page];
+  $("#calNavLabel").textContent = ep ? `Folge ${ep.dataset.n}` : "";
   $("#calNav [data-nav='-1']").hidden = cal.page === 0;
+}
+// Höhe der Leiste = Höhe der aktuellen Folge (gleitet über die CSS-Transition)
+function calSetHeight(instant = false) {
+  const body = $("#calBody"), want = calPanelH(cal.page);
+  if (!want) return;
+  if (instant || !body.style.height) { body.style.transition = "none"; body.style.height = want + "px"; body.offsetHeight; body.style.transition = ""; }
+  else body.style.height = want + "px";
 }
 async function calPlanDialog(li) {
   const id = +li.dataset.tmdbId, kind = li.dataset.kind, date = li.dataset.date || null;
@@ -2330,7 +2365,7 @@ async function calSettings() {
 }
 $("#calFilters").addEventListener("click", e => {
   const b = e.target.closest("[data-filter]"); if (!b) return;
-  cal.filters[b.dataset.filter] = !cal.filters[b.dataset.filter]; cal.minH = 0;
+  cal.filters[b.dataset.filter] = !cal.filters[b.dataset.filter];
   try { localStorage.setItem("ct-cal-filters", JSON.stringify(cal.filters)); } catch {}
   renderCalCard();
 });
@@ -2340,37 +2375,61 @@ $("#calBody").addEventListener("click", e => {
   else if (b.dataset.cal === "plan") calPlanDialog(b.closest(".cal-film"));
 });
 $("#calSet").addEventListener("click", calSettings);
-let calPaging = false, calShrinkT = null;
-// Nach dem Blättern (kurz keine Klicks, Zeiger nicht auf der Leiste): Karte sanft auf die Höhe der aktuellen Folge schrumpfen
-function calShrinkLater() {
-  clearTimeout(calShrinkT);
-  calShrinkT = setTimeout(() => {
-    if ($("#calNav").matches(":hover")) { calShrinkLater(); return; }
-    const body = $("#calBody"), h0 = body.offsetHeight;
-    body.style.minHeight = ""; const h1 = body.offsetHeight; cal.minH = h1; body.style.minHeight = h1 + "px";
-    if (h1 < h0 && !reduceMotion() && body.animate) body.animate([{ height: h0 + "px" }, { height: h1 + "px" }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" });
-  }, 1800);
-}
-$("#calNav").addEventListener("click", async ev => {
-  const b = ev.target.closest("[data-nav]"); if (!b || calPaging) return;
-  const dir = +b.dataset.nav, to = cal.page + dir; if (to < 0) return;
-  calPaging = true;
-  try {
-    if (to >= cal.count) {                                   // nächste Folgen nachladen
-      cal.count += CAL_STEP;
-      try { await calFetch(); } catch (e) { console.error(e); toast("Weitere Starts ließen sich nicht laden: " + (e.message || "Fehler"), true); cal.count -= CAL_STEP; return; }
-    }
-    cal.page = to;
-    const body = $("#calBody"), h0 = body.offsetHeight;
-    renderCalCard();
-    if (!reduceMotion() && body.animate) {
-      const h1 = body.offsetHeight;
-      if (h1 !== h0) body.animate([{ height: h0 + "px" }, { height: h1 + "px" }], { duration: 260, easing: "cubic-bezier(.2,.8,.2,1)" });
-      body.firstElementChild?.animate([{ opacity: 0, translate: `${dir * 18}px 0` }, { opacity: 1, translate: "0 0" }], { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)" });
-    }
-    calShrinkLater();
-  } finally { calPaging = false; }
+$("#calSort").addEventListener("click", () => {
+  cal.filters.sort = cal.filters.sort === "date" ? "pop" : "date";
+  try { localStorage.setItem("ct-cal-filters", JSON.stringify(cal.filters)); } catch {}
+  renderCalCard();
 });
+let calScrollT = null, calMoreLoading = false;
+// Am Ende der geladenen Folgen: die nächsten im Hintergrund nachladen und anhängen
+async function calLoadMore() {
+  if (calMoreLoading) return; calMoreLoading = true;
+  cal.count += CAL_STEP;
+  try { await calFetch(); renderCalCard(); }
+  catch (e) { console.error(e); cal.count -= CAL_STEP; toast("Weitere Starts ließen sich nicht laden: " + (e.message || "Fehler"), true); }
+  finally { calMoreLoading = false; }
+}
+function calGo(i) {
+  const body = $("#calBody"), n = body.children.length;
+  if (i < 0) return;
+  if (i >= n) { calLoadMore().then(() => { if (body.children.length > i) calGo(i); }); return; }
+  body.scrollTo({ left: calPageLeft(i), behavior: reduceMotion() ? "auto" : "smooth" });
+}
+$("#calNav").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-nav]"); if (!b) return;
+  calGo(cal.page + +b.dataset.nav);
+});
+// Trackpad/Mausrad seitlich: eine Geste = eine Folge (sonst rastet ein kurzer Wisch auf die alte Folge zurück).
+// Nach dem Wechsel werden die restlichen Ereignisse der Geste (Nachschwung) ignoriert, bis 220 ms Ruhe ist.
+let calWheelSum = 0, calWheelLocked = false, calWheelT = null;
+$("#calBody").addEventListener("wheel", e => {
+  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;          // senkrecht: die Seite scrollt normal
+  e.preventDefault();
+  clearTimeout(calWheelT);
+  calWheelT = setTimeout(() => { calWheelSum = 0; calWheelLocked = false; }, 220);
+  if (calWheelLocked) return;
+  calWheelSum += e.deltaX;
+  if (Math.abs(calWheelSum) > 30) {
+    const to = cal.page + Math.sign(calWheelSum);
+    calWheelSum = 0; calWheelLocked = true;
+    if (to >= 0) calGo(to);
+  }
+}, { passive: false });
+// Während des Scrollens: Beschriftung mitziehen, Höhe für beide sichtbaren Folgen freihalten; am Ende einrasten lassen
+$("#calBody").addEventListener("scroll", () => {
+  const body = $("#calBody"), ps = body.children; if (!ps.length || !ps[0].dataset.n) return;
+  cal.busyUntil = Date.now() + 400;
+  const step = ps[1] ? ps[1].offsetLeft - ps[0].offsetLeft : body.clientWidth || 1, x = body.scrollLeft / step;
+  const both = Math.max(calPanelH(Math.floor(x)), calPanelH(Math.ceil(x)));
+  if (both > (parseFloat(body.style.height) || 0)) body.style.height = both + "px";
+  const page = Math.round(x);
+  if (page !== cal.page) { cal.page = page; calLabel(); }
+  clearTimeout(calScrollT);
+  calScrollT = setTimeout(() => {
+    calSetHeight();
+    if (cal.page >= ps.length - 1) calLoadMore();
+  }, 140);
+}, { passive: true });
 
 /* ---- Archiv-Liste ---- */
 // Nach Übernehmen/Schließen oben auf der Folgen-Liste landen, beim Öffnen oben auf der Prüfung
