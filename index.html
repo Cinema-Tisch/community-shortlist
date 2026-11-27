@@ -519,15 +519,6 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .cal-ep h3{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;margin:0 0 8px;font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:19px;color:var(--navy-ink)}
 .cal-ep h3 .hint{font-family:"Karla",sans-serif;font-weight:600}
 .cal-ep h3 .moved{color:var(--red-deep)}
-.cal-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.cal-film{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:2px solid var(--line);border-radius:12px;padding:7px 9px 7px 7px}
-.cal-film.planned{background:var(--navy-soft)}
-.cal-film .poster{width:40px;border-width:1.5px;box-shadow:none}
-.cal-film .poster .ph{font-size:15px}
-.cal-film .t{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere}
-.cal-film .s{font-size:13px;color:var(--muted);font-weight:600}
-.cal-film .warn{color:var(--red-deep)}
-.cal-film .mini.on{background:var(--navy);color:#fff}
 .cal-empty{margin:0;font-size:14px;color:var(--muted);font-weight:600}
 /* Folgen nebeneinander, rasten ein: Wischen (Handy), seitliches Scrollen (Trackpad) und Pfeile gleiten nativ */
 /* Leiste reicht bis an den inneren Kartenrand: freigelegte Filme verschwinden hinter dem Rand der Karte */
@@ -593,26 +584,11 @@ html.case-busy .film.top1::before{animation-play-state:paused}
   .cal-date{flex-direction:row;align-items:baseline;gap:6px;padding-top:0}
   .cal-date .d{font-size:18px}.cal-date .rec{margin:0 0 0 4px;align-self:center}
 }
-/* Zusammenfalter je Folge wie bei der Hauptliste: erste 5 Filme, darunter Verlauf und Pfeil */
-.cal-fold{position:relative}
-.cal-fold.foldable{padding-bottom:52px}
-.cal-fold.collapsed .cal-list,.cal-fold.anim .cal-list{overflow:hidden}
-.cal-fold.anim .cal-list{max-height:none !important}
-.cal-fold.foldable::after{content:"";position:absolute;left:-2px;right:-2px;top:var(--fade-top,0);height:var(--fade,70px);pointer-events:none;
-  background:linear-gradient(to bottom, rgba(255,253,248,0), rgba(255,253,248,.35) 35%, rgba(255,253,248,.8) 55%, var(--paper) 78%);
-  opacity:0;transition:opacity .45s ease}
-.cal-fold.collapsed::after{opacity:1;transition-delay:.1s}
-.cal-fold.anim::after{opacity:0;transition:none}
-.cal-fold .more{bottom:0}
-.cal-fold:not(.collapsed) .more .chev{transform:scaleY(-1)}
-.cal-fold.collapsed .more .chev{animation:chev-float 2.6s ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){.cal-fold.collapsed .more .chev{animation:none}}
 .cal-nav{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
 .cal-nav[hidden]{display:none}
 .cal-tools{align-items:center}
 .cal-nav #calNavLabel{font-weight:800;font-size:14px;color:var(--navy-ink);min-width:5.6em;text-align:center}
 .cal-nav .mini[hidden]{display:inline-flex;visibility:hidden}
-@media (max-width:480px){.cal-film{grid-template-columns:auto minmax(0,1fr)}.cal-film .mini{grid-column:2;justify-self:start}}
 .arch-more-line{margin:12px 0 0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .textlink{appearance:none;background:none;border:0;padding:0;font:inherit;font-weight:700;font-size:14px;color:var(--navy-ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;cursor:pointer}
 .textlink:hover{color:var(--red-deep)}
@@ -796,6 +772,7 @@ body.team .pill-name{cursor:default}
 .case-text.has-more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
 .case-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
 .case-src{font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center}
+.case-plan{align-self:center;margin-top:10px}     /* Klappentext eines Kinokalender-Films: Vormerken */
 .case-layer.reduce .case,.case-layer.reduce .case-inner,.case-layer.reduce .case-dim{transition:none}
 @media (prefers-reduced-motion:reduce){.poster[data-tmdb]:hover{transform:none}}
 input[type=email],input[type=password],input[type=url]{width:100%;font:inherit;font-size:17px;font-weight:500;color:var(--line);padding:12px 14px;background:#fff;border:2.5px solid var(--line);border-radius:12px;outline:none}
@@ -904,7 +881,7 @@ footer{display:flex;flex-direction:column;align-items:center;gap:10px}
 
   <section class="card" id="calCard" hidden>
     <h2><span class="num ic"><svg class="cal" aria-hidden="true"><use href="#i-cal"/></svg></span>Kinokalender</h2>
-    <div class="cal-bar"><div class="cal-filters" id="calFilters" role="group" aria-label="Filter"></div><span class="cal-tools"><button class="mini" type="button" id="calSort"></button><button class="mini" type="button" id="calSet">Aufnahme anpassen</button><span class="cal-nav" id="calNav" hidden>
+    <div class="cal-bar"><div class="cal-filters" id="calFilters" role="group" aria-label="Filter"></div><span class="cal-tools"><button class="mini" type="button" id="calSet">Aufnahme anpassen</button><span class="cal-nav" id="calNav" hidden>
       <button class="mini only" type="button" data-nav="-1" aria-label="Vorherige Folge"><svg viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M9 2 L3 8 L9 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <span id="calNavLabel" aria-live="polite"></span>
       <button class="mini only" type="button" data-nav="1" aria-label="Nächste Folge"><svg viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M3 2 L9 8 L3 14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -2241,10 +2218,9 @@ function renderBondCard() {
    (Standard Donnerstag), einzelne Aufnahmen lassen sich verschieben (recording_dates).
    Ein Film gehört zur ersten Folge, deren Aufnahme am oder nach seinem Start liegt – startet er am Aufnahmetag, gibt es einen Hinweis.
    Vormerkungen (release_plans) bleiben bei ihrer Folge, auch wenn sich der Termin verschiebt; das zeigt die Karte an. */
-const CAL_TOP = 5, CAL_STEP = 3, WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WD_LONG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-const PRESENT = { max: "Max stellt vor", vincent: "Vincent stellt vor", both: "Beide stellen vor" };
+const CAL_STEP = 3, WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WD_LONG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const cal = { state: "idle", err: null, last: null, weekday: 4, overrides: new Map(), plans: [], films: new Map(), info: new Map(),
-  count: CAL_STEP, page: 0, open: new Set(), busyUntil: 0, redrawT: null, fetched: null, filters: (() => { const d = { kino: true, stream: true, kids: false, doku: false, planned: false, sort: "pop" };
+  count: CAL_STEP, page: 0, openDays: new Set(), lastHTML: "", busyUntil: 0, redrawT: null, fetched: null, filters: (() => { const d = { kino: true, stream: true, kids: false, doku: false, planned: false };
     try { return { ...d, ...JSON.parse(localStorage.getItem("ct-cal-filters") || "{}") }; } catch { return d; } })() };
 const isoDay = d => d.toISOString().slice(0, 10);
 const dayOf = iso => new Date(iso + "T12:00:00Z");
@@ -2324,22 +2300,8 @@ function calRows() {
   }
   const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
   const byPop = (a, b) => (b.f.popularity || 0) - (a.f.popularity || 0) || byDate(a, b);
-  for (const g of groups.values()) g.sort((a, b) => (!!b.plan - !!a.plan) || (cal.filters.sort === "date" ? byDate(a, b) : byPop(a, b)));
+  for (const g of groups.values()) g.sort((a, b) => byDate(a, b) || byPop(a, b));
   return { eps, groups };
-}
-function calFilmHTML(r) {
-  const { f } = r, kind = r.kind === "stream" ? `Streaming${f.provider ? " · " + f.provider : ""}` : "Kino";
-  const bits = [`${kind} · ${r.date ? fmtDay(r.date) : "Termin offen"}`];
-  if (calRerun(f, r.date)) bits.push("Wiederaufführung");
-  const warn = [];
-  if (r.sameDay) warn.push("startet am Aufnahmetag");
-  if (r.shifted) warn.push(`Termin verschoben (vorher ${fmtDay(r.shifted)})`);
-  if (r.late) warn.push(`startet erst nach der Aufnahme von Folge ${r.ep.n}`);
-  const sub = [kind, r.date ? fmtDay(r.date) : ""].filter(Boolean).join(" · ");
-  return `<li class="cal-film${r.plan ? " planned" : ""}" data-tmdb-id="${esc(f.tmdb_id)}" data-ep="${esc(r.ep.n)}" data-kind="${esc(r.kind)}" data-date="${esc(r.date || "")}">
-    ${posterHTML(f.poster, f.title, "w92", f.tmdb_id ? { id: f.tmdb_id, type: "movie", title: f.title, sub } : null)}
-    <div class="txt"><div class="t">${esc(f.title)}</div><div class="s">${esc(bits.join(" · "))}${warn.length ? ` · <span class="warn">${esc(warn.join(" · "))}</span>` : ""}</div></div>
-    <button type="button" class="mini${r.plan ? " on" : ""}" data-cal="plan">${r.plan ? esc(PRESENT[r.plan.presented_by] || "Vorgemerkt") : "＋ Vormerken"}</button></li>`;
 }
 // Tagesansicht: Karte im Stapel (Cover antippen = Klappentext; Karte = vormerken)
 function calCardHTML(r, z) {
@@ -2365,7 +2327,7 @@ function calDaysHTML(e, g) {
     const rows = days.get(k).sort((a, b) => (b.f.popularity || 0) - (a.f.popularity || 0));
     const d = k ? dayOf(k) : null;
     return `<div class="cal-day"><div class="cal-date">${d ? `<span class="wd">${WD[d.getUTCDay()]}</span><span class="d">${d.getUTCDate()}.${d.getUTCMonth() + 1}.</span>` : `<span class="d">offen</span>`}${k && k === e.record ? `<span class="rec">Aufnahme</span>` : ""}</div>
-      <div class="cal-stack${rows.some(r => r.plan) ? " has-plan" : ""}">${rows.map((r, i) => calCardHTML(r, i + 1)).join("")}</div></div>`;
+      <div class="cal-stack${rows.some(r => r.plan) ? " has-plan" : ""}${rows.length === 1 ? " solo" : ""}" data-key="${e.n}|${esc(k)}">${rows.map((r, i) => calCardHTML(r, i + 1)).join("")}</div></div>`;
   }).join("")}</div>`;
 }
 // Computer (Maus, genug Breite) oder Handy-Verhalten für die Stapel
@@ -2390,6 +2352,7 @@ function calUnreveal(st) { [...st.children].forEach(c => { c.classList.remove("l
 function calFan(st, open) {
   const cards = [...st.children], before = cards.map(c => c.getBoundingClientRect());
   calUnreveal(st); st.classList.toggle("open", open);
+  if (open) cal.openDays.add(st.dataset.key); else cal.openDays.delete(st.dataset.key);
   if (reduceMotion()) return;
   cards.forEach((c, i) => { const a = c.getBoundingClientRect();
     c.animate([{ transform: `translate(${before[i].left - a.left}px,${before[i].top - a.top}px)` }, { transform: "none" }], { duration: 380, easing: "cubic-bezier(.2,.8,.2,1)" }); });
@@ -2402,10 +2365,11 @@ function renderCalCard() {
   if (card.hidden) return;
   if (cal.state === "idle") { calInit(); return; }
   const F = [["kino", "Kino"], ["stream", "Streaming"], ["kids", "Kinder/Familie"], ["doku", "Doku"], ["planned", "Nur vorgemerkte"]];
-  $("#calFilters").innerHTML = F.map(([k, l]) => `<button type="button" class="mini" data-filter="${k}" aria-pressed="${!!cal.filters[k]}">${l}</button>`).join("");
-  $("#calSet").hidden = $("#calSort").hidden = cal.state !== "ready";
-  $("#calSort").textContent = cal.filters.sort === "date" ? "Sortiert nach Datum" : "Sortiert nach Beliebtheit";
+  const fHTML = F.map(([k, l]) => `<button type="button" class="mini" data-filter="${k}" aria-pressed="${!!cal.filters[k]}">${l}</button>`).join("");
+  if ($("#calFilters").innerHTML !== fHTML) $("#calFilters").innerHTML = fHTML;
+  $("#calSet").hidden = cal.state !== "ready";
   const body = $("#calBody");
+  if (cal.state !== "ready") cal.lastHTML = "";
   if (cal.state === "loading") { body.style.height = ""; body.innerHTML = `<p class="cal-empty cal-msg">Lade Kino- und Streaming-Starts …</p>`; $("#calNav").hidden = true; return; }
   if (cal.state === "error") { body.style.height = ""; body.innerHTML = `<div class="cal-msg"><p class="cal-empty"></p><button type="button" class="btn small" data-cal="retry">Nochmal versuchen</button></div>`; body.querySelector("p").textContent = cal.err; $("#calNav").hidden = true; return; }
   // Alle geladenen Folgen nebeneinander; sichtbar ist immer eine. Unten rechts „‹ Folge N ›“.
@@ -2413,14 +2377,16 @@ function renderCalCard() {
   if (Date.now() < cal.busyUntil) { clearTimeout(cal.redrawT); cal.redrawT = setTimeout(renderCalCard, cal.busyUntil - Date.now() + 30); return; }
   const { eps, groups } = calRows();
   cal.page = Math.min(cal.page, eps.length - 1);
-  body.innerHTML = eps.map(e => { const g = groups.get(e.n);
+  const html = eps.map(e => { const g = groups.get(e.n);
     return `<section class="cal-ep" data-n="${e.n}"><h3>Folge ${e.n} <span class="hint">${e.moved ? `<span class="moved">Aufnahme ${fmtDay(e.record)} (verschoben)</span>` : `Aufnahme ${fmtDay(e.record)}`} · erscheint ${fmtDay(e.release)}</span></h3>
-      ${!g.length ? `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>`
-        : cal.filters.sort === "date" ? calDaysHTML(e, g)
-        : g.length <= CAL_TOP ? `<ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>`
-        : `<div class="cal-fold foldable${cal.open.has(e.n) ? "" : " collapsed"}"><ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>
-           <button class="more" type="button" data-cal="fold" aria-expanded="${cal.open.has(e.n)}"><svg class="chev" viewBox="0 0 56 16" fill="none" aria-hidden="true"><path d="M4 4 L28 12 L52 4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="more-lbl"></span></button></div>`}</section>`; }).join("");
-  body.querySelectorAll(".cal-fold").forEach(calFoldUpdate);
+      ${!g.length ? `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>` : calDaysHTML(e, g)}</section>`; }).join("");
+  // Gegen Flackern: Die Seite zeichnet regelmäßig alles neu (neue Stimmen, minütlich, Klappentext). Hat sich am Kalender
+  // nichts geändert, bleiben Karten und Cover stehen – sonst würden alle Cover neu erzeugt und kurz neu geladen.
+  if (html === cal.lastHTML && cal.stackMode === cal.lastMode && body.querySelector(".cal-ep")) { $("#calNav").hidden = false; calLabel(); return; }
+  cal.lastHTML = html; cal.lastMode = cal.stackMode;
+  body.innerHTML = html;
+  // aufgefächerte Tage bleiben offen, auch wenn neu gezeichnet werden musste
+  body.querySelectorAll(".cal-stack").forEach(st => st.classList.toggle("open", cal.stackMode !== "desk" && cal.openDays.has(st.dataset.key)));
   calStackLayout();
   body.scrollLeft = calPageLeft(cal.page);                     // an der aktuellen Folge bleiben, ohne Gleiten
   calSetHeight(true);
@@ -2429,56 +2395,7 @@ function renderCalCard() {
   $("#calNav").hidden = false;
   calLabel();
 }
-const calRO = typeof ResizeObserver === "function" ? new ResizeObserver(() => {
-  if (!cal.folding) $("#calBody").querySelectorAll(".cal-fold").forEach(calFoldUpdate);
-  calSetHeight();
-}) : null;
-// Schnittkante: oberes Drittel des 6. Films; darüber der Verlauf (wie bei der Hauptliste)
-function calFoldUpdate(fold) {
-  const ul = fold.querySelector(".cal-list"), lis = [...ul.children], n = +fold.closest(".cal-ep").dataset.n;
-  const open = cal.open.has(n), extra = lis.length - CAL_TOP;
-  fold.classList.toggle("collapsed", !open);
-  const btn = fold.querySelector(".more");
-  btn.setAttribute("aria-expanded", open);
-  btn.querySelector(".more-lbl").textContent = open ? "Einklappen" : `${extra} weitere${extra === 1 ? "r" : ""} Start${extra === 1 ? "" : "s"}`;
-  lis.forEach((li, i) => li.toggleAttribute("inert", !open && i >= CAL_TOP));
-  const li = lis[CAL_TOP], third = li.offsetHeight / 3, h = li.offsetTop - ul.offsetTop + third, fade = third + 16;
-  fold.style.setProperty("--fade", Math.round(fade) + "px");
-  fold.style.setProperty("--fade-top", Math.round(ul.offsetTop + h - fade + 2) + "px");
-  ul.style.maxHeight = open ? "" : h + "px";
-}
-// Auf- und Zuklappen: Höhe gleitet sanft; beim Zuklappen bleibt der Pfeil unter dem Finger (Seite scrollt mit)
-function calFoldToggle(fold) {
-  const ul = fold.querySelector(".cal-list"), n = +fold.closest(".cal-ep").dataset.n, body = $("#calBody");
-  const from = ul.offsetHeight, opening = !cal.open.has(n);
-  const btn = fold.querySelector(".more"), btnTop = btn.getBoundingClientRect().top;   // VOR dem Umschalten messen
-  if (opening) cal.open.add(n); else cal.open.delete(n);
-  calFoldUpdate(fold);
-  if (reduceMotion()) { calSetHeight(true); return; }
-  const to = opening ? ul.scrollHeight : parseFloat(ul.style.maxHeight);
-  // Beim Zuklappen bleibt das untere Ende stehen: In jedem Bild wird nachgemessen, wo der Pfeil jetzt ist,
-  // und die Seite um genau diese Abweichung geschoben (nicht vorausberechnet – Safari rundet und scrollt anders)
-  const follow = !opening && btnTop > 0 && btnTop < innerHeight;
-  const html = document.documentElement, sb = html.style.scrollBehavior, oa = html.style.overflowAnchor;
-  if (follow) { html.style.scrollBehavior = "auto"; html.style.overflowAnchor = "none"; }
-  const keep = () => { if (!follow) return; const d = btn.getBoundingClientRect().top - btnTop; if (Math.abs(d) > .2) window.scrollTo(0, scrollY + d); };
-  const dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
-  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  cal.folding = true; fold.classList.add("anim"); body.classList.add("folding");
-  ul.style.height = from + "px";
-  const t0 = performance.now();
-  const step = now => {
-    const p = Math.min(1, (now - t0) / dur), h = from + (to - from) * ease(p);
-    ul.style.height = h + "px";
-    body.style.height = calPanelH(cal.page) + "px";
-    keep();
-    if (p < 1) { requestAnimationFrame(step); return; }
-    ul.style.height = ""; fold.classList.remove("anim"); body.classList.remove("folding"); cal.folding = false;
-    calFoldUpdate(fold); calSetHeight(true); keep();
-    if (follow) { html.style.scrollBehavior = sb; html.style.overflowAnchor = oa; }
-  };
-  requestAnimationFrame(step);
-}
+const calRO = typeof ResizeObserver === "function" ? new ResizeObserver(() => calSetHeight()) : null;
 // Fensterbreite ändert sich (Drehen am Handy): an der aktuellen Folge bleiben
 addEventListener("resize", () => {
   const b = $("#calBody"); if (!b?.children[0]?.dataset.n) return;
@@ -2561,8 +2478,6 @@ $("#calFilters").addEventListener("click", e => {
 $("#calBody").addEventListener("click", e => {
   const b = e.target.closest("[data-cal]"); if (!b) return;
   if (b.dataset.cal === "retry") { cal.state = "idle"; feedCache = null; renderCalCard(); }
-  else if (b.dataset.cal === "plan") calPlanDialog(b.closest(".cal-film"));
-  else if (b.dataset.cal === "fold" && !cal.folding) calFoldToggle(b.closest(".cal-fold"));
 });
 $("#calSet").addEventListener("click", calSettings);
 $("#calBody").addEventListener("keydown", e => {
@@ -2575,15 +2490,11 @@ $("#calBody").addEventListener("mouseout", e => { if (cal.stackMode !== "desk") 
 $("#calBody").addEventListener("focusin", e => { if (cal.stackMode !== "desk") return; const c = e.target.closest(".cal-card"); if (c) calReveal(c); });
 $("#calBody").addEventListener("click", e => {
   const c = e.target.closest(".cal-card"), st = e.target.closest(".cal-stack");
-  if (cal.stackMode === "desk") { if (c) calPlanDialog(c); return; }
+  if (c && e.target.closest(".tt")) { calPlanDialog(c); return; }          // Titel antippen = direkt vormerken (auch im geschlossenen Stapel)
+  if (cal.stackMode === "desk" || st?.classList.contains("solo")) { if (c) calPlanDialog(c); return; }   // nur ein Film: kein Auffächern
   if (!st) { $("#calBody").querySelectorAll(".cal-stack.open").forEach(s => calFan(s, false)); return; }
   if (!st.classList.contains("open")) { $("#calBody").querySelectorAll(".cal-stack.open").forEach(s => s !== st && calFan(s, false)); calFan(st, true); return; }
   if (c) calPlanDialog(c); else calFan(st, false);
-});
-$("#calSort").addEventListener("click", () => {
-  cal.filters.sort = cal.filters.sort === "date" ? "pop" : "date";
-  try { localStorage.setItem("ct-cal-filters", JSON.stringify(cal.filters)); } catch {}
-  renderCalCard();
 });
 let calScrollT = null, calMoreLoading = false;
 // Am Ende der geladenen Folgen: die nächsten im Hintergrund nachladen und anhängen
@@ -2605,18 +2516,19 @@ $("#calNav").addEventListener("click", ev => {
   calGo(cal.page + +b.dataset.nav);
 });
 // Trackpad/Mausrad seitlich: eine Geste = eine Folge (sonst rastet ein kurzer Wisch auf die alte Folge zurück).
-// Nach dem Wechsel werden die restlichen Ereignisse der Geste (Nachschwung) ignoriert, bis 220 ms Ruhe ist.
-let calWheelSum = 0, calWheelLocked = false, calWheelT = null;
+// Nach dem Wechsel werden die restlichen Ereignisse der Geste (Nachschwung) ignoriert: mindestens 0,7 s lang
+// und bis 250 ms Ruhe ist (manche Geräte schicken den Nachschwung mit kleinen Pausen).
+let calWheelSum = 0, calWheelLocked = false, calWheelT = null, calWheelUntil = 0;
 $("#calBody").addEventListener("wheel", e => {
   if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;          // senkrecht: die Seite scrollt normal
   e.preventDefault();
   clearTimeout(calWheelT);
-  calWheelT = setTimeout(() => { calWheelSum = 0; calWheelLocked = false; }, 220);
-  if (calWheelLocked) return;
+  calWheelT = setTimeout(() => { calWheelSum = 0; calWheelLocked = false; }, 250);
+  if (calWheelLocked || Date.now() < calWheelUntil) return;
   calWheelSum += e.deltaX;
   if (Math.abs(calWheelSum) > 30) {
     const to = cal.page + Math.sign(calWheelSum);
-    calWheelSum = 0; calWheelLocked = true;
+    calWheelSum = 0; calWheelLocked = true; calWheelUntil = Date.now() + 700;
     if (to >= 0) calGo(to);
   }
 }, { passive: false });
@@ -3363,6 +3275,7 @@ async function openCase(poster) {
   const lo = img?.complete && img.naturalWidth ? img.src : "";
   const src = img?.src ? img.src.replace(/\/w\d+\//, "/w500/") : "";
   const title = poster.dataset.ctitle || "", sub = poster.dataset.csub || "";
+  const calOf = poster.closest(".cal-card");       // Film aus dem Kinokalender: Klappentext bekommt „Vormerken“
   const layer = document.createElement("div");
   layer.className = "case-layer" + (reduce ? " reduce" : "");
   layer.innerHTML = `<div class="case-dim"></div>
@@ -3374,6 +3287,7 @@ async function openCase(poster) {
           <h3 class="case-title"></h3><div class="case-alt"></div>
           <div class="case-meta" hidden></div>
           <div class="case-text"></div>
+          ${calOf ? `<button type="button" class="mini case-plan">${calOf.classList.contains("planned") ? "Vormerkung ändern" : "＋ Vormerken"}</button>` : ""}
           <div class="case-src">Inhaltsangabe: TMDB</div>
         </div>
       </div>
@@ -3408,6 +3322,15 @@ async function openCase(poster) {
   // Seite dahinter nicht scrollen lassen – nur der lange Text in der Hülle scrollt (overscroll-behavior hält ihn dort)
   layer.addEventListener("wheel", e => { const t = e.target.closest(".case-text"); if (!t || t.scrollHeight <= t.clientHeight) e.preventDefault(); }, { passive: false });
   layer.querySelector(".case-x").onclick = closeCase;
+  // Vormerken: erst den Klappentext zurückfliegen lassen, dann den Dialog öffnen (sonst liegen beide übereinander)
+  const planBtn = layer.querySelector(".case-plan");
+  if (planBtn) planBtn.onclick = async () => {
+    closeCase();
+    const t0 = Date.now();
+    while (caseState.layer && Date.now() - t0 < 2000) await new Promise(r => setTimeout(r, 40));
+    if (calOf.isConnected) calPlanDialog(calOf);
+    else { const again = $("#calBody").querySelector(`.cal-card[data-tmdb-id="${CSS.escape(calOf.dataset.tmdbId)}"]`); if (again) calPlanDialog(again); }
+  };
   setTimeout(() => layer.querySelector(".case-x")?.focus({ preventScroll: true }), reduce ? 50 : 650);
   watchCovers();
   if (ready) return;
@@ -3470,7 +3393,7 @@ async function closeCase() {
 }
 const caseTarget = e => {
   const p = e.target.closest?.(".poster[data-tmdb]");
-  if (p && cal.stackMode !== "desk" && p.closest(".cal-stack:not(.open)")) return null;   // erst auffächern
+  if (p && cal.stackMode !== "desk" && p.closest(".cal-stack:not(.open):not(.solo)")) return null;   // erst auffächern (außer bei nur einem Film)
   return p;
 };
 /* Vorladen: großes Cover und Inhaltsangabe, damit beim Umdrehen alles schon da ist.
