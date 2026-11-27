@@ -138,7 +138,7 @@ h1{
 }
 
 .card{
-  --cpb:22px;
+  --cpb:22px;--cpx:22px;
   background:var(--paper);
   border:3.5px solid var(--line);
   border-radius:18px 10px 22px 12px / 12px 20px 10px 18px;
@@ -371,7 +371,7 @@ footer span{background:var(--paper);padding:5px 12px;border:2px solid var(--line
   .cloth > *{transform:none}
   .cloth{background-size:7px 7px, 36px 36px, 36px 36px}
   .logo{width:156px;height:156px;margin-left:-78px;top:-74px}
-  .card{--cpb:16px;padding:16px 14px;box-shadow:5px 6px 0 rgba(29,23,18,.32)}
+  .card{--cpb:16px;--cpx:14px;padding:16px 14px;box-shadow:5px 6px 0 rgba(29,23,18,.32)}
   .lede{font-size:15.5px}
   .film{grid-template-columns:34px 1fr auto;gap:9px;padding:10px 9px 10px 6px}
   .rank{font-size:20px}
@@ -530,13 +530,69 @@ html.case-busy .film.top1::before{animation-play-state:paused}
 .cal-film .mini.on{background:var(--navy);color:#fff}
 .cal-empty{margin:0;font-size:14px;color:var(--muted);font-weight:600}
 /* Folgen nebeneinander, rasten ein: Wischen (Handy), seitliches Scrollen (Trackpad) und Pfeile gleiten nativ */
-.cal-body{display:flex;align-items:flex-start;gap:28px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+/* Leiste reicht bis an den inneren Kartenrand: freigelegte Filme verschwinden hinter dem Rand der Karte */
+.cal-body{margin-inline:calc(-1 * var(--cpx));padding-inline:var(--cpx);scroll-padding-inline:var(--cpx);
+  display:flex;align-items:flex-start;gap:28px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
   overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;transition:height .38s cubic-bezier(.2,.8,.2,1)}
 .cal-body::-webkit-scrollbar{display:none}
 .cal-body > .cal-ep{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;margin-top:0;padding:16px 0 4px}   /* Abstand als Innenabstand: zählt zur gemessenen Höhe */
 .cal-body > .cal-msg{flex:0 0 100%}
 @media (prefers-reduced-motion:reduce){.cal-body{transition:none}}
 .cal-body.folding{transition:none}
+/* Tagesansicht (Sortierung nach Datum): eine Zeile pro Tag, darin die Starts als Kacheln nach Beliebtheit */
+.cal-days{margin-top:4px}
+.cal-day{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;padding:10px 0;border-top:2px dashed #ddd1b8}
+.cal-day:first-child{border-top:0}
+.cal-date{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05;padding-top:4px}
+.cal-date .wd{font-weight:800;font-size:12.5px;color:var(--muted)}
+.cal-date .d{font-family:"Playfair Display",Georgia,serif;font-weight:800;font-size:21px;color:var(--navy-ink)}
+.cal-date .rec{margin-top:5px;font-size:11.5px;font-weight:800;color:#fff;background:var(--red-deep);border-radius:6px;padding:2px 6px}
+/* Stapel: die Starts eines Tages liegen aufgefächert übereinander, links unten der beliebteste.
+   Computer: Drüberfahren legt frei, Klick = vormerken. Handy: Antippen fächert den Tag auf, dann Antippen = vormerken. */
+.cal-stack{position:relative;display:flex;align-items:flex-start;padding:4px 0 6px}
+.cal-card{position:relative;flex:none;cursor:pointer;background:#fff;border:2px solid var(--line);border-radius:10px;box-shadow:2px 2px 0 var(--line);
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease;-webkit-tap-highlight-color:transparent}
+.cal-card:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+.cal-card.stream{border-style:dashed}
+.cal-card.planned{background:var(--navy-soft)}
+.cal-stack:not(.open) .cal-card:not(:first-child){box-shadow:2px 2px 0 var(--line),-6px 0 8px -5px rgba(29,23,18,.55)}
+.cal-card .poster{border-width:1.5px;box-shadow:none}
+.cal-card .tt{font-weight:800;line-height:1.2}
+.cal-card .ss{display:block;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-card .warn{color:var(--red-deep)}
+/* Karteimarker in Kartenfarbe mit Namens-Pille; Ecken laufen im gleichen Abstand um die Pille */
+.cal-tab{--pr:8.5px;position:absolute;line-height:1;background:var(--navy-soft);border:2px solid var(--line);padding:1.5px 2px;white-space:nowrap}
+.cal-tab .pill{display:inline-block;font-size:11px;font-weight:800;line-height:1.3;color:#fff;background:var(--navy);border-radius:999px;padding:1px 7px 2px}
+/* Computer */
+.stack-desk .cal-stack.has-plan{padding-bottom:22px}
+.stack-desk .cal-card{display:grid;grid-template-columns:34px 170px;gap:9px;align-items:center;padding:5px 10px 5px 5px;height:64px}
+.stack-desk .cal-card .poster{width:34px}
+.stack-desk .cal-card .poster .ph{font-size:14px}
+.stack-desk .cal-card .tt{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stack-desk .cal-card .ss{font-size:12px}
+.stack-desk .cal-card.lift{transform:translateY(-3px);box-shadow:3px 5px 0 var(--line)}
+.stack-desk .cal-stack:not(.open) .cal-card:not(:first-child).lift{box-shadow:3px 5px 0 var(--line),-6px 0 8px -5px rgba(29,23,18,.55)}
+.stack-desk .cal-card.planned{border-bottom-left-radius:0}
+.stack-desk .cal-tab{left:-2px;top:100%;border-top:0;border-radius:0 0 calc(var(--pr) + 4px) calc(var(--pr) + 4px)}
+/* Handy */
+.stack-mob .cal-stack.has-plan{padding-top:21px}
+.stack-mob .cal-card{width:84px;padding:5px 5px 6px;text-align:center}
+.stack-mob .cal-card .poster{width:100%}
+.stack-mob .cal-card .tt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:5px;font-size:12.5px;min-height:2.4em;
+  hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere}
+.stack-mob .cal-card .ss{font-size:11px}
+.stack-mob .cal-card.planned{border-top-left-radius:0}
+.stack-mob .cal-tab{left:-2px;bottom:100%;border-bottom:0;border-radius:calc(var(--pr) + 4px) calc(var(--pr) + 4px) 0 0}
+.stack-mob .cal-tab .pill{font-size:10.5px}
+.stack-mob .cal-stack.open{flex-wrap:wrap;gap:10px}
+.stack-mob .cal-stack.open.has-plan{row-gap:30px}
+.stack-mob .cal-stack.open .cal-card{margin-left:0 !important;width:calc((100% - 20px) / 3)}
+@media (prefers-reduced-motion:reduce){.cal-card{transition:none}}
+@media (max-width:480px){
+  .cal-day{grid-template-columns:minmax(0,1fr);gap:7px}
+  .cal-date{flex-direction:row;align-items:baseline;gap:6px;padding-top:0}
+  .cal-date .d{font-size:18px}.cal-date .rec{margin:0 0 0 4px;align-self:center}
+}
 /* Zusammenfalter je Folge wie bei der Hauptliste: erste 5 Filme, darunter Verlauf und Pfeil */
 .cal-fold{position:relative}
 .cal-fold.foldable{padding-bottom:52px}
@@ -2285,8 +2341,63 @@ function calFilmHTML(r) {
     <div class="txt"><div class="t">${esc(f.title)}</div><div class="s">${esc(bits.join(" · "))}${warn.length ? ` · <span class="warn">${esc(warn.join(" · "))}</span>` : ""}</div></div>
     <button type="button" class="mini${r.plan ? " on" : ""}" data-cal="plan">${r.plan ? esc(PRESENT[r.plan.presented_by] || "Vorgemerkt") : "＋ Vormerken"}</button></li>`;
 }
+// Tagesansicht: Karte im Stapel (Cover antippen = Klappentext; Karte = vormerken)
+function calCardHTML(r, z) {
+  const { f } = r, kind = r.kind === "stream" ? (f.provider || "Streaming") : "Kino";
+  const bits = [esc(kind)];
+  if (calRerun(f, r.date)) bits.push("Wiederaufführung");
+  if (r.shifted) bits.push(`<span class="warn">verschoben (vorher ${esc(fmtDay(r.shifted))})</span>`);
+  if (r.late) bits.push(`<span class="warn">nach der Aufnahme</span>`);
+  const sub = [r.kind === "stream" ? "Streaming" + (f.provider ? " · " + f.provider : "") : "Kino", r.date ? fmtDay(r.date) : ""].filter(Boolean).join(" · ");
+  const who = r.plan ? { max: "Max", vincent: "Vincent", both: "Beide" }[r.plan.presented_by] || "Vorgemerkt" : "";
+  return `<div class="cal-card${r.kind === "stream" ? " stream" : ""}${r.plan ? " planned" : ""}" style="z-index:${z}" role="button" tabindex="0"
+      data-tmdb-id="${esc(f.tmdb_id)}" data-ep="${esc(r.ep.n)}" data-kind="${esc(r.kind)}" data-date="${esc(r.date || "")}"
+      aria-label="${esc(f.title)}${who ? " – vorgemerkt: " + esc(who) : ""}">
+    ${posterHTML(f.poster, f.title, "w185", f.tmdb_id ? { id: f.tmdb_id, type: "movie", title: f.title, sub } : null)}
+    ${who ? `<span class="cal-tab"><span class="pill">${esc(who)}</span></span>` : ""}
+    <div><div class="tt">${esc(f.title)}</div><span class="ss">${bits.join(" · ")}</span></div></div>`;
+}
+function calDaysHTML(e, g) {
+  const days = new Map();
+  for (const r of g) { const k = r.date || ""; if (!days.has(k)) days.set(k, []); days.get(k).push(r); }
+  const keys = [...days.keys()].sort((a, b) => (!a) - (!b) || (a < b ? -1 : a > b ? 1 : 0));   // „Termin offen“ zuletzt
+  return `<div class="cal-days">${keys.map(k => {
+    const rows = days.get(k).sort((a, b) => (b.f.popularity || 0) - (a.f.popularity || 0));
+    const d = k ? dayOf(k) : null;
+    return `<div class="cal-day"><div class="cal-date">${d ? `<span class="wd">${WD[d.getUTCDay()]}</span><span class="d">${d.getUTCDate()}.${d.getUTCMonth() + 1}.</span>` : `<span class="d">offen</span>`}${k && k === e.record ? `<span class="rec">Aufnahme</span>` : ""}</div>
+      <div class="cal-stack${rows.some(r => r.plan) ? " has-plan" : ""}">${rows.map((r, i) => calCardHTML(r, i + 1)).join("")}</div></div>`;
+  }).join("")}</div>`;
+}
+// Computer (Maus, genug Breite) oder Handy-Verhalten für die Stapel
+const calStackMode = () => matchMedia("(hover:hover) and (pointer:fine)").matches && ($("#calCard").clientWidth || innerWidth) > 680 ? "desk" : "mob";
+// Überlappung je Zeile: Der zusammengeschobene Stapel passt in die Zeile; beim Freilegen dürfen Karten hinter dem Kartenrand verschwinden
+function calStackLayout() {
+  const desk = cal.stackMode === "desk";
+  $("#calBody").querySelectorAll(".cal-stack").forEach(st => {
+    const cards = [...st.children], n = cards.length; if (!n) return;
+    const w = cards[0].offsetWidth, W = st.clientWidth, max = desk ? 104 : 36, min = desk ? 24 : 14;
+    const step = Math.max(min, Math.min(max, n > 1 ? (W - w) / (n - 1) : max));
+    cards.forEach((c, i) => { c.style.marginLeft = i ? (step - w) + "px" : ""; });
+  });
+}
+function calReveal(card) {
+  const st = card.parentElement, cards = [...st.children], i = cards.indexOf(card), next = cards[i + 1];
+  const hidden = next ? card.offsetLeft + card.offsetWidth - next.offsetLeft + 8 : 0;
+  cards.forEach((c, j) => { c.classList.toggle("lift", j === i); c.style.transform = j > i && hidden > 0 ? `translateX(${hidden}px)` : ""; });
+}
+function calUnreveal(st) { [...st.children].forEach(c => { c.classList.remove("lift"); c.style.transform = ""; }); }
+// Handy: Tag auf- oder zufächern, Karten gleiten von der alten an die neue Stelle
+function calFan(st, open) {
+  const cards = [...st.children], before = cards.map(c => c.getBoundingClientRect());
+  calUnreveal(st); st.classList.toggle("open", open);
+  if (reduceMotion()) return;
+  cards.forEach((c, i) => { const a = c.getBoundingClientRect();
+    c.animate([{ transform: `translate(${before[i].left - a.left}px,${before[i].top - a.top}px)` }, { transform: "none" }], { duration: 380, easing: "cubic-bezier(.2,.8,.2,1)" }); });
+}
 function renderCalCard() {
   const card = $("#calCard");
+  cal.stackMode = calStackMode();
+  card.classList.toggle("stack-desk", cal.stackMode === "desk"); card.classList.toggle("stack-mob", cal.stackMode !== "desk");
   card.hidden = !state.isAdmin;
   if (card.hidden) return;
   if (cal.state === "idle") { calInit(); return; }
@@ -2305,10 +2416,12 @@ function renderCalCard() {
   body.innerHTML = eps.map(e => { const g = groups.get(e.n);
     return `<section class="cal-ep" data-n="${e.n}"><h3>Folge ${e.n} <span class="hint">${e.moved ? `<span class="moved">Aufnahme ${fmtDay(e.record)} (verschoben)</span>` : `Aufnahme ${fmtDay(e.record)}`} · erscheint ${fmtDay(e.release)}</span></h3>
       ${!g.length ? `<p class="cal-empty">Keine Starts${cal.filters.planned ? " vorgemerkt" : ""}.</p>`
+        : cal.filters.sort === "date" ? calDaysHTML(e, g)
         : g.length <= CAL_TOP ? `<ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>`
         : `<div class="cal-fold foldable${cal.open.has(e.n) ? "" : " collapsed"}"><ul class="cal-list">${g.map(calFilmHTML).join("")}</ul>
            <button class="more" type="button" data-cal="fold" aria-expanded="${cal.open.has(e.n)}"><svg class="chev" viewBox="0 0 56 16" fill="none" aria-hidden="true"><path d="M4 4 L28 12 L52 4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="more-lbl"></span></button></div>`}</section>`; }).join("");
   body.querySelectorAll(".cal-fold").forEach(calFoldUpdate);
+  calStackLayout();
   body.scrollLeft = calPageLeft(cal.page);                     // an der aktuellen Folge bleiben, ohne Gleiten
   calSetHeight(true);
   // Wird eine Folge nachträglich höher (Schrift fertig geladen, Cover, Textumbruch), wächst die Leiste mit – nichts wird abgeschnitten
@@ -2338,12 +2451,18 @@ function calFoldUpdate(fold) {
 function calFoldToggle(fold) {
   const ul = fold.querySelector(".cal-list"), n = +fold.closest(".cal-ep").dataset.n, body = $("#calBody");
   const from = ul.offsetHeight, opening = !cal.open.has(n);
+  const btn = fold.querySelector(".more"), btnTop = btn.getBoundingClientRect().top;   // VOR dem Umschalten messen
   if (opening) cal.open.add(n); else cal.open.delete(n);
   calFoldUpdate(fold);
   if (reduceMotion()) { calSetHeight(true); return; }
   const to = opening ? ul.scrollHeight : parseFloat(ul.style.maxHeight);
-  const btnTop = fold.querySelector(".more").getBoundingClientRect().top, follow = !opening && btnTop > 0 && btnTop < innerHeight;
-  const y0 = scrollY, dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
+  // Beim Zuklappen bleibt das untere Ende stehen: In jedem Bild wird nachgemessen, wo der Pfeil jetzt ist,
+  // und die Seite um genau diese Abweichung geschoben (nicht vorausberechnet – Safari rundet und scrollt anders)
+  const follow = !opening && btnTop > 0 && btnTop < innerHeight;
+  const html = document.documentElement, sb = html.style.scrollBehavior, oa = html.style.overflowAnchor;
+  if (follow) { html.style.scrollBehavior = "auto"; html.style.overflowAnchor = "none"; }
+  const keep = () => { if (!follow) return; const d = btn.getBoundingClientRect().top - btnTop; if (Math.abs(d) > .2) window.scrollTo(0, scrollY + d); };
+  const dur = Math.min(850, 420 + Math.abs(to - from) * 0.2);
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   cal.folding = true; fold.classList.add("anim"); body.classList.add("folding");
   ul.style.height = from + "px";
@@ -2352,15 +2471,20 @@ function calFoldToggle(fold) {
     const p = Math.min(1, (now - t0) / dur), h = from + (to - from) * ease(p);
     ul.style.height = h + "px";
     body.style.height = calPanelH(cal.page) + "px";
-    if (follow) window.scrollTo({ top: Math.max(0, y0 - (from - h)), behavior: "instant" });
+    keep();
     if (p < 1) { requestAnimationFrame(step); return; }
     ul.style.height = ""; fold.classList.remove("anim"); body.classList.remove("folding"); cal.folding = false;
-    calFoldUpdate(fold); calSetHeight(true);
+    calFoldUpdate(fold); calSetHeight(true); keep();
+    if (follow) { html.style.scrollBehavior = sb; html.style.overflowAnchor = oa; }
   };
   requestAnimationFrame(step);
 }
 // Fensterbreite ändert sich (Drehen am Handy): an der aktuellen Folge bleiben
-addEventListener("resize", () => { const b = $("#calBody"); if (b?.children[0]?.dataset.n) b.scrollLeft = calPageLeft(cal.page); });
+addEventListener("resize", () => {
+  const b = $("#calBody"); if (!b?.children[0]?.dataset.n) return;
+  if (calStackMode() !== cal.stackMode) { renderCalCard(); return; }       // Adressleiste am iPhone o. Ä.: nichts neu zeichnen
+  b.scrollLeft = calPageLeft(cal.page); calStackLayout();
+});
 // Linke Kante von Folge i in der Leiste
 const calPageLeft = i => { const ps = $("#calBody").children; return ps[i] ? ps[i].offsetLeft - ps[0].offsetLeft : 0; };
 const calPanelH = i => $("#calBody").children[i]?.offsetHeight || 0;
@@ -2441,6 +2565,21 @@ $("#calBody").addEventListener("click", e => {
   else if (b.dataset.cal === "fold" && !cal.folding) calFoldToggle(b.closest(".cal-fold"));
 });
 $("#calSet").addEventListener("click", calSettings);
+$("#calBody").addEventListener("keydown", e => {
+  const t = e.target.closest?.(".cal-card");
+  if (t && e.target === t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); t.click(); }
+});
+// Stapel: Computer = Drüberfahren legt frei, Klick merkt vor; Handy = erst auffächern, dann vormerken
+$("#calBody").addEventListener("pointerover", e => { if (cal.stackMode !== "desk") return; const c = e.target.closest(".cal-card"); if (c) calReveal(c); });
+$("#calBody").addEventListener("mouseout", e => { if (cal.stackMode !== "desk") return; const st = e.target.closest(".cal-stack"); if (st && !st.contains(e.relatedTarget)) calUnreveal(st); });
+$("#calBody").addEventListener("focusin", e => { if (cal.stackMode !== "desk") return; const c = e.target.closest(".cal-card"); if (c) calReveal(c); });
+$("#calBody").addEventListener("click", e => {
+  const c = e.target.closest(".cal-card"), st = e.target.closest(".cal-stack");
+  if (cal.stackMode === "desk") { if (c) calPlanDialog(c); return; }
+  if (!st) { $("#calBody").querySelectorAll(".cal-stack.open").forEach(s => calFan(s, false)); return; }
+  if (!st.classList.contains("open")) { $("#calBody").querySelectorAll(".cal-stack.open").forEach(s => s !== st && calFan(s, false)); calFan(st, true); return; }
+  if (c) calPlanDialog(c); else calFan(st, false);
+});
 $("#calSort").addEventListener("click", () => {
   cal.filters.sort = cal.filters.sort === "date" ? "pop" : "date";
   try { localStorage.setItem("ct-cal-filters", JSON.stringify(cal.filters)); } catch {}
@@ -3329,7 +3468,11 @@ async function closeCase() {
   if (fly) fly.finished.then(land, land); else land();
   setTimeout(land, 900);
 }
-const caseTarget = e => e.target.closest?.(".poster[data-tmdb]");
+const caseTarget = e => {
+  const p = e.target.closest?.(".poster[data-tmdb]");
+  if (p && cal.stackMode !== "desk" && p.closest(".cal-stack:not(.open)")) return null;   // erst auffächern
+  return p;
+};
 /* Vorladen: großes Cover und Inhaltsangabe, damit beim Umdrehen alles schon da ist.
    1. sobald jemand mit der Maus über ein Cover fährt, es antippt oder per Tastatur ansteuert
    2. nach dem ersten Klappentext zusätzlich die Cover, die gerade im Bild sind – im Leerlauf, höchstens zwei
